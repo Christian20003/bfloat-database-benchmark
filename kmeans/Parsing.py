@@ -31,8 +31,18 @@ def parse_time_output(output: str, columns: int) -> Tuple[dict, np.ndarray]:
     return (json_obj, clusters)
 
 def parse_memory_output(results: dict) -> dict:
+    '''
+    This function parses the output of the memory benchmark into the provided results dictionary.
+    The output data will be read from a generated file. The resulting dictionary will contain the
+    heap, stack and total memory at the time of highest consumption.
+
+    :param results: The dictionary containing all benchmark results.
+
+    :return: The updated dictionary.
+    '''
     heap = []
     stack = []
+    # Extract all values
     with open('massif.out.kmeans', 'r') as file:
         line = file.readline()
         while line:
@@ -44,5 +54,13 @@ def parse_memory_output(results: dict) -> dict:
             if 'mem_stacks_B' in line:
                 stack.append(int(line[index + 1:]))
             line = file.readline()
-    
-    
+    # Identify max values
+    results['memory']['heap'] = 0
+    results['memory']['stack'] = 0
+    results['memory']['total'] = 0
+    index = 0
+    while index < len(heap):
+        if heap[index] + stack[index] > results['memory']['total']:
+            results['memory']['heap'] = heap[index]
+            results['memory']['stack'] = stack[index]
+            results['memory']['total'] = heap[index] + stack[index]

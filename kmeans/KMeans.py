@@ -4,7 +4,7 @@ from Plot import plot_results
 from typing import List, Tuple
 from pathlib import Path
 from Csv import init_csv_file, write_to_csv
-from Parsing import parse_time_output
+from Parsing import parse_time_output, parse_memory_output
 from Format import color
 from sklearn.cluster import KMeans
 import numpy as np
@@ -31,8 +31,10 @@ def main():
             print(f'{color.BLUE}Execute benchmark with type: {type}{color.END}')
             create_tables(points, cluster, type, args)
             output = time_benchmark(args)
-            json_obj, clusters = parse_time_output(output, value['cluster'])
-            write_to_csv(json_obj, type, value['number'])
+            results, clusters = parse_time_output(output, value['cluster'])
+            memory_benchmark(args)
+            results = parse_memory_output(results)
+            write_to_csv(results, type, value['number'])
             evaluate_accuray(points, cluster, clusters, iterations, type)
         print('\n')
     plot_results()
