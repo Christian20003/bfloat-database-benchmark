@@ -12,8 +12,8 @@ clusters (iter, cid, x, y) AS (
             WHERE c.iter = d.iter AND (d.x-p.x)^2 + (d.y-p.y)^2 < (c.x-p.x)^2 + (c.y-p.y)^2
         )
         GROUP BY iter, pid, p.x, p.y
-    )
-    WHERE iter<20
+    ) AS result
+    WHERE iter<10
     GROUP BY cid, iter
 )
-SELECT * FROM clusters WHERE iter = 20 ORDER BY cid;
+SELECT * FROM clusters WHERE iter = 10 ORDER BY cid;

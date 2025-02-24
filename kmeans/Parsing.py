@@ -40,21 +40,26 @@ def parse_memory_output(results: dict) -> dict:
 
     :return: The updated dictionary.
     '''
+    print('Parse the output into correct format')
     heap = []
     stack = []
     # Extract all values
-    with open('massif.out.kmeans', 'r') as file:
+    with open('kmeans', 'r') as file:
         line = file.readline()
         while line:
-            index = re.findall('=', line)
-            if 'mem_heap_B' in line:
-                heap.append(int(line[index + 1:]))
-            if 'mem_heap_extra_B' in line:
-                heap[len(heap) - 1] += int(line[index + 1:])
-            if 'mem_stacks_B' in line:
-                stack.append(int(line[index + 1:]))
+            try:
+                index = line.find('=')
+                if 'mem_heap_B' in line:
+                    heap.append(int(line[index + 1:]))
+                if 'mem_heap_extra_B' in line:
+                    heap[len(heap) - 1] += int(line[index + 1:])
+                if 'mem_stacks_B' in line:
+                    stack.append(int(line[index + 1:]))
+            except ValueError:
+                pass
             line = file.readline()
     # Identify max values
+    results['memory'] = {}
     results['memory']['heap'] = 0
     results['memory']['stack'] = 0
     results['memory']['total'] = 0
@@ -64,3 +69,5 @@ def parse_memory_output(results: dict) -> dict:
             results['memory']['heap'] = heap[index]
             results['memory']['stack'] = stack[index]
             results['memory']['total'] = heap[index] + stack[index]
+        index += 1
+    return results

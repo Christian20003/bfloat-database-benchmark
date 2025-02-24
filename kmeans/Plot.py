@@ -58,6 +58,7 @@ def plot_time_multiple(data: dict):
 
     :param data: The dictionary containing all pre-processed data.
     '''
+    print('Plot time performance results into pdf files')
     for index, result in enumerate(TIME_FILE_NAMES):
         data_key = 'y_exec' if index == 0 else 'y_compiler' if index == 1 else 'y_total_time'
         style_index = 0
@@ -83,6 +84,7 @@ def plot_memory_multiple(data: dict):
 
     :param data: The dictionary containing all pre-processed data.
     '''
+    print('Plot memory performance results into pdf files')
     for index, result in enumerate(TIME_FILE_NAMES):
         data_key = 'y_heap' if index == 0 else 'y_stack' if index == 1 else 'y_total_memory'
         style_index = 0
