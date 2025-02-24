@@ -1,9 +1,9 @@
 WITH RECURSIVE 
 points_start (pid, x, y) AS (SELECT * FROM points),
 clusters (iter, cid, x, y) AS (
-    (SELECT 0,* FROM clusters_0)
+    (SELECT 0, id, x, y FROM clusters_0)
     UNION ALL
-    SELECT iter+1,cid, AVG(px), AVG(py) FROM (
+    SELECT iter+1, cid, AVG(px), AVG(py) FROM (
         SELECT iter, pid, p.x AS px, p.y AS py, MIN(cid) AS cid
         FROM points_start p, clusters c
         WHERE NOT EXISTS (
