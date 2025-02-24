@@ -188,9 +188,9 @@ def time_benchmark(paths: Tuple[str, str, str]) -> str:
 def memory_benchmark(paths: Tuple[str, str, str]):
     print('Start the memory benchmark (This will take some time)')
     database  = subprocess.Popen(
-        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', '--massif-out-file=kmeans', f'{paths[0]}/run-sql', paths[2], paths[1], 'json']
+        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', '--massif-out-file=kmeans', f'{paths[0]}/run-sql', paths[2], paths[1], 'none']
     )
-    output, error = database.communicate()
+    _, error = database.communicate()
     if error:
         raise RuntimeError(f'{color.RED}Something went wrong during the memory-benchmark{color.END}: \n {error}')
 

@@ -25,6 +25,7 @@ def transform_data(data: List[List[str]]):
     print('Transform relevant data')
     result = {}
     # Identify all tested types
+    types = []
     types = [element[1] for element in data if element[1] not in types]
     for type in types:
         # Identify all entries belonging to the current type
@@ -35,9 +36,9 @@ def transform_data(data: List[List[str]]):
         y_compiler = [sum(float(element[i]) for i in range(3, 12)) for element in entries]
         y_exec = [float(element[12]) for element in entries]
         y_total_time = [float(element[13]) for element in entries]
-        y_heap = [float(element[14]) / 1024^2 for element in entries]
-        y_stack = [float(element[15]) / 1024^2 for element in entries]
-        y_total_memory = [float(element[16]) / 1024^2 for element in entries]
+        y_heap = [float(element[14]) / (1024*1024) for element in entries]
+        y_stack = [float(element[15]) / 1024 for element in entries]
+        y_total_memory = [float(element[16]) / (1024*1024) for element in entries]
         result.update({
             type: {
                 'x_values': x_values,
@@ -60,18 +61,20 @@ def plot_time_multiple(data: dict):
     '''
     print('Plot time performance results into pdf files')
     for index, result in enumerate(TIME_FILE_NAMES):
+        plt.clf()
         data_key = 'y_exec' if index == 0 else 'y_compiler' if index == 1 else 'y_total_time'
         style_index = 0
         for key, value in data.items():
-            # smooth the curve
+            """ # smooth the curve
             x = np.array(value['x_values'])
             y = np.array(value[data_key])
             spline = make_interp_spline(x, y)
             x_new = np.linspace(x.min(), x.max(), 300)
-            y_new = spline(x_new)
+            y_new = spline(x_new) """
             # plot the data
-            plt.plot(x_new, y_new, linestyle=STYLES[style_index], color=COLORS[style_index], marker='o', label=f'Type: {key}')
-        plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2), mode='expand', ncol=4)
+            plt.plot(value['x_values'], value[data_key], linestyle=STYLES[style_index], color=COLORS[style_index], marker='o', label=f'Type: {key}')
+            style_index += 1
+        plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2))
         plt.xlabel('Number of points')
         plt.ylabel('Time in ms')
         plt.xscale('log')
@@ -85,25 +88,30 @@ def plot_memory_multiple(data: dict):
     :param data: The dictionary containing all pre-processed data.
     '''
     print('Plot memory performance results into pdf files')
-    for index, result in enumerate(TIME_FILE_NAMES):
+    for index, result in enumerate(MEMORY_FILE_NAMES):
+        plt.clf()
         data_key = 'y_heap' if index == 0 else 'y_stack' if index == 1 else 'y_total_memory'
         style_index = 0
         for key, value in data.items():
-            # smooth the curve
+            """ # smooth the curve
             x = np.array(value['x_values'])
             y = np.array(value[data_key])
             spline = make_interp_spline(x, y)
             x_new = np.linspace(x.min(), x.max(), 300)
-            y_new = spline(x_new)
+            y_new = spline(x_new) """
             # plot the data
-            plt.plot(x_new, y_new, linestyle=STYLES[style_index], color=COLORS[style_index], marker='o', label=f'Type: {key}')
-        plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2), mode='expand', ncol=4)
+            plt.plot(value['x_values'], value[data_key], linestyle=STYLES[style_index], color=COLORS[style_index], marker='o', label=f'Type: {key}')
+            style_index += 1
+        plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2))
         plt.xlabel('Number of points')
-        plt.ylabel('Used memory in MB')
+        if data_key == 'y_stack':
+            plt.ylabel('Used memory in KB')
+        else:
+            plt.ylabel('Used memory in MB')
         plt.xscale('log')
         plt.savefig(result)
 
-def plot_time_single(data: dict):
+""" def plot_time_single(data: dict):
     print('Plotting the results into performance.pdf')
     color_index = 0
     for key, value in data.items():
@@ -120,7 +128,7 @@ def plot_time_single(data: dict):
     plt.ylabel('Time in ms')
     plt.xscale('log')
     plt.savefig('performance.pdf')
-    #plt.show()
+    #plt.show() """
 
 def plot_results():
     data = read_data_from_csv()
