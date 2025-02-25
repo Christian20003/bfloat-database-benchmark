@@ -105,7 +105,7 @@ def values_to_numpy(values: List[Value], rows: int) -> np.ndarray:
     for row in range(rows):
         entries = [element for element in values if element.row == row]
         entries = sorted(entries, key=lambda x: x.column)
-        entries = [element.value for element in values]
+        entries = [element.value for element in entries]
         # Could be a vector
         if len(entries) == 1:
             list.append(entries[0])
@@ -188,7 +188,7 @@ def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarr
     '''
 
     print('Evaluate accuracy of the database output with numpy')
-    correct_result = np.einsum('ab, bc, b->a', tensorA, tensorB, tensorC)
+    correct_result = np.einsum('ac, bc, b->a', tensorA, tensorB, tensorC)
     distance = np.sum(result - correct_result)
 
     print(f'\t{color.UNDERLINE} Result {color.END}')
