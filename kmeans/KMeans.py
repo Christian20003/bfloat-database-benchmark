@@ -26,7 +26,7 @@ import os
 import time
 
 def main():
-    args = parse_args()
+    args = parse_args('Kmeans')
     types = CONFIG['types']
     iterations = CONFIG['iterations']
     init_csv_file()

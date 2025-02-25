@@ -2,17 +2,18 @@ from typing import Tuple
 from pathlib import Path
 import argparse
 
-def parse_args() -> Tuple[str, str, str]:
+def parse_args(name: str) -> Tuple[str, str, str]:
     '''
     This function initializes the arguments for this benchmark file:
         -e:     Path to executable files
         -o:     Path to store persistent data
         -f:     Path of the sql statement which should be benchmarked
+    :param name: The name of the benchmark
     
     :return: A tuple with all three received values
     :raise:  RuntimeError, if invalid paths or empty values are provided 
     '''
-    parser = argparse.ArgumentParser('Kmeans', description='Execute Kmeans benchmark on LingoDB')
+    parser = argparse.ArgumentParser('[File name]', description=f'Execute a {name} benchmark on LingoDB')
     parser.add_argument('-e', '--executable', type=str, help='Path to the executables', required=True)
     parser.add_argument('-o', '--output', type=str, help='Path to store tables', required=True)
     parser.add_argument('-f', '--file', type=str, help='File with the SQL statement to benchmark', required=True)
