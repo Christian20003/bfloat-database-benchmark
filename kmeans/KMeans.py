@@ -1,16 +1,27 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Benchmark')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Csv')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Plot')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Types')))
+
 from Config import CONFIG
 from Point import Point
 from Plot import plot_results
 from typing import List, Tuple
-from pathlib import Path
 from Csv import init_csv_file, write_to_csv
-from Parsing import parse_time_output, parse_memory_output
+from Parse_Args import parse_args
+from Parse_Memory import parse_memory_metrics
+from Parse_Time import parse_time_metrics
+from Parse_Table import parse_table_output
+from Execute import time_benchmark, memory_benchmark
 from Format import color
 from sklearn.cluster import KMeans
 import numpy as np
 import random
 import subprocess
-import argparse
 import os
 import time
 
@@ -31,9 +42,10 @@ def main():
             print(f'{color.BLUE}Execute benchmark with type: {type}{color.END}')
             create_tables(points, cluster, type, args)
             output = time_benchmark(args)
-            results, clusters = parse_time_output(output, value['cluster'])
+            results = parse_time_metrics(output, value['cluster'])
+            clusters = parse_table_output(output)
             memory_benchmark(args)
-            results = parse_memory_output(results)
+            results = parse_memory_metrics(results)
             write_to_csv(results, type, value['number'])
             evaluate_accuray(points, cluster, clusters, iterations, type)
         print('\n')
@@ -163,37 +175,6 @@ def remove_tables(paths: Tuple[str, str, str]):
     # Ensure files are removed
     time.sleep(2)
 
-def time_benchmark(paths: Tuple[str, str, str]) -> str:
-    '''
-    This function executes the actual benchmark.
-
-    :param paths: A tuple with the paths to the executable and directories.
-
-    :returns: The complete output of the database.
-    
-    :raise RuntimeError: If the database could not run the benchmark.
-    '''
-    
-    print('Start the time benchmark')
-    database = subprocess.Popen(
-        [f'{paths[0]}/run-sql', paths[2], paths[1], 'json'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    output, error = database.communicate()
-    if error:
-        raise RuntimeError(f'{color.RED}Something went wrong during the time-benchmark{color.END}: \n {error}')
-    return output
-
-def memory_benchmark(paths: Tuple[str, str, str]):
-    print('Start the memory benchmark (This will take some time)')
-    database  = subprocess.Popen(
-        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', '--massif-out-file=kmeans', f'{paths[0]}/run-sql', paths[2], paths[1], 'none']
-    )
-    _, error = database.communicate()
-    if error:
-        raise RuntimeError(f'{color.RED}Something went wrong during the memory-benchmark{color.END}: \n {error}')
-
 def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str):
     '''
     This function evaluates the precision of the database output with the KMeans algorithm of 'Sklearn'.
@@ -226,40 +207,6 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
         font_color = color.GREEN if value.startswith('0.00') else color.YELLOW
         print(f'\t\t{font_color} Distance: {distance[closest_index]:.2f} {color.END}')
         result = np.delete(result, closest_index, axis=0)
-
-def parse_args() -> Tuple[str, str, str]:
-    '''
-    This function initializes the arguments for this benchmark file:
-        -e:     Path to executable files
-        -o:     Path to store persistent data
-        -f:     Path of the sql statement which should be benchmarked
-    
-    :return: A tuple with all three received values
-    :raise:  RuntimeError, if invalid paths or empty values are provided 
-    '''
-    parser = argparse.ArgumentParser('Kmeans', description='Execute Kmeans benchmark on LingoDB')
-    parser.add_argument('-e', '--executable', type=str, help='Path to the executables', required=True)
-    parser.add_argument('-o', '--output', type=str, help='Path to store tables', required=True)
-    parser.add_argument('-f', '--file', type=str, help='File with the SQL statement to benchmark', required=True)
-    args = parser.parse_args()
-    # Proof if arguments exists
-    if args.executable and args.output and args.file:
-        sql_exe = Path(f'{args.executable}/sql')
-        run_sql_exe = Path(f'{args.executable}/run-sql')
-        output_path = Path(args.output)
-        file = Path(args.file)
-        # Proof if directories and files exists
-        if not sql_exe.exists():
-            raise RuntimeError(f'{sql_exe.__str__()} not found')
-        if not run_sql_exe.exists():
-            raise RuntimeError(f'{run_sql_exe.__str__()} not found')
-        if not output_path.exists():
-            raise RuntimeError(f'{output_path.__str__()} does not exist')
-        if not file.exists():
-            raise RuntimeError(f'{file.__str__()} does not exist')
-        return (args.executable, args.output, args.file)
-    else:
-        raise RuntimeError('Missing arguments')
 
 if __name__ == "__main__":
     main()
