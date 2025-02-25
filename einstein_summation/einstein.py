@@ -40,9 +40,9 @@ def main():
         # Iterate over all specified types
         for type in types:
             print(f'{color.BLUE}Execute benchmark with type: {type}{color.END}')
-            create_table(tensorA, 'MatrixA', type, args)
-            create_table(tensorB, 'MatrixB', type, args)
-            create_table(tensorC, 'VectorV', type, args)
+            create_table(tensorA, 'matrixa', type, args)
+            create_table(tensorB, 'matrixb', type, args)
+            create_table(tensorC, 'vectorv', type, args)
             tensorA_np = values_to_numpy(tensorA, 2)
             tensorB_np = values_to_numpy(tensorB, axis_2)
             tensorC_np = values_to_numpy(tensorC, axis_2)
@@ -51,7 +51,7 @@ def main():
             output = parse_table_output(output, 2, 1, 1)
             memory_benchmark(args)
             results = parse_memory_metrics(results)
-            write_to_csv(results, type, value['number'])
+            write_to_csv(results, type, 2*axis_1 + axis_1*axis_2 + axis_2)
             evaluate_accuray(tensorA_np, tensorB_np, tensorC_np, output, type)
         print('\n')
     plot_results()
@@ -113,7 +113,7 @@ def values_to_numpy(values: List[Value], rows: int) -> np.ndarray:
             list.append(entries)
     return np.array(list, dtype=float)
 
-def remove_tables(paths: Tuple[str, str, str], table_name: str) -> None:
+def remove_table(paths: Tuple[str, str, str], table_name: str) -> None:
     '''
     This function removes files which corresponds to the given table name.
 
@@ -146,7 +146,7 @@ def create_table(tensor: List[Value], table_name: str, type: str, paths: Tuple[s
     '''
     
     print(f'Create table {table_name} with {len(tensor)} entries.')
-    remove_tables(paths, table_name)
+    remove_table(paths, table_name)
     # Define all statements to create tables with the help of LingoDB
     persist = 'SET persist=1;\n'
     create_table = f'CREATE TABLE {table_name}(rowIndex int, columnIndex int, val {type});\n'
