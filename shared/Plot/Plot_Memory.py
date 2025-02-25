@@ -16,7 +16,7 @@ def plot_memory_multiple(data: dict):
     print('Plot memory performance results into pdf files')
     colors = ['r', 'b', 'g', 'c']
     styles = ['-', ':', '--', '-']
-    for y_key, value in MEMORY_FILE_NAMES.items():
+    for y_key, file_value in MEMORY_FILE_NAMES.items():
         plt.clf()
         style_index = 0
         for type_key, value in data.items():
@@ -30,4 +30,4 @@ def plot_memory_multiple(data: dict):
         else:
             plt.ylabel('Used memory in MB')
         plt.xscale('log')
-        plt.savefig(value)
+        plt.savefig(file_value)

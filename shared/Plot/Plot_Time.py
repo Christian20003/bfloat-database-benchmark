@@ -16,7 +16,7 @@ def plot_time_multiple(data: dict) -> None:
     print('Plot time performance results into pdf files')
     colors = ['r', 'b', 'g', 'c']
     styles = ['-', ':', '--', '-']
-    for y_key, value in TIME_FILE_NAMES.items():
+    for y_key, file_value in TIME_FILE_NAMES.items():
         plt.clf()
         style_index = 0
         for type_key, value in data.items():
@@ -27,7 +27,7 @@ def plot_time_multiple(data: dict) -> None:
         plt.xlabel('Number of points')
         plt.ylabel('Time in ms')
         plt.xscale('log')
-        plt.savefig(value)
+        plt.savefig(file_value)
 
 def plot_time_single(data: dict) -> None:
     '''

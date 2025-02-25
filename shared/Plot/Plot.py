@@ -1,6 +1,7 @@
 import sys
+import os
 
-sys.path.append('../Csv')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Csv')))
 
 from Transform import transform_data
 from Plot_Time import plot_time_multiple
