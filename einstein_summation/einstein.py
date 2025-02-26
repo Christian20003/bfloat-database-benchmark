@@ -54,7 +54,7 @@ def main():
             write_to_csv(results, type, 2*axis_1 + axis_1*axis_2 + axis_2)
             evaluate_accuray(tensorA_np, tensorB_np, tensorC_np, output, type)
         print('\n')
-    plot_results()
+    plot_results('Number of tensor entries')
 
 def generate_tensor(rows: int, columns: int, upper_bound: int, lower_bound: int) -> List[Value]:
     '''

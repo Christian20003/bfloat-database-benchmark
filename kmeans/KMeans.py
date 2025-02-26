@@ -49,7 +49,7 @@ def main():
             write_to_csv(results, type, value['number'])
             evaluate_accuray(points, cluster, clusters, iterations, type)
         print('\n')
-    plot_results()
+    plot_results('Number of points')
 
 def generate_points(number: int, x_upper: int, y_upper: int, x_lower: int, y_lower: int) -> List[Point]:
     '''

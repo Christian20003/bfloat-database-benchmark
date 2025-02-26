@@ -24,6 +24,9 @@ def parse_table_output(output: str, total_columns: int, start: int, stop: int) -
             row = []
             for entry in range(start, stop + 1):
                 row.append(float(database_result[index + entry]))
-            data.append(row)
+            if len(row) == 1:
+                data.append(row[0])
+            else:
+                data.append(row)
     result = np.array(data, dtype=float)
     return result

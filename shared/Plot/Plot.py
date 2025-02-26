@@ -8,8 +8,8 @@ from Plot_Time import plot_time_multiple
 from Plot_Memory import plot_memory_multiple
 from Csv import read_data_from_csv
 
-def plot_results():
+def plot_results(x_label: str):
     data = read_data_from_csv()
     data = transform_data(data)
-    plot_time_multiple(data)
-    plot_memory_multiple(data)
+    plot_time_multiple(data, x_label)
+    plot_memory_multiple(data, x_label)
