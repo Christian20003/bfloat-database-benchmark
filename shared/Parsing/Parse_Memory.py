@@ -12,7 +12,7 @@ def parse_memory_metrics(results: dict) -> dict:
     heap = []
     stack = []
     # Extract all values
-    with open('kmeans', 'r') as file:
+    with open('memperfom', 'r') as file:
         line = file.readline()
         while line:
             try:
