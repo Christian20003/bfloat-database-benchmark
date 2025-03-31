@@ -3,7 +3,7 @@ import re
 
 def parse_table_output(output: str, total_columns: int, start: int, stop: int) -> np.ndarray:
     '''
-    This function parses the table output of the database into numpy array. This function
+    This function parses the table output of the database into a numpy array. This function
     only works if all columns are numeric values.
 
     :param output: The output string from the database executable.
@@ -14,9 +14,9 @@ def parse_table_output(output: str, total_columns: int, start: int, stop: int) -
     :return: A numpy array containing all extracted values.
     '''
     
-    print('Parse the output into correct format')
     output = output.decode('utf-8')
     end = output.index('{')
+    # Extract all numbers from the output table
     database_result = re.findall(r'-?\d+\.\d+|-?\d+', output[:end])
     data = []
     for index in range(0, len(database_result), total_columns):

@@ -8,7 +8,7 @@ def parse_memory_metrics(results: dict) -> dict:
 
     :return: The updated dictionary.
     '''
-    print('Parse the output into correct format')
+
     heap = []
     stack = []
     # Extract all values

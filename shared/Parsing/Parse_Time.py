@@ -9,7 +9,7 @@ def parse_time_metrics(output: str) -> dict:
 
     :return: A dictionary which contains every time metric.
     '''
-    print('Parse the output into correct format')
+
     output = output.decode('utf-8')
     start = output.index('{')
     json_str = output[start:]

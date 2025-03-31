@@ -3,7 +3,7 @@ import csv
 
 FILE_NAME = 'results.csv'
 
-def init_csv_file():
+def init_csv_file() -> None:
     '''
     This function initialize the results.csv file with a header (override previous content).
     '''
@@ -31,7 +31,7 @@ def init_csv_file():
         ]
         writer.writerow(header)
 
-def write_to_csv(results: dict, type: str, size: int):
+def write_to_csv(results: dict, type: str, size: int) -> None:
     '''
     This function writes data to the result.csv file (append).
 
@@ -40,7 +40,6 @@ def write_to_csv(results: dict, type: str, size: int):
     :param size: The size of the input data.
     '''
 
-    print('Write results into results.csv file')
     with open(FILE_NAME, mode='a', newline='') as file:
         writer = csv.writer(file)
         data = [
@@ -69,7 +68,6 @@ def read_data_from_csv() -> List[List[str]]:
     This function reads the data from results.csv
     '''
     
-    print(f'Read data from {FILE_NAME}')
     with open(FILE_NAME, mode='r') as file:
         reader = csv.reader(file)
         next(reader)
