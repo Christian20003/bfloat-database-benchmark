@@ -17,7 +17,7 @@ def parse_table_output(output: str, total_columns: int, start: int, stop: int) -
     output = output.decode('utf-8')
     end = output.index('{')
     # Extract all numbers from the output table
-    database_result = re.findall(r'-?\d+\.\d+|-?\d+', output[:end])
+    database_result = re.findall(r'-?\d+\.\d+e[+-]?\d+|-?\d+\.\d+|-?\d+', output[:end])
     data = []
     for index in range(0, len(database_result), total_columns):
         if index + stop < len(database_result):
