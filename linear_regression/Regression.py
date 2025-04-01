@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 from Config import CONFIG
 from Point import Point
 from Plot import plot_results
-from typing import List
+from typing import List, Tuple
 from Csv import init_csv_file, write_to_csv
 from Parse_Args import parse_args
 from Parse_Memory import parse_memory_metrics
@@ -18,7 +18,6 @@ from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
 from Format import print_error, print_warning, print_information, print_success, print_title
-from scipy import stats
 import random
 import subprocess
 import os
@@ -33,7 +32,8 @@ def main():
         if 'case' not in key:
             continue
         print_title(f'### START BENCHMARKING LINEAR REGRESSION WITH {value["number"]} POINTS ###')
-        points = generate_points(value["number"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
+        slope, intercept = generate_regression_line(value['param_upper_bound'], value['param_lower_bound'])
+        points = generate_points(value["number"], value["param_upper_bound"], value["param_lower_bound"], slope, intercept, CONFIG['noise_std_dev'])
         for type in types:
             print_information(f'Execute benchmark with type: {type}')
             create_table(points, type, args)
@@ -43,11 +43,16 @@ def main():
             memory_benchmark(args)
             results = parse_memory_metrics(results)
             write_to_csv(results, 'Regression', type, value['number'])
-            evaluate_accuracy(points, values[0], values[1], type)
+            evaluate_accuracy(values[0], values[1], slope, intercept, type)
         print('\n')
     plot_results('Number of points')
 
-def generate_points(number: int, x_upper: int, y_upper: int, x_lower: int, y_lower: int) -> List[Point]:
+def generate_regression_line(upper_bound: int, lower_bound: int) -> Tuple[float, float]:
+    slope = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
+    intercept = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
+    return slope, intercept
+
+def generate_points(number: int, upper_bound: int, lower_bound: int, slope: float, intercept: float, error_deviation: float) -> List[Point]:
     '''
     This function generates a specified number of random points.
 
@@ -62,8 +67,9 @@ def generate_points(number: int, x_upper: int, y_upper: int, x_lower: int, y_low
 
     result = []
     for value in range(number):
-        x = "{:.4f}".format(random.uniform(x_lower, x_upper))
-        y = "{:.4f}".format(random.uniform(y_lower, y_upper))
+        x = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
+        error = "{:.4f}".format(random.gauss(1, error_deviation))
+        y = slope * x + intercept + error
         result.append(Point(value, x, y))
     return result
 
@@ -146,18 +152,14 @@ def remove_tables(paths: dict):
     # Ensure files are removed
     time.sleep(2)
 
-def evaluate_accuracy(points: List[Point], slope_db: float, intercept_db: float, type: str) -> None:
-    x_values = [element.x for element in points]
-    y_values = [element.y for element in points]
-    slope, intercept, r, p, std_err = stats.linregress(x_values, y_values)
-
-    error_slope = str("{:.4f}".format(slope - slope_db))
-    error_intercept = str("{:.4f}".format(intercept - intercept_db))
+def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, intercept_label: float, type: str) -> None:
+    error_slope = str("{:.4f}".format(slope_label - slope_db))
+    error_intercept = str("{:.4f}".format(intercept_label - intercept_db))
 
     sign_db = '+' if intercept_db > 0 else ''
-    sign = '+' if intercept > 0 else ''
+    sign = '+' if intercept_label > 0 else ''
+    print_information(f'The generated truth: {slope_label} * x {sign} {intercept_label}', mark=True, tabs=1)
     print_information(f'Result of Lingo-DB with {type}: {slope_db} * x {sign_db} {intercept_db}', mark=True, tabs=1)
-    print_information(f'Result of SciPy: {slope} * x {sign} {intercept}', mark=True, tabs=1)
     if error_slope.startswith('0.0000'):
         print_success(f'Slope error: {error_slope}', tabs=2)
     else:

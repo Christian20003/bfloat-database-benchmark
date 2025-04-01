@@ -18,7 +18,7 @@ def time_benchmark(paths: Dict) -> str:
     
     print('Start the time benchmark')
     database = subprocess.Popen(
-        [paths['exe_bench'], paths['file'], paths['storage'], 'json'],
+        [paths['exe_bench'], paths['statement'], paths['storage'], 'json'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
