@@ -39,18 +39,19 @@ def main():
             create_table(points, type, args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
-            values = parse_table_output(output, 3, 2, 3)
+            values = parse_table_output(output, 3, 1, 2)
             memory_benchmark(args)
             results = parse_memory_metrics(results)
             write_to_csv(results, 'Regression', type, value['number'])
-            evaluate_accuracy(values[0], values[1], slope, intercept, type)
+            evaluate_accuracy(values[0][0], values[0][1], slope, intercept, type)
         print('\n')
     plot_results('Number of points')
 
 def generate_regression_line(upper_bound: int, lower_bound: int) -> Tuple[float, float]:
     slope = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
     intercept = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
-    return slope, intercept
+    return float(slope), float(intercept)
+
 
 def generate_points(number: int, upper_bound: int, lower_bound: int, slope: float, intercept: float, error_deviation: float) -> List[Point]:
     '''
@@ -69,7 +70,7 @@ def generate_points(number: int, upper_bound: int, lower_bound: int, slope: floa
     for value in range(number):
         x = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
         error = "{:.4f}".format(random.gauss(1, error_deviation))
-        y = slope * x + intercept + error
+        y = slope * float(x) + float(intercept) + float(error)
         result.append(Point(value, x, y))
     return result
 

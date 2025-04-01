@@ -38,7 +38,7 @@ def memory_benchmark(paths: Dict) -> None:
 
     print('Start the memory benchmark (This will take some time)')
     database  = subprocess.Popen(
-        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', '--massif-out-file=memperfom', paths['exe_bench'], paths['file'], paths['storage'], 'none']
+        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', '--massif-out-file=memperfom', paths['exe_bench'], paths['statement'], paths['storage'], 'none']
     )
     _, error = database.communicate()
     if error:
