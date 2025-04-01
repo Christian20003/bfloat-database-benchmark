@@ -14,7 +14,7 @@ def plot_time_multiple(data: dict, x_label: str) -> None:
     :param data: The dictionary containing all pre-processed data.
     :param x_label: The label for the x-axis.
     '''
-    print('Plot time performance results into pdf files')
+
     colors = ['r', 'b', 'g', 'c']
     styles = ['-', ':', '--', '-']
     for y_key, file_value in TIME_FILE_NAMES.items():

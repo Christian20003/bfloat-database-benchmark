@@ -17,7 +17,7 @@ from Parse_Memory import parse_memory_metrics
 from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
-from Format import color
+from Format import color, print_error, print_warning, print_information, print_success, print_title
 from sklearn.cluster import KMeans
 import numpy as np
 import random
@@ -34,19 +34,19 @@ def main():
     for key, value in CONFIG.items():
         if 'cluster' not in key:
             continue
-        print(f'{color.BOLD}### START BENCHMARKING KMEANS WITH {value["number"]} POINTS ###{color.END}\n')
+        print_title(f'### START BENCHMARKING KMEANS WITH {value["number"]} POINTS ###')
         points = generate_points(value["number"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
         cluster = generate_points(value["cluster"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
         # Iterate over all specified types
         for type in types:
-            print(f'{color.BLUE}Execute benchmark with type: {type}{color.END}')
+            print_information(f'Execute benchmark with type: {type}')
             create_tables(points, cluster, type, args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             clusters = parse_table_output(output, 4, 2, 3)
             memory_benchmark(args)
             results = parse_memory_metrics(results)
-            write_to_csv(results, type, value['number'])
+            write_to_csv(results, 'KMeans', type, value['number'])
             evaluate_accuray(points, cluster, clusters, iterations, type)
         print('\n')
     plot_results('Number of points')
@@ -63,7 +63,7 @@ def generate_points(number: int, x_upper: int, y_upper: int, x_lower: int, y_low
 
     :return: A list of point objects.
     '''
-    print(f'Generate {number} random points')
+
     result = []
     for value in range(number):
         x = "{:.4f}".format(random.uniform(x_lower, x_upper))
@@ -102,19 +102,19 @@ def points_to_numpy(points: List[Point]) -> np.ndarray:
         coordinates.append([point.x, point.y])
     return np.array(coordinates, dtype=float)
 
-def create_tables(points: List[Point], clusters: List[Point], type: str, paths: Tuple[str, str, str]):
+def create_tables(points: List[Point], clusters: List[Point], type: str, paths: dict):
     '''
     This function creates the persistent tables for the randomly generates points and clusters.
 
     :param points: A list of randomly created points.
     :param clusters: A list of randomly created cluster centers.
     :param type: The current datatype.
-    :param paths: A tuple with the path to the executable.
+    :param paths: A dictionary with paths to all necessary executables and directories.
 
     :raise RuntimeError: If the tables could not be generated.
     '''
     
-    print(f'Create Point-table with {len(points)} entries and Cluster-table with {len(clusters)} entries.')
+    print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(clusters)} entries.')
     remove_tables(paths)
     # Define all statements to create tables with the help of LingoDB
     persist = 'SET persist=1;\n'
@@ -123,7 +123,7 @@ def create_tables(points: List[Point], clusters: List[Point], type: str, paths: 
     insert_clusters = f'{points_to_sql(clusters, "Clusters_0")}\n'
     number_tuples = len(points) if len(points) <= 1000 else 1000
     database = subprocess.Popen(
-        [f'{paths[0]}/sql', paths[1]], 
+        [paths['exe'], paths['storage']], 
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -140,38 +140,30 @@ def create_tables(points: List[Point], clusters: List[Point], type: str, paths: 
         database.stdin.write(f'{insert}\n')
         database.stdin.flush()
         # Print after some steps the progress
-        if ((index + number_tuples)*100/len(points)) % 10 == 0:
-            print(f'\t{(index + number_tuples)*100/len(points)}% tuples inserted')
+        inserted = (index + number_tuples)*100/len(points)
+        if inserted % 10 == 0:
+            print_information(f'{inserted}% tuples inserted', tabs=1)
     _, error = database.communicate()
     if error:
-        raise RuntimeError(f'{color.RED}Something went wrong by creating the table: \n {error}{color.END}')
-    print('Tables generated and filled successfully')
+        print_error('Something went wrong by creating the table', error)
 
-def remove_tables(paths: Tuple[str, str, str]):
+def remove_tables(paths: dict):
     '''
     This function removes all table files which stores the randomly created points and cluster centers
 
-    :param paths: A tuple with the path to the directory of the persistent database.
+    :param paths: A dictionary with paths to all necessary executables and directories.
 
     :raise RuntimeError: If the corresponding files could not be removed. 
     '''
     
-    try:
-        os.unlink(os.path.join(paths[1], 'points.arrow'))
-        os.unlink(os.path.join(paths[1], 'points.arrow.sample'))
-        os.unlink(os.path.join(paths[1], 'points.metadata.json'))
-    except FileNotFoundError:
-        print(f'{color.YELLOW}Points table does not exist. Ignore deletion{color.END}')
-    except Exception as e:
-        raise RuntimeError(f'{color.RED}Failed to remove Points table files{color.END}', e)
-    try:
-        os.unlink(os.path.join(paths[1], 'clusters_0.arrow'))
-        os.unlink(os.path.join(paths[1], 'clusters_0.arrow.sample'))
-        os.unlink(os.path.join(paths[1], 'clusters_0.metadata.json'))
-    except FileNotFoundError:
-        print(f'{color.YELLOW}Cluster table does not exist. Ignore deletion{color.END}')
-    except Exception as e:
-        raise RuntimeError(f'{color.RED}Failed to remove Cluster table files{color.END}', e)
+    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json', 'clusters_0.arrow', 'clusters_0.arrow.sample', 'clusters_0.metadata.json']
+    for file in files:
+        try:
+            os.unlink(os.path.join(paths['storage'], file))
+        except FileNotFoundError:
+            print_warning(f'{file} does not exist. Ignore deletion')
+        except Exception as e:
+            print_error(f'Failed to remove {file}', e)
     # Ensure files are removed
     time.sleep(2)
 
@@ -186,7 +178,6 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
     :param type: The datatype of the current running benchmark.
     '''
 
-    print('Evaluate accuracy of the database output with the sklearn algorithm')
     # Prepare and execute Kmeans from sklearn
     points = points_to_numpy(points)
     cluster = points_to_numpy(cluster)
@@ -200,13 +191,18 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
             break
         closest_index = np.argmin(distance)
         closest = result[closest_index]
-        print(f'\t{color.UNDERLINE} Cluster {idx + 1} {color.END}')
-        print(f'\t\tLingo-DB with {type}: {closest}')
-        print(f'\t\tSklearn with float: {center}')
+
         value = f'{distance[closest_index]:.2f}'
-        font_color = color.GREEN if value.startswith('0.00') else color.YELLOW
-        print(f'\t\t{font_color} Distance: {distance[closest_index]:.2f} {color.END}')
+        print_information(f'Cluster {idx + 1}', True, 1)
+        print_information(f'Lingo-DB with {type}: {closest}', tabs=2)
+        print_information(f'Sklearn with float: {center}', tabs=2)
+        if value.startswith('0.00'):
+            print_success(f'Distance: {distance[closest_index]:.2f}', tabs=2)
+        else:
+            print_warning(f'Distance: {distance[closest_index]:.2f}', tabs=2)
+
         result = np.delete(result, closest_index, axis=0)
+
 
 if __name__ == "__main__":
     main()

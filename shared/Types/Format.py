@@ -30,15 +30,16 @@ def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 
    start = '\t' * tabs
    raise RuntimeError(f'{start} {color.RED} {message} {color.END} \n', error)
 
-def print_information(message: str = 'Dummy Information', tabs: int = 0) -> None:
+def print_information(message: str = 'Dummy Information', mark: bool = False, tabs: int = 0) -> None:
    '''
    This function prints an information message to the console.
 
    :param message: The message to be printed on the console.
+   :param mark: If the message should be highlighted with a color.
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   print(f'{start} {color.RED} {message} {color.END} \n')
+   print(f'{start} {color.BLUE if mark else ''} {message} {color.END} \n')
 
 def print_warning(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    '''
@@ -49,3 +50,13 @@ def print_warning(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    '''
    start = '\t' * tabs
    print(f'{start} {color.YELLOW} {message} {color.END} \n')
+
+def print_success(message: str = 'Dummy Warning', tabs: int = 0) -> None:
+   '''
+   This function prints a success message to the console.
+
+   :param message: The message to be printed on the console.
+   :param tabs: Number of tab characters at the beginning of the message.
+   '''
+   start = '\t' * tabs
+   print(f'{start} {color.GREEN} {message} {color.END} \n')

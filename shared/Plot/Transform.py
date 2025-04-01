@@ -27,7 +27,7 @@ def get_unique_types(data: List[List[str]]) -> List[str]:
 
     :param data: A list of all entries from a csv file (without header).
 
-    :return: A list with all unique type.
+    :return: A list with all unique types.
     '''
     types = []
     types = [element[TYPE_INDEX] for element in data if element[TYPE_INDEX] not in types]
@@ -47,7 +47,7 @@ def extract_entries(type: str, data: List[List[str]]) -> List[List[str]]:
     entries = sorted(entries, key=lambda x: int(x[POINT_INDEX]))
     return entries
 
-def extract_time_data(data: List[List[str]]) -> Tuple[float, float, float]:
+def extract_time_data(data: List[List[str]]) -> Tuple[List[float], List[float], List[float]]:
     '''
     This function returns the time data for a specific type (compilation, execution and 
     total time).
@@ -61,7 +61,7 @@ def extract_time_data(data: List[List[str]]) -> Tuple[float, float, float]:
     y_total_time = [float(element[TOTAL_TIME_INDEX]) for element in data]
     return y_compiler, y_exec, y_total_time
 
-def extract_memory_data(data: List[List[str]]) -> Tuple[float, float, float]:
+def extract_memory_data(data: List[List[str]]) -> Tuple[List[float], List[float], List[float]]:
     '''
     This function returns the memory data for a specific type (heap, stack and 
     total memory). Heap and total memory is calculated in MB whereas the stack
@@ -90,7 +90,7 @@ def transform_data(data: List[List[str]]) -> dict:
              like structure.
     :raise ValueError: If the provided content does not fulfill the requirements.
     '''
-    print('Transform relevant data')
+
     check_structure(data)
     result = {}
     types = get_unique_types(data)    

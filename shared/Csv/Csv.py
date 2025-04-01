@@ -31,11 +31,12 @@ def init_csv_file() -> None:
         ]
         writer.writerow(header)
 
-def write_to_csv(results: dict, type: str, size: int) -> None:
+def write_to_csv(results: dict, name: str, type: str, size: int) -> None:
     '''
     This function writes data to the result.csv file (append).
 
     :param results: Dictionary including all results which should be written into the file.
+    :param name: The name of the benchmark.
     :param type: The data-type which corresponds to the specified results.
     :param size: The size of the input data.
     '''
@@ -43,7 +44,7 @@ def write_to_csv(results: dict, type: str, size: int) -> None:
     with open(FILE_NAME, mode='a', newline='') as file:
         writer = csv.writer(file)
         data = [
-            'KMeans',
+            name,
             type,
             str(size),
             results['times']['QOpt'],
