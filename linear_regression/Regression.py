@@ -48,6 +48,15 @@ def main():
     plot_results('Number of points')
 
 def generate_regression_line(upper_bound: int, lower_bound: int) -> Tuple[float, float]:
+    '''
+    This function generates some random parameter for a linear regression problem (slope and offset).
+
+    :param upper_bound: The maximum value for both parameters.
+    :param lower_bound: The minimum value for both parameters.
+
+    :return: A tuple including the slope and the offset of the generated regression line.
+    '''
+
     slope = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
     intercept = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
     return float(slope), float(intercept)
@@ -55,13 +64,15 @@ def generate_regression_line(upper_bound: int, lower_bound: int) -> Tuple[float,
 
 def generate_points(number: int, upper_bound: int, lower_bound: int, slope: float, intercept: float, error_deviation: float) -> List[Point]:
     '''
-    This function generates a specified number of random points.
+    This function generates a specified number of random points near a regression line.
+    It will further add a random error to the y label.
 
     :param number: The number of points.
-    :param x_upper: The maximum value for x.
-    :param y_upper: The maximum value for y.
-    :param x_lower: The minimum value for x.
-    :param y_lower: The minimum value for y.
+    :param upper_bound: The maximum value for the x value.
+    :param lower_bound: The minimum value for the x value.
+    :param slope: The slope of the regression line.
+    :param intercept: The offset of the regression line.
+    :param error_deviation: The deviation of the error in a gaussian distribution.
 
     :return: A list of point objects.
     '''
@@ -91,7 +102,7 @@ def points_to_sql(points: List[Point], table_name: str) -> str:
     result += ";"
     return result
 
-def create_table(points: List[Point], type: str, paths: dict):
+def create_table(points: List[Point], type: str, paths: dict) -> None:
     '''
     This function creates the persistent table for the randomly generates points.
 
@@ -133,7 +144,7 @@ def create_table(points: List[Point], type: str, paths: dict):
     if error:
         print_error('Something went wrong by creating the table', error)
 
-def remove_tables(paths: dict):
+def remove_tables(paths: dict) -> None:
     '''
     This function removes all table files which stores the randomly created points.
 
@@ -154,6 +165,16 @@ def remove_tables(paths: dict):
     time.sleep(2)
 
 def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, intercept_label: float, type: str) -> None:
+    '''
+    This function evaluates the accuracy of the database result.
+
+    :param slope_db: The slope of the regression line from the database.
+    :param intercept_db: The offset of the regression line from the database.
+    :param slope_label: The truth slope of the regression line.
+    :param intercept_label: The truth offset of the regression line.
+    :param type: The datatype of x and y values.
+    '''
+    
     error_slope = str("{:.4f}".format(slope_label - slope_db))
     error_intercept = str("{:.4f}".format(intercept_label - intercept_db))
 

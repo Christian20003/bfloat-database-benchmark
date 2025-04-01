@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 
 from typing import List, Tuple
 from Value import Value
-from Format import color
+from Format import print_error, print_information, print_success, print_title, print_warning
 from Parse_Args import parse_args
 from Parse_Time import parse_time_metrics
 from Parse_Memory import parse_memory_metrics
@@ -33,13 +33,13 @@ def main():
             continue
         axis_1 = value['size_axis_1']
         axis_2 = value['size_axis_2']
-        print(f'{color.BOLD}### START BENCHMARKING EINSTEIN SUMMATION WITH 2x{axis_1}*{axis_1}x{axis_2}*{axis_2}x1 ###{color.END}\n')
+        print_title(f'### START BENCHMARKING EINSTEIN SUMMATION WITH 2x{axis_1}*{axis_1}x{axis_2}*{axis_2}x1 ###')
         tensorA = generate_tensor(2, axis_1, CONFIG['value_upper_bound'], CONFIG['value_lower_bound'])
         tensorB = generate_tensor(axis_2, axis_1, CONFIG['value_upper_bound'], CONFIG['value_lower_bound'])
         tensorC = generate_tensor(axis_2, 1, CONFIG['value_upper_bound'], CONFIG['value_lower_bound'])
         # Iterate over all specified types
         for type in types:
-            print(f'{color.BLUE}Execute benchmark with type: {type}{color.END}')
+            print_information(f'Execute benchmark with type: {type}', mark=True)
             create_table(tensorA, 'matrixa', type, args)
             create_table(tensorB, 'matrixb', type, args)
             create_table(tensorC, 'vectorv', type, args)
@@ -122,14 +122,15 @@ def remove_table(paths: Tuple[str, str, str], table_name: str) -> None:
 
     :raise RuntimeError: If the corresponding files could not be removed. 
     '''
-    try:
-        os.unlink(os.path.join(paths[1], f'{table_name}.arrow'))
-        os.unlink(os.path.join(paths[1], f'{table_name}.arrow.sample'))
-        os.unlink(os.path.join(paths[1], f'{table_name}.metadata.json'))
-    except FileNotFoundError:
-        print(f'{color.YELLOW}{table_name} table does not exist. Ignore deletion{color.END}')
-    except Exception as e:
-        raise RuntimeError(f'{color.RED}Failed to remove {table_name} table files{color.END}', e)
+
+    files = [f'{table_name}.arrow', f'{table_name}.arrow.sample', f'{table_name}.metadata.json']
+    for file in files:
+        try:
+            os.unlink(os.path.join(paths['storage'], file))
+        except FileNotFoundError:
+            print_warning(f'{table_name} table does not exist. Ignore deletion')
+        except Exception as e:
+            print_error(f'Failed to remove {table_name} table files', e)
     # Ensure files are removed
     time.sleep(1)
 
@@ -152,7 +153,7 @@ def create_table(tensor: List[Value], table_name: str, type: str, paths: Tuple[s
     create_table = f'CREATE TABLE {table_name}(rowIndex int, columnIndex int, val {type});\n'
     number_tuples = len(tensor) if len(tensor) <= 1000 else 1000
     database = subprocess.Popen(
-        [f'{paths[0]}/sql', paths[1]], 
+        [paths['exe'], paths['storage']], 
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -169,11 +170,12 @@ def create_table(tensor: List[Value], table_name: str, type: str, paths: Tuple[s
         database.stdin.write(f'{insert}\n')
         database.stdin.flush()
         # Print after some steps the progress
-        if ((index + number_tuples)*100/len(tensor)) % 10 == 0:
-            print(f'\t{(index + number_tuples)*100/len(tensor)}% tuples inserted')
+        inserted = (index + number_tuples)*100/len(tensor)
+        if inserted % 10 == 0:
+            print_information(f'{inserted}% tuples inserted')
     _, error = database.communicate()
     if error:
-        raise RuntimeError(f'{color.RED}Something went wrong by creating the table: \n {error}{color.END}')
+        print_error('Something went wrong by creating the table', error)
 
 def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarray, result: np.ndarray, type: str):
     '''
@@ -191,12 +193,14 @@ def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarr
     correct_result = np.einsum('ac, bc, b->a', tensorA, tensorB, tensorC)
     distance = np.sum(result - correct_result)
 
-    print(f'\t{color.UNDERLINE} Result {color.END}')
-    print(f'\t\tLingo-DB with {type}: {result}')
-    print(f'\t\tNumpy with float: {correct_result}')
+    print_information('Result:', True, 1)
+    print_information(f'Lingo-DB with {type}: {result}', tabs=2)
+    print_information(f'Numpy with float: {correct_result}', tabs=2)
     value = f'{distance:.2f}'
-    font_color = color.GREEN if value.startswith('0.00') else color.YELLOW
-    print(f'\t\t{font_color} Distance: {distance:.2f} {color.END}')
+    if value.startswith('0.00'):
+        print_success(f'Distance: {distance:.2f}', tabs=2)
+    else:
+        print_warning(f'Distance: {distance:.2f}', tabs=2)
 
 if __name__ == "__main__":
     main()

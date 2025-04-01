@@ -4,12 +4,12 @@ import re
 def parse_table_output(output: str, total_columns: int, start: int, stop: int) -> np.ndarray:
     '''
     This function parses the table output of the database into a numpy array. This function
-    only works if all columns are numeric values.
+    only works if all columns are numeric values. Each row will be an element in the numpy array.
 
     :param output: The output string from the database executable.
     :param total_columns: The number of output columns. 
-    :param start: The first column which should be extracted.
-    :param stop: The last column which should be extracted.
+    :param start: The first column which should be extracted (Start with 0).
+    :param stop: The last column which should be extracted (Start with 0).
 
     :return: A numpy array containing all extracted values.
     '''
