@@ -39,7 +39,8 @@ def print_information(message: str = 'Dummy Information', mark: bool = False, ta
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   print(f'{start} {color.BLUE if mark else ''} {message} {color.END} \n')
+   highlight = color.BLUE if mark else ''
+   print(f'{start} {highlight} {message} {color.END} \n')
 
 def print_warning(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    '''

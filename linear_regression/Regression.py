@@ -18,8 +18,7 @@ from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
 from Format import print_error, print_warning, print_information, print_success, print_title
-from sklearn.cluster import KMeans
-import numpy as np
+from scipy import stats
 import random
 import subprocess
 import os
@@ -28,26 +27,23 @@ import time
 def main():
     args = parse_args('Kmeans')
     types = CONFIG['types']
-    iterations = CONFIG['iterations']
     init_csv_file()
-    # Iterate over all cluser benchmarks
+    # Iterate over all benchmarks
     for key, value in CONFIG.items():
-        if 'cluster' not in key:
+        if 'case' not in key:
             continue
-        print_title(f'### START BENCHMARKING KMEANS WITH {value["number"]} POINTS ###')
+        print_title(f'### START BENCHMARKING LINEAR REGRESSION WITH {value["number"]} POINTS ###')
         points = generate_points(value["number"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
-        cluster = generate_points(value["cluster"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
-        # Iterate over all specified types
         for type in types:
             print_information(f'Execute benchmark with type: {type}')
-            create_tables(points, cluster, type, args)
+            create_table(points, type, args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
-            clusters = parse_table_output(output, 4, 2, 3)
+            values = parse_table_output(output, 3, 2, 3)
             memory_benchmark(args)
             results = parse_memory_metrics(results)
-            write_to_csv(results, 'KMeans', type, value['number'])
-            evaluate_accuray(points, cluster, clusters, iterations, type)
+            write_to_csv(results, 'Regression', type, value['number'])
+            evaluate_accuracy(points, values[0], values[1], type)
         print('\n')
     plot_results('Number of points')
 
@@ -88,39 +84,22 @@ def points_to_sql(points: List[Point], table_name: str) -> str:
     result += ";"
     return result
 
-def points_to_numpy(points: List[Point]) -> np.ndarray:
+def create_table(points: List[Point], type: str, paths: dict):
     '''
-    This function changes the given list of point objects to a numpy array.
-
-    :param points: The list of points which should be converted.
-
-    :return: All points in a 2 dimensional numpy array.
-    '''
-
-    coordinates = []
-    for point in points:
-        coordinates.append([point.x, point.y])
-    return np.array(coordinates, dtype=float)
-
-def create_tables(points: List[Point], clusters: List[Point], type: str, paths: dict):
-    '''
-    This function creates the persistent tables for the randomly generates points and clusters.
+    This function creates the persistent table for the randomly generates points.
 
     :param points: A list of randomly created points.
-    :param clusters: A list of randomly created cluster centers.
     :param type: The current datatype.
     :param paths: A dictionary with paths to all necessary executables and directories.
 
-    :raise RuntimeError: If the tables could not be generated.
+    :raise RuntimeError: If the table could not be generated.
     '''
     
-    print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(clusters)} entries.')
+    print_information(f'Create Point-table with {len(points)} entries.')
     remove_tables(paths)
     # Define all statements to create tables with the help of LingoDB
     persist = 'SET persist=1;\n'
     create_points = f'CREATE TABLE Points(id int, x {type}, y {type});\n'
-    create_clusters = f'CREATE TABLE Clusters_0(id int, x {type}, y {type});\n'
-    insert_clusters = f'{points_to_sql(clusters, "Clusters_0")}\n'
     number_tuples = len(points) if len(points) <= 1000 else 1000
     database = subprocess.Popen(
         [paths['exe'], paths['storage']], 
@@ -130,7 +109,7 @@ def create_tables(points: List[Point], clusters: List[Point], type: str, paths: 
         text=True
     )
     # Create all table and insert cluster values
-    statements = [persist, create_points, create_clusters, insert_clusters]
+    statements = [persist, create_points]
     for statement in statements:
         database.stdin.write(statement)
         database.stdin.flush()
@@ -149,14 +128,14 @@ def create_tables(points: List[Point], clusters: List[Point], type: str, paths: 
 
 def remove_tables(paths: dict):
     '''
-    This function removes all table files which stores the randomly created points and cluster centers
+    This function removes all table files which stores the randomly created points.
 
     :param paths: A dictionary with paths to all necessary executables and directories.
 
     :raise RuntimeError: If the corresponding files could not be removed. 
     '''
     
-    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json', 'clusters_0.arrow', 'clusters_0.arrow.sample', 'clusters_0.metadata.json']
+    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json']
     for file in files:
         try:
             os.unlink(os.path.join(paths['storage'], file))
@@ -167,42 +146,26 @@ def remove_tables(paths: dict):
     # Ensure files are removed
     time.sleep(2)
 
-def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str):
-    '''
-    This function evaluates the precision of the database output with the KMeans algorithm of 'Sklearn'.
+def evaluate_accuracy(points: List[Point], slope_db: float, intercept_db: float, type: str) -> None:
+    x_values = [element.x for element in points]
+    y_values = [element.y for element in points]
+    slope, intercept, r, p, std_err = stats.linregress(x_values, y_values)
 
-    :param points: The list of randomly generated points.
-    :param cluster: The list of randomly generated cluster centers.
-    :param result: A numpy array containing the clusters from after the database execution.
-    :param iterations: The number of iterations of the KMeans algorithm.
-    :param type: The datatype of the current running benchmark.
-    '''
+    error_slope = str("{:.4f}".format(slope - slope_db))
+    error_intercept = str("{:.4f}".format(intercept - intercept_db))
 
-    # Prepare and execute Kmeans from sklearn
-    points = points_to_numpy(points)
-    cluster = points_to_numpy(cluster)
-    kmeans = KMeans(n_clusters=cluster.shape[0], init=cluster, n_init=1, max_iter=iterations)
-    kmeans.fit(points)
-    centers = kmeans.cluster_centers_
-    # Find the nearest pairs and print the solution of comparison.
-    for idx, center in enumerate(centers):
-        distance = np.linalg.norm(result - center, axis=1)
-        if len(distance) == 0:
-            break
-        closest_index = np.argmin(distance)
-        closest = result[closest_index]
-
-        value = f'{distance[closest_index]:.2f}'
-        print_information(f'Cluster {idx + 1}', True, 1)
-        print_information(f'Lingo-DB with {type}: {closest}', tabs=2)
-        print_information(f'Sklearn with float: {center}', tabs=2)
-        if value.startswith('0.00'):
-            print_success(f'Distance: {distance[closest_index]:.2f}', tabs=2)
-        else:
-            print_warning(f'Distance: {distance[closest_index]:.2f}', tabs=2)
-
-        result = np.delete(result, closest_index, axis=0)
-
+    sign_db = '+' if intercept_db > 0 else ''
+    sign = '+' if intercept > 0 else ''
+    print_information(f'Result of Lingo-DB with {type}: {slope_db} * x {sign_db} {intercept_db}', mark=True, tabs=1)
+    print_information(f'Result of SciPy: {slope} * x {sign} {intercept}', mark=True, tabs=1)
+    if error_slope.startswith('0.0000'):
+        print_success(f'Slope error: {error_slope}', tabs=2)
+    else:
+        print_warning(f'Slope error: {error_slope}', tabs=2)
+    if error_intercept.startswith('0.0000'):
+        print_success(f'Intercept error: {error_intercept}', tabs=2)
+    else:
+        print_warning(f'Intercept error: {error_intercept}', tabs=2)
 
 if __name__ == "__main__":
     main()
