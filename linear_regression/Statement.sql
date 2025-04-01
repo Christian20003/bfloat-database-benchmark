@@ -5,4 +5,4 @@ UNION ALL
     FROM gd, points
     WHERE idx < 5 GROUP BY idx, a, b
 )
-SELECT * FROM gd ORDER BY idx;
+SELECT * FROM gd WHERE idx = 5;
