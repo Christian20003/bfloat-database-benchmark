@@ -51,7 +51,7 @@ def main():
             output = parse_table_output(output, 2, 1, 1)
             memory_benchmark(args)
             results = parse_memory_metrics(results)
-            write_to_csv(results, type, 2*axis_1 + axis_1*axis_2 + axis_2)
+            write_to_csv(results, 'Einstein', type, 2*axis_1 + axis_1*axis_2 + axis_2)
             evaluate_accuray(tensorA_np, tensorB_np, tensorC_np, output, type)
         print('\n')
     plot_results('Number of tensor entries')
