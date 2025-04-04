@@ -18,8 +18,8 @@ def check_structure(data: List[List[str]]) -> None:
     :raise ValueError: If the provided content does not fulfill the requirements.
     '''
     for list in data:
-        if len(list) != 17:
-            raise ValueError(f'Expected a list of length 17, but got instead a list with {len(data)} entries.')
+        if len(list) < 17:
+            raise ValueError(f'Expected a list of length 17, but got instead a list with {len(list)} entries.')
 
 def get_unique_types(data: List[List[str]]) -> List[str]:
     '''
