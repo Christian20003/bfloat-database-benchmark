@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Plot')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Types')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
 from Config import CONFIG
 from Point import Point
@@ -18,12 +19,10 @@ from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
 from Format import print_error, print_warning, print_information, print_success, print_title
+from Helper import remove_files, execute_sql
 from sklearn.cluster import KMeans
 import numpy as np
 import random
-import subprocess
-import os
-import time
 
 def main():
     args = parse_args('Kmeans')
@@ -39,14 +38,16 @@ def main():
         cluster = generate_points(value["cluster"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
         # Iterate over all specified types
         for type in types:
+            table_names = ['points', 'clusters_0']
             print_information(f'Execute benchmark with type: {type}')
             print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(clusters)} entries.')
-            create_tables(cluster, type, args)
-            insert_points(points, args)
+            create_tables(table_names, type, args)
+            insert_points(cluster, table_names[1], args)
+            insert_points(points, table_names[0], args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             clusters = parse_table_output(output, 4, 2, 3)
-            file = memory_benchmark(args, f'{type}{value['number']}')
+            file = memory_benchmark(args, f'{type}{value["number"]}')
             results = parse_memory_metrics(results, file)
             eval = evaluate_accuray(points, cluster, clusters, iterations, type)
             write_to_csv(results, 'KMeans', type, value['number'], eval)
@@ -73,87 +74,54 @@ def generate_points(number: int, x_upper: int, y_upper: int, x_lower: int, y_low
         result.append(Point(value, x, y))
     return result
 
-def points_to_sql(points: List[Point], table_name: str) -> str:
+def create_tables(table_names: List[str], type: str, paths: dict) -> None:
     '''
-    This function changes the transforms list of point objects into a sql insert statement.
+    This function creates tables which can be inserted with values.
 
-    :param points: The list of points which should be converted.
-    :param table_name: The name of the table in which they should be inserted.
-
-    :return: A string which defines the insert statement for all points.
-    '''
-    result = f'INSERT INTO {table_name}(id, x, y) VALUES '
-    for idx, point in enumerate(points):
-        result += point.to_sql_value()
-        if idx != points.__len__() - 1:
-            result += ","
-    result += ";"
-    return result
-
-def points_to_numpy(points: List[Point]) -> np.ndarray:
-    '''
-    This function changes the given list of point objects to a numpy array.
-
-    :param points: The list of points which should be converted.
-
-    :return: All points in a 2 dimensional numpy array.
-    '''
-
-    coordinates = []
-    for point in points:
-        coordinates.append([point.x, point.y])
-    return np.array(coordinates, dtype=float)
-
-def create_tables(clusters: List[Point], type: str, paths: dict):
-    '''
-    This function creates the persistent tables for the randomly generates points and clusters.
-
-    :param clusters: A list of randomly created cluster centers.
+    :param table_names: The name of the tables.
     :param type: The current datatype.
     :param paths: A dictionary with paths to all necessary executables and directories.
 
     :raise RuntimeError: If the tables could not be generated.
     '''
     
-    remove_tables(paths)
+    # Remove tables from previous tests
+    files = []
+    for name in table_names:
+        files.append(f'{name}.arrow')
+        files.append(f'{name}.arrow.sample')
+        files.append(f'{name}.metadata.json')
+    remove_files(files, paths['storage'])
+
+
     # Define all statements to create tables with the help of LingoDB
-    persist = 'SET persist=1;\n'
-    create_points = f'CREATE TABLE Points(id int, x {type}, y {type});\n'
-    create_clusters = f'CREATE TABLE Clusters_0(id int, x {type}, y {type});\n'
-    insert_clusters = f'{points_to_sql(clusters, "Clusters_0")}\n'
-    database = subprocess.Popen(
-        [paths['exe'], paths['storage']], 
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    # Create all table and insert cluster values
-    statements = [persist, create_points, create_clusters, insert_clusters]
-    for statement in statements:
-        database.stdin.write(statement)
-        database.stdin.flush()
-    _, error = database.communicate()
-    if error:
-        print_error('Something went wrong by creating the table', error)
+    statements = ['SET persist=1;\n']
+    for name in table_names:
+        statements.append(f'CREATE TABLE {name}(id int, x {type}, y {type});\n')
+    execute_sql(statements, paths['exe'], paths['storage'])
 
-def insert_points(points: List[Point], paths: dict) -> None:
+def insert_points(points: List[Point], table_name: str, paths: dict) -> None:
+    '''
+    This function inserts all given points into a table.
+
+    :param points: A list of points which should be inserted.
+    :param table_name: The name of table in which the points should be inserted.
+    :param paths: A dictionary with paths to all necessary executables and directories.
+
+    :raise RuntimeError: If the data could not be inserted.
+    '''
+
     max = 1000000
-    if len(points) > max:
-        for idx in range(0, len(points), max):
-            if idx + max > len(points):
-                insert_points(points[idx:], paths)
-            else:
-                insert_points(points[idx:idx+max], paths)
-            # Print after some steps the progress
-            inserted = (idx + max)*100/len(points)
-            if inserted % 10 == 0:
-                print_information(f'{inserted}% tuples inserted', tabs=1)
-    else:
-        insert_points(points, paths)
+    for idx in range(0, len(points), max):
+        amount = (len(points) / (idx + max)) if idx + max < len(points) else 100
+        print_information(f'Inserting {amount} of points', tabs=1)
+        if idx + max > len(points):
+            insert_block(points[idx:], paths)
+        else:
+            insert_block(points[idx:idx+max], paths)
 
 
-def insert_block(points: List[Point], paths: dict) -> None:
+def insert_block(points: List[Point], table_name: str, paths: dict) -> None:
     '''
     This function inserts a specific amount of points into the points table.
 
@@ -163,43 +131,12 @@ def insert_block(points: List[Point], paths: dict) -> None:
     :raise RuntimeError: If the data could not be generated.
     '''
     number_tuples = len(points) if len(points) <= 1000 else 1000
-    database = subprocess.Popen(
-        [paths['exe'], paths['storage']], 
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    database.stdin.write('SET persist=1;\n')
-    database.stdin.flush()
+    statements = ['SET persist=1;\n']
+    
     # Insert point values. Limit to 1000 at a time, otherwise LingoDB stops working
     for index in range(0, len(points), number_tuples):
-        insert = points_to_sql(points[index:index + number_tuples], "Points")
-        database.stdin.write(f'{insert}\n')
-        database.stdin.flush()
-    _, error = database.communicate()
-    if error:
-        print_error('Something went wrong by creating the table', error)
-
-def remove_tables(paths: dict):
-    '''
-    This function removes all table files which stores the randomly created points and cluster centers
-
-    :param paths: A dictionary with paths to all necessary executables and directories.
-
-    :raise RuntimeError: If the corresponding files could not be removed. 
-    '''
-    
-    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json', 'clusters_0.arrow', 'clusters_0.arrow.sample', 'clusters_0.metadata.json']
-    for file in files:
-        try:
-            os.unlink(os.path.join(paths['storage'], file))
-        except FileNotFoundError:
-            print_warning(f'{file} does not exist. Ignore deletion')
-        except Exception as e:
-            print_error(f'Failed to remove {file}', e)
-    # Ensure files are removed
-    time.sleep(2)
+        statements.append(Point.points_to_sql(points[index:index + number_tuples], table_name))
+    execute_sql(statements, paths['exe'], paths['storage'])
 
 def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str) -> Tuple[str, str]:
     '''
@@ -215,8 +152,8 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
     '''
 
     # Prepare and execute Kmeans from sklearn
-    points = points_to_numpy(points)
-    cluster = points_to_numpy(cluster)
+    points = Point.points_to_numpy(points)
+    cluster = Point.points_to_numpy(cluster)
     kmeans = KMeans(n_clusters=cluster.shape[0], init=cluster, n_init=1, max_iter=iterations)
     kmeans.fit(points)
     centers = kmeans.cluster_centers_
