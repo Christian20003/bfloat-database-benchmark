@@ -1,10 +1,11 @@
-def parse_memory_metrics(results: dict) -> dict:
+def parse_memory_metrics(results: dict, file_name: str) -> dict:
     '''
     This function parses the output of the memory benchmark into the provided results dictionary.
     The output data will be read from a generated file. The resulting dictionary will contain the
     heap, stack and total memory at the time of highest consumption.
 
     :param results: The dictionary containing all benchmark results.
+    :param file_name: The name of the file with the raw data from valgrind.
 
     :return: The updated dictionary.
     '''
@@ -12,7 +13,7 @@ def parse_memory_metrics(results: dict) -> dict:
     heap = []
     stack = []
     # Extract all values
-    with open('memperfom', 'r') as file:
+    with open(file_name, 'r') as file:
         line = file.readline()
         while line:
             try:

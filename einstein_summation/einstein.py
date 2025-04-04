@@ -49,10 +49,10 @@ def main():
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             output = parse_table_output(output, 2, 1, 1)
-            memory_benchmark(args)
-            results = parse_memory_metrics(results)
-            write_to_csv(results, 'Einstein', type, 2*axis_1 + axis_1*axis_2 + axis_2)
-            evaluate_accuray(tensorA_np, tensorB_np, tensorC_np, output, type)
+            file = memory_benchmark(args, f'{type}{2*axis_1 + axis_1*axis_2 + axis_2}')
+            results = parse_memory_metrics(results, file)
+            eval = evaluate_accuray(tensorA_np, tensorB_np, tensorC_np, output, type)
+            write_to_csv(results, 'Einstein', type, 2*axis_1 + axis_1*axis_2 + axis_2, eval)
         print('\n')
     plot_results('Number of tensor entries')
 
@@ -177,7 +177,7 @@ def create_table(tensor: List[Value], table_name: str, type: str, paths: Tuple[s
     if error:
         print_error('Something went wrong by creating the table', error)
 
-def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarray, result: np.ndarray, type: str):
+def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarray, result: np.ndarray, type: str) -> Tuple[str, str]:
     '''
     This function evaluates the precision of the database output with the function of numpy.
     The following calculation take place -> A*B*C
@@ -187,6 +187,8 @@ def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarr
     :param tensorC: The third generated tensor object.
     :param result: The output of the database.
     :param type: The datatype of the current running benchmark.
+
+    :returns: Two strings containing the correct result from numpy and the database result.
     '''
 
     print('Evaluate accuracy of the database output with numpy')
@@ -201,6 +203,7 @@ def evaluate_accuray(tensorA: np.ndarray, tensorB: np.ndarray, tensorC: np.ndarr
         print_success(f'Distance: {distance:.2f}', tabs=2)
     else:
         print_warning(f'Distance: {distance:.2f}', tabs=2)
+    return np.array_str(correct_result), np.array_str(result)
 
 if __name__ == "__main__":
     main()

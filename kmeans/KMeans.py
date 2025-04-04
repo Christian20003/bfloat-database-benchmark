@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 from Config import CONFIG
 from Point import Point
 from Plot import plot_results
-from typing import List
+from typing import List, Tuple
 from Csv import init_csv_file, write_to_csv
 from Parse_Args import parse_args
 from Parse_Memory import parse_memory_metrics
@@ -44,10 +44,10 @@ def main():
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             clusters = parse_table_output(output, 4, 2, 3)
-            memory_benchmark(args)
-            results = parse_memory_metrics(results)
-            write_to_csv(results, 'KMeans', type, value['number'])
-            evaluate_accuray(points, cluster, clusters, iterations, type)
+            file = memory_benchmark(args, f'{type}{value['number']}')
+            results = parse_memory_metrics(results, file)
+            eval = evaluate_accuray(points, cluster, clusters, iterations, type)
+            write_to_csv(results, 'KMeans', type, value['number'], eval)
         print('\n')
     plot_results('Number of points')
 
@@ -167,15 +167,17 @@ def remove_tables(paths: dict):
     # Ensure files are removed
     time.sleep(2)
 
-def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str):
+def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str) -> Tuple[str, str]:
     '''
     This function evaluates the precision of the database output with the KMeans algorithm of 'Sklearn'.
 
     :param points: The list of randomly generated points.
     :param cluster: The list of randomly generated cluster centers.
-    :param result: A numpy array containing the clusters from after the database execution.
+    :param result: A numpy array containing the clusters from the database execution.
     :param iterations: The number of iterations of the KMeans algorithm.
     :param type: The datatype of the current running benchmark.
+
+    :returns: Two strings containing the correct result from numpy and the database result.
     '''
 
     # Prepare and execute Kmeans from sklearn
@@ -184,6 +186,8 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
     kmeans = KMeans(n_clusters=cluster.shape[0], init=cluster, n_init=1, max_iter=iterations)
     kmeans.fit(points)
     centers = kmeans.cluster_centers_
+    correct = np.array_str(centers)
+    calculation = np.array_str(result)
     # Find the nearest pairs and print the solution of comparison.
     for idx, center in enumerate(centers):
         distance = np.linalg.norm(result - center, axis=1)
@@ -202,6 +206,7 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
             print_warning(f'Distance: {distance[closest_index]:.2f}', tabs=2)
 
         result = np.delete(result, closest_index, axis=0)
+    return correct, calculation
 
 
 if __name__ == "__main__":

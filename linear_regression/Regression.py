@@ -36,14 +36,14 @@ def main():
         points = generate_points(value["number"], value["param_upper_bound"], value["param_lower_bound"], slope, intercept, CONFIG['noise_std_dev'])
         for type in types:
             print_information(f'Execute benchmark with type: {type}')
-            create_table(points, type, args)
+            create_tables(points, type, args, value['lr'])
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             values = parse_table_output(output, 3, 1, 2)
-            memory_benchmark(args)
-            results = parse_memory_metrics(results)
-            write_to_csv(results, 'Regression', type, value['number'])
-            evaluate_accuracy(values[0][0], values[0][1], slope, intercept, type)
+            file = memory_benchmark(args, f'{type}{value['number']}')
+            results = parse_memory_metrics(results, file)
+            eval = evaluate_accuracy(values[0][0], values[0][1], slope, intercept, type)
+            write_to_csv(results, 'Regression', type, value['number'], eval)
         print('\n')
     plot_results('Number of points')
 
@@ -102,13 +102,14 @@ def points_to_sql(points: List[Point], table_name: str) -> str:
     result += ";"
     return result
 
-def create_table(points: List[Point], type: str, paths: dict) -> None:
+def create_tables(points: List[Point], type: str, paths: dict, lr: float) -> None:
     '''
     This function creates the persistent table for the randomly generates points.
 
     :param points: A list of randomly created points.
     :param type: The current datatype.
     :param paths: A dictionary with paths to all necessary executables and directories.
+    :param lr: The learning-rate for this current case.
 
     :raise RuntimeError: If the table could not be generated.
     '''
@@ -118,6 +119,8 @@ def create_table(points: List[Point], type: str, paths: dict) -> None:
     # Define all statements to create tables with the help of LingoDB
     persist = 'SET persist=1;\n'
     create_points = f'CREATE TABLE Points(id int, x {type}, y {type});\n'
+    create_lr = f'CREATE TABLE lr(rate float);\n'
+    insert_lr = f'INSERT INTO lr(rate) VALUES ({lr});\n'
     number_tuples = len(points) if len(points) <= 1000 else 1000
     database = subprocess.Popen(
         [paths['exe'], paths['storage']], 
@@ -127,7 +130,7 @@ def create_table(points: List[Point], type: str, paths: dict) -> None:
         text=True
     )
     # Create all table and insert cluster values
-    statements = [persist, create_points]
+    statements = [persist, create_points, create_lr, insert_lr]
     for statement in statements:
         database.stdin.write(statement)
         database.stdin.flush()
@@ -153,7 +156,7 @@ def remove_tables(paths: dict) -> None:
     :raise RuntimeError: If the corresponding files could not be removed. 
     '''
     
-    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json']
+    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json', 'lr.arrow', 'lr.arrow.sample', 'lr.metadata.json']
     for file in files:
         try:
             os.unlink(os.path.join(paths['storage'], file))
@@ -164,7 +167,7 @@ def remove_tables(paths: dict) -> None:
     # Ensure files are removed
     time.sleep(2)
 
-def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, intercept_label: float, type: str) -> None:
+def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, intercept_label: float, type: str) -> str:
     '''
     This function evaluates the accuracy of the database result.
 
@@ -173,6 +176,8 @@ def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, 
     :param slope_label: The truth slope of the regression line.
     :param intercept_label: The truth offset of the regression line.
     :param type: The datatype of x and y values.
+
+    :returns: Two strings containing the correct result and the database result.
     '''
     
     error_slope = str("{:.4f}".format(slope_label - slope_db))
@@ -190,6 +195,7 @@ def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, 
         print_success(f'Intercept error: {error_intercept}', tabs=2)
     else:
         print_warning(f'Intercept error: {error_intercept}', tabs=2)
+    return f'{slope_label} * x {sign} {intercept_label}', f'{slope_db} * x {sign_db} {intercept_db}'
 
 if __name__ == "__main__":
     main()

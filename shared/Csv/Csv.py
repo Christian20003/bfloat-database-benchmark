@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 import csv
 
 FILE_NAME = 'results.csv'
@@ -27,11 +27,13 @@ def init_csv_file() -> None:
             'TotalTime',
             'Heap',
             'Stack',
-            'TotalMemory'
+            'TotalMemory',
+            'correctResult',
+            'lingoDBResult'
         ]
         writer.writerow(header)
 
-def write_to_csv(results: dict, name: str, type: str, size: int) -> None:
+def write_to_csv(results: dict, name: str, type: str, size: int, eval: Tuple[str, str]) -> None:
     '''
     This function writes data to the result.csv file (append).
 
@@ -39,6 +41,7 @@ def write_to_csv(results: dict, name: str, type: str, size: int) -> None:
     :param name: The name of the benchmark.
     :param type: The data-type which corresponds to the specified results.
     :param size: The size of the input data.
+    :param eval: The result from evaluation as tuple (correct result / database result)
     '''
 
     with open(FILE_NAME, mode='a', newline='') as file:
@@ -60,7 +63,9 @@ def write_to_csv(results: dict, name: str, type: str, size: int) -> None:
             results['times']['total'],
             results['memory']['heap'],
             results['memory']['stack'],
-            results['memory']['total']
+            results['memory']['total'],
+            eval[0],
+            eval[1]
         ]
         writer.writerow(data)
 
