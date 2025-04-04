@@ -40,7 +40,7 @@ def main():
         for type in types:
             table_names = ['points', 'clusters_0']
             print_information(f'Execute benchmark with type: {type}')
-            print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(clusters)} entries.')
+            print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(cluster)} entries.')
             create_tables(table_names, type, args)
             insert_points(cluster, table_names[1], args)
             insert_points(points, table_names[0], args)
@@ -116,9 +116,9 @@ def insert_points(points: List[Point], table_name: str, paths: dict) -> None:
         amount = (len(points) / (idx + max)) if idx + max < len(points) else 100
         print_information(f'Inserting {amount} of points', tabs=1)
         if idx + max > len(points):
-            insert_block(points[idx:], paths)
+            insert_block(points[idx:], table_name, paths)
         else:
-            insert_block(points[idx:idx+max], paths)
+            insert_block(points[idx:idx+max], table_name, paths)
 
 
 def insert_block(points: List[Point], table_name: str, paths: dict) -> None:
