@@ -41,4 +41,20 @@ CONFIG = {
         "x_lower_bound": -100,
         "y_lower_bound": -100,
     },
+    "cluster6": {
+        "cluster": 4,
+        "number": 2500000,
+        "x_upper_bound": 100,
+        "y_upper_bound": 100,
+        "x_lower_bound": -100,
+        "y_lower_bound": -100,
+    },
+    "cluster7": {
+        "cluster": 4,
+        "number": 5000000,
+        "x_upper_bound": 100,
+        "y_upper_bound": 100,
+        "x_lower_bound": -100,
+        "y_lower_bound": -100,
+    },
 }

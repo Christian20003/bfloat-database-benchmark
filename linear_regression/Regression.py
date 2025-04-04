@@ -36,7 +36,23 @@ def main():
         points = generate_points(value["number"], value["param_upper_bound"], value["param_lower_bound"], slope, intercept, CONFIG['noise_std_dev'])
         for type in types:
             print_information(f'Execute benchmark with type: {type}')
-            create_tables(points, type, args, value['lr'])
+            print_information(f'Create Point-table with {len(points)} entries.')
+            create_tables(type, args, value['lr'])
+
+            max = 1000000
+            if len(points) > max:
+                for idx in range(0, len(points), max):
+                    if idx + max > len(points):
+                        insert_points(points[idx:], args)
+                    else:
+                        insert_points(points[idx:idx+max], args)
+                    # Print after some steps the progress
+                    inserted = (idx + max)*100/len(points)
+                    if inserted % 10 == 0:
+                        print_information(f'{inserted}% tuples inserted', tabs=1)
+            else:
+                insert_points(points, args)
+
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             values = parse_table_output(output, 3, 1, 2)
@@ -102,11 +118,10 @@ def points_to_sql(points: List[Point], table_name: str) -> str:
     result += ";"
     return result
 
-def create_tables(points: List[Point], type: str, paths: dict, lr: float) -> None:
+def create_tables(type: str, paths: dict, lr: float) -> None:
     '''
     This function creates the persistent table for the randomly generates points.
 
-    :param points: A list of randomly created points.
     :param type: The current datatype.
     :param paths: A dictionary with paths to all necessary executables and directories.
     :param lr: The learning-rate for this current case.
@@ -114,14 +129,12 @@ def create_tables(points: List[Point], type: str, paths: dict, lr: float) -> Non
     :raise RuntimeError: If the table could not be generated.
     '''
     
-    print_information(f'Create Point-table with {len(points)} entries.')
     remove_tables(paths)
     # Define all statements to create tables with the help of LingoDB
     persist = 'SET persist=1;\n'
     create_points = f'CREATE TABLE Points(id int, x {type}, y {type});\n'
     create_lr = f'CREATE TABLE lr(rate float);\n'
     insert_lr = f'INSERT INTO lr(rate) VALUES ({lr});\n'
-    number_tuples = len(points) if len(points) <= 1000 else 1000
     database = subprocess.Popen(
         [paths['exe'], paths['storage']], 
         stdout=subprocess.PIPE,
@@ -134,15 +147,34 @@ def create_tables(points: List[Point], type: str, paths: dict, lr: float) -> Non
     for statement in statements:
         database.stdin.write(statement)
         database.stdin.flush()
+    _, error = database.communicate()
+    if error:
+        print_error('Something went wrong by creating the table', error)
+
+def insert_points(points: List[Point], paths: dict) -> None:
+    '''
+    This function inserts a specific amount of points into the points table.
+
+    :param points: The randomly generated points
+    :param paths: A dictionary with paths to all necessary executables and directories.
+
+    :raise RuntimeError: If the dara could not be inserted.
+    '''
+    number_tuples = len(points) if len(points) <= 1000 else 1000
+    database = subprocess.Popen(
+        [paths['exe'], paths['storage']], 
+        stdout=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    database.stdin.write('SET persist=1;\n')
+    database.stdin.flush()
     # Insert point values. Limit to 1000 at a time, otherwise LingoDB stops working
     for index in range(0, len(points), number_tuples):
         insert = points_to_sql(points[index:index + number_tuples], "Points")
         database.stdin.write(f'{insert}\n')
         database.stdin.flush()
-        # Print after some steps the progress
-        inserted = (index + number_tuples)*100/len(points)
-        if inserted % 10 == 0:
-            print_information(f'{inserted}% tuples inserted', tabs=1)
     _, error = database.communicate()
     if error:
         print_error('Something went wrong by creating the table', error)
