@@ -41,9 +41,18 @@ def main():
             table_names = ['points', 'clusters_0']
             print_information(f'Execute benchmark with type: {type}')
             print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(cluster)} entries.')
-            create_tables(table_names, type, args)
-            insert_points(cluster, table_names[1], args)
-            insert_points(points, table_names[0], args)
+            if type == 'tfloat':
+                dummy_tables = ['pointsdummy', 'clusterdummy']
+                create_tables(table_names, type, args)
+                create_tables(dummy_tables, 'float', args)
+                insert_points(cluster, dummy_tables[1], './cluster.csv', args)
+                insert_points(points, dummy_tables[0], './points.csv', args)
+                tfloat_switch(table_names[1], dummy_tables[1], args)
+                tfloat_switch(table_names[0], dummy_tables[0], args)
+            else:
+                create_tables(table_names, type, args)
+                insert_points(cluster, table_names[1], './cluster.csv', args)
+                insert_points(points, table_names[0], './points.csv', args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             clusters = parse_table_output(output, 4, 2, 3)
@@ -116,9 +125,25 @@ def insert_points(points: List[Point], table_name: str, csv_file: str, paths: di
     data = [[point.id, point.x, point.y] for point in points]
     generate_csv(csv_file, ['id', 'x', 'y'], data)
     statements = ['SET persist=1;\n']
-    copy = f"copy {table_name} from {csv_file} delimiter ',' HEADER;\n"
+    copy = f"copy {table_name} from '{csv_file}' delimiter ',' HEADER;\n"
     statements.append(copy)
     execute_sql(statements, paths['exe'], paths['storage'])
+
+def tfloat_switch(table_name_new: str, table_name_old: str, paths: dict) -> None:
+    '''
+    This function transfers the data into an table with tfloat type.
+
+    :param table_name_new: The name of the table with the type tfloat.
+    :param table_name_old: The name of the table with the type float.
+    :paths: A dictionary with paths to all necessary executables and directories.
+    '''
+    statements = ['SET persist=1;\n']
+    copy = f'INSERT INTO {table_name_new} SELECT * FROM {table_name_old};\n'
+    statements.append(copy)
+    execute_sql(statements, paths['exe'], paths['storage'])
+
+    files = [f'{table_name_old}.arrow', f'{table_name_old}.arrow.sample', f'{table_name_old}.metadata.json']
+    remove_files(files, paths['storage'])    
 
 def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str) -> Tuple[str, str]:
     '''
