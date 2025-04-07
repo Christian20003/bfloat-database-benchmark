@@ -28,7 +28,7 @@ def main():
     args = parse_args('Kmeans')
     types = CONFIG['types']
     iterations = CONFIG['iterations']
-    init_csv_file()
+    init_csv_file(['Size', 'correctResult', 'lingoDBResult'])
     # Iterate over all cluser benchmarks
     for key, value in CONFIG.items():
         if 'cluster' not in key:
@@ -59,7 +59,7 @@ def main():
             file = memory_benchmark(args, f'{type}{value["number"]}')
             results = parse_memory_metrics(results, file)
             eval = evaluate_accuray(points, cluster, clusters, iterations, type)
-            write_to_csv(results, 'KMeans', type, value['number'], eval)
+            write_to_csv(results, 'KMeans', type, [value['number'], eval[0], eval[1]])
         print('\n')
     plot_results('Number of points')
 

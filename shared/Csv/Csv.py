@@ -1,11 +1,13 @@
-from typing import List, Tuple
+from typing import List
 import csv
 
 FILE_NAME = 'results.csv'
 
-def init_csv_file() -> None:
+def init_csv_file(additional_header: List[str]) -> None:
     '''
     This function initialize the results.csv file with a header (override previous content).
+
+    :param addition_header: A list of headers which should be added to the csv file.
     '''
 
     with open(FILE_NAME, mode='w', newline='') as file:
@@ -13,7 +15,6 @@ def init_csv_file() -> None:
         header = [
             'Name', 
             'Type', 
-            'Size', 
             'QueryOptimization', 
             'LowerRelAlgDialect', 
             'LowerSubOpDialect', 
@@ -27,21 +28,19 @@ def init_csv_file() -> None:
             'TotalTime',
             'Heap',
             'Stack',
-            'TotalMemory',
-            'correctResult',
-            'lingoDBResult'
+            'TotalMemory'
         ]
+        header = header + additional_header
         writer.writerow(header)
 
-def write_to_csv(results: dict, name: str, type: str, size: int, eval: Tuple[str, str]) -> None:
+def write_to_csv(results: dict, name: str, type: str, additional_results: List) -> None:
     '''
     This function writes data to the result.csv file (append).
 
     :param results: Dictionary including all results which should be written into the file.
     :param name: The name of the benchmark.
     :param type: The data-type which corresponds to the specified results.
-    :param size: The size of the input data.
-    :param eval: The result from evaluation as tuple (correct result / database result)
+    :param additional_results: Furhter data which should be added to the csv file.
     '''
 
     with open(FILE_NAME, mode='a', newline='') as file:
@@ -49,7 +48,6 @@ def write_to_csv(results: dict, name: str, type: str, size: int, eval: Tuple[str
         data = [
             name,
             type,
-            str(size),
             results['times']['QOpt'],
             results['times']['lowerRelAlg'],
             results['times']['lowerSubOp'],
@@ -64,9 +62,8 @@ def write_to_csv(results: dict, name: str, type: str, size: int, eval: Tuple[str
             results['memory']['heap'],
             results['memory']['stack'],
             results['memory']['total'],
-            eval[0],
-            eval[1]
         ]
+        data = data + additional_results
         writer.writerow(data)
 
 def read_data_from_csv() -> List[List[str]]:

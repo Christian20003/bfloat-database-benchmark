@@ -26,7 +26,7 @@ import random
 def main():
     args = parse_args('Einstein_Summation')
     types = CONFIG['types']
-    init_csv_file()
+    init_csv_file('Size', 'correctResult', 'lingoDBResult')
     # Iterate over all cluser benchmarks
     for key, value in CONFIG.items():
         if 'setup' not in key:
@@ -64,7 +64,7 @@ def main():
             file = memory_benchmark(args, f'{type}{2*axis_1 + axis_1*axis_2 + axis_2}')
             results = parse_memory_metrics(results, file)
             eval = evaluate_accuray(tensorA_np, tensorB_np, tensorC_np, output, type)
-            write_to_csv(results, 'Einstein', type, 2*axis_1 + axis_1*axis_2 + axis_2, eval)
+            write_to_csv(results, 'Einstein', type, [2*axis_1 + axis_1*axis_2 + axis_2, eval[0], eval[1]])
         print('\n')
     plot_results('Number of tensor entries')
 

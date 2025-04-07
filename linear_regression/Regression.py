@@ -25,7 +25,7 @@ import random
 def main():
     args = parse_args('Kmeans')
     types = CONFIG['types']
-    init_csv_file()
+    init_csv_file('Size', 'correctResult', 'lingoDBResult')
     # Iterate over all benchmarks
     for key, value in CONFIG.items():
         if 'case' not in key:
@@ -51,7 +51,7 @@ def main():
             file = memory_benchmark(args, f'{type}{value['number']}')
             results = parse_memory_metrics(results, file)
             eval = evaluate_accuracy(values[0][0], values[0][1], slope, intercept, type)
-            write_to_csv(results, 'Regression', type, value['number'], eval)
+            write_to_csv(results, 'Regression', type, [value['number'], eval[0], eval[1]])
         print('\n')
     plot_results('Number of points')
 
