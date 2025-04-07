@@ -19,7 +19,7 @@ from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
 from Format import print_warning, print_information, print_success, print_title
-from Helper import remove_files, execute_sql, generate_csv
+from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
 from sklearn.cluster import KMeans
 import numpy as np
 import random
@@ -127,23 +127,7 @@ def insert_points(points: List[Point], table_name: str, csv_file: str, paths: di
     statements = ['SET persist=1;\n']
     copy = f"copy {table_name} from '{csv_file}' delimiter ',' HEADER;\n"
     statements.append(copy)
-    execute_sql(statements, paths['exe'], paths['storage'])
-
-def tfloat_switch(table_name_new: str, table_name_old: str, paths: dict) -> None:
-    '''
-    This function transfers the data into an table with tfloat type.
-
-    :param table_name_new: The name of the table with the type tfloat.
-    :param table_name_old: The name of the table with the type float.
-    :paths: A dictionary with paths to all necessary executables and directories.
-    '''
-    statements = ['SET persist=1;\n']
-    copy = f'INSERT INTO {table_name_new} SELECT * FROM {table_name_old};\n'
-    statements.append(copy)
-    execute_sql(statements, paths['exe'], paths['storage'])
-
-    files = [f'{table_name_old}.arrow', f'{table_name_old}.arrow.sample', f'{table_name_old}.metadata.json']
-    remove_files(files, paths['storage'])    
+    execute_sql(statements, paths['exe'], paths['storage'])    
 
 def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str) -> Tuple[str, str]:
     '''

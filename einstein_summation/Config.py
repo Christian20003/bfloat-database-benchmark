@@ -30,4 +30,12 @@ CONFIG = {
         "size_axis_1": 1000,
         "size_axis_2": 1000,
     },
+    "setup8": {
+        "size_axis_1": 2500,
+        "size_axis_2": 2500,
+    },
+    "setup9": {
+        "size_axis_1": 5000,
+        "size_axis_2": 5000,
+    },
 }

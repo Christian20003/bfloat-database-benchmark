@@ -66,3 +66,19 @@ def generate_csv(file_name: str, header: List[str], data: List) -> None:
         writer = csv.writer(file)
         data.insert(0, header)
         writer.writerows(data)
+
+def tfloat_switch(table_name_new: str, table_name_old: str, paths: dict) -> None:
+    '''
+    This function transfers the data into an table with tfloat type.
+
+    :param table_name_new: The name of the table with the type tfloat.
+    :param table_name_old: The name of the table with the type float.
+    :paths: A dictionary with paths to all necessary executables and directories.
+    '''
+    statements = ['SET persist=1;\n']
+    copy = f'INSERT INTO {table_name_new} SELECT * FROM {table_name_old};\n'
+    statements.append(copy)
+    execute_sql(statements, paths['exe'], paths['storage'])
+
+    files = [f'{table_name_old}.arrow', f'{table_name_old}.arrow.sample', f'{table_name_old}.metadata.json']
+    remove_files(files, paths['storage'])

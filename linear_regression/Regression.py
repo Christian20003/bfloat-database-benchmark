@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Plot')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Types')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
 from Config import CONFIG
 from Point import Point
@@ -17,11 +18,9 @@ from Parse_Memory import parse_memory_metrics
 from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
-from Format import print_error, print_warning, print_information, print_success, print_title
+from Format import print_warning, print_information, print_success, print_title
+from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
 import random
-import subprocess
-import os
-import time
 
 def main():
     args = parse_args('Kmeans')
@@ -37,22 +36,15 @@ def main():
         for type in types:
             print_information(f'Execute benchmark with type: {type}')
             print_information(f'Create Point-table with {len(points)} entries.')
-            create_tables(type, args, value['lr'])
-
-            max = 1000000
-            if len(points) > max:
-                for idx in range(0, len(points), max):
-                    if idx + max > len(points):
-                        insert_points(points[idx:], args)
-                    else:
-                        insert_points(points[idx:idx+max], args)
-                    # Print after some steps the progress
-                    inserted = (idx + max)*100/len(points)
-                    if inserted % 10 == 0:
-                        print_information(f'{inserted}% tuples inserted', tabs=1)
+            create_lr_table(value['lr'], args)
+            if type == 'tfloat':
+                create_table('points', type, args)
+                create_table('pointsdummy', 'float', args)
+                insert_points(points, 'pointsdummy', './points.csv', args)
+                tfloat_switch('points', 'pointsdummy', args)
             else:
-                insert_points(points, args)
-
+                create_table('points', type, args)
+                insert_points(points, 'points', './points.csv', args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
             values = parse_table_output(output, 3, 1, 2)
@@ -101,103 +93,55 @@ def generate_points(number: int, upper_bound: int, lower_bound: int, slope: floa
         result.append(Point(value, x, y))
     return result
 
-def points_to_sql(points: List[Point], table_name: str) -> str:
-    '''
-    This function changes the transforms list of point objects into a sql insert statement.
-
-    :param points: The list of points which should be converted.
-    :param table_name: The name of the table in which they should be inserted.
-
-    :return: A string which defines the insert statement for all points.
-    '''
-    result = f'INSERT INTO {table_name}(id, x, y) VALUES '
-    for idx, point in enumerate(points):
-        result += point.to_sql_value()
-        if idx != points.__len__() - 1:
-            result += ","
-    result += ";"
-    return result
-
-def create_tables(type: str, paths: dict, lr: float) -> None:
+def create_table(table_name: str, type: str, paths: dict) -> None:
     '''
     This function creates the persistent table for the randomly generates points.
 
+    :param table_name: The name of the table.
     :param type: The current datatype.
     :param paths: A dictionary with paths to all necessary executables and directories.
-    :param lr: The learning-rate for this current case.
 
     :raise RuntimeError: If the table could not be generated.
     '''
     
-    remove_tables(paths)
-    # Define all statements to create tables with the help of LingoDB
-    persist = 'SET persist=1;\n'
-    create_points = f'CREATE TABLE Points(id int, x {type}, y {type});\n'
-    create_lr = f'CREATE TABLE lr(rate float);\n'
-    insert_lr = f'INSERT INTO lr(rate) VALUES ({lr});\n'
-    database = subprocess.Popen(
-        [paths['exe'], paths['storage']], 
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    # Create all table and insert cluster values
-    statements = [persist, create_points, create_lr, insert_lr]
-    for statement in statements:
-        database.stdin.write(statement)
-        database.stdin.flush()
-    _, error = database.communicate()
-    if error:
-        print_error('Something went wrong by creating the table', error)
+    files = [f'{table_name}.arrow', f'{table_name}.arrow.sample', f'{table_name}.metadata.json']
+    remove_files(files, paths['storage'])
 
-def insert_points(points: List[Point], paths: dict) -> None:
+    statements = ['SET persist=1;\n', f'CREATE TABLE {table_name}(id int, x {type}, y {type});\n']
+    execute_sql(statements, paths['exe'], paths['storage'])
+
+def create_lr_table(lr: float, paths: dict) -> None:
+    '''
+    This function creates a learning rate table for a dynamic learning rate.
+
+    :param lr: The learning-rate for this current case.    
+    :param paths: A dictionary with paths to all necessary executables and directories.
+    '''
+
+    files = ['lr.arrow', 'lr.arrow.sample', 'lr.metadata.json']
+    remove_files(files, paths['storage'])
+    statements = ['SET persist=1;\n', f'CREATE TABLE lr(rate float);\n', f'INSERT INTO lr(rate) VALUES ({lr});\n']
+    execute_sql(statements, paths['exe'], paths['storage'])
+
+def insert_points(points: List[Point], table_name: str, csv_file: str, paths: dict) -> None:
     '''
     This function inserts a specific amount of points into the points table.
 
-    :param points: The randomly generated points
+    :param points: The randomly generated points.
+    :param table_name: The name of the table.
+    :param csv_file: The file where the data is stored.
     :param paths: A dictionary with paths to all necessary executables and directories.
 
     :raise RuntimeError: If the dara could not be inserted.
     '''
-    number_tuples = len(points) if len(points) <= 1000 else 1000
-    database = subprocess.Popen(
-        [paths['exe'], paths['storage']], 
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    database.stdin.write('SET persist=1;\n')
-    database.stdin.flush()
-    # Insert point values. Limit to 1000 at a time, otherwise LingoDB stops working
-    for index in range(0, len(points), number_tuples):
-        insert = points_to_sql(points[index:index + number_tuples], "Points")
-        database.stdin.write(f'{insert}\n')
-        database.stdin.flush()
-    _, error = database.communicate()
-    if error:
-        print_error('Something went wrong by creating the table', error)
-
-def remove_tables(paths: dict) -> None:
-    '''
-    This function removes all table files which stores the randomly created points.
-
-    :param paths: A dictionary with paths to all necessary executables and directories.
-
-    :raise RuntimeError: If the corresponding files could not be removed. 
-    '''
     
-    files = ['points.arrow', 'points.arrow.sample', 'points.metadata.json', 'lr.arrow', 'lr.arrow.sample', 'lr.metadata.json']
-    for file in files:
-        try:
-            os.unlink(os.path.join(paths['storage'], file))
-        except FileNotFoundError:
-            print_warning(f'{file} does not exist. Ignore deletion')
-        except Exception as e:
-            print_error(f'Failed to remove {file}', e)
-    # Ensure files are removed
-    time.sleep(2)
+    print_information(f'Inserting {len(points)} of points (This can take a while)', tabs=1)
+    data = [[point.id, point.x, point.y] for point in points]
+    generate_csv(csv_file, ['id', 'x', 'y'], data)
+    statements = ['SET persist=1;\n']
+    copy = f"copy {table_name} from '{csv_file}' delimiter ',' HEADER;\n"
+    statements.append(copy)
+    execute_sql(statements, paths['exe'], paths['storage'])
 
 def evaluate_accuracy(slope_db: float, intercept_db: float, slope_label: float, intercept_label: float, type: str) -> str:
     '''
