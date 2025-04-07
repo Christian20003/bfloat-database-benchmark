@@ -18,8 +18,8 @@ from Parse_Memory import parse_memory_metrics
 from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
-from Format import print_error, print_warning, print_information, print_success, print_title
-from Helper import remove_files, execute_sql
+from Format import print_warning, print_information, print_success, print_title
+from Helper import remove_files, execute_sql, generate_csv
 from sklearn.cluster import KMeans
 import numpy as np
 import random
@@ -100,42 +100,24 @@ def create_tables(table_names: List[str], type: str, paths: dict) -> None:
         statements.append(f'CREATE TABLE {name}(id int, x {type}, y {type});\n')
     execute_sql(statements, paths['exe'], paths['storage'])
 
-def insert_points(points: List[Point], table_name: str, paths: dict) -> None:
+def insert_points(points: List[Point], table_name: str, csv_file: str, paths: dict) -> None:
     '''
     This function inserts all given points into a table.
 
     :param points: A list of points which should be inserted.
     :param table_name: The name of table in which the points should be inserted.
+    :param csv_file: The file where the data is stored.
     :param paths: A dictionary with paths to all necessary executables and directories.
 
     :raise RuntimeError: If the data could not be inserted.
     '''
 
-    max = 1000000
-    for idx in range(0, len(points), max):
-        amount = (len(points) / (idx + max)) if idx + max < len(points) else 100
-        print_information(f'Inserting {amount} of points', tabs=1)
-        if idx + max > len(points):
-            insert_block(points[idx:], table_name, paths)
-        else:
-            insert_block(points[idx:idx+max], table_name, paths)
-
-
-def insert_block(points: List[Point], table_name: str, paths: dict) -> None:
-    '''
-    This function inserts a specific amount of points into the points table.
-
-    :param points: The randomly generated points
-    :param paths: A dictionary with paths to all necessary executables and directories.
-
-    :raise RuntimeError: If the data could not be generated.
-    '''
-    number_tuples = len(points) if len(points) <= 1000 else 1000
+    print_information(f'Inserting {len(points)} of points (This can take a while)', tabs=1)
+    data = [[point.id, point.x, point.y] for point in points]
+    generate_csv(csv_file, ['id', 'x', 'y'], data)
     statements = ['SET persist=1;\n']
-    
-    # Insert point values. Limit to 1000 at a time, otherwise LingoDB stops working
-    for index in range(0, len(points), number_tuples):
-        statements.append(Point.points_to_sql(points[index:index + number_tuples], table_name))
+    copy = f"copy {table_name} from {csv_file} delimiter ',' HEADER;\n"
+    statements.append(copy)
     execute_sql(statements, paths['exe'], paths['storage'])
 
 def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str) -> Tuple[str, str]:

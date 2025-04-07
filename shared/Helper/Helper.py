@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Type
 from typing import List
 from Format import print_error, print_warning
 import subprocess
+import csv
 
 def execute_sql(statements: List[str], exe: str, dir: str) -> str:
     '''
@@ -51,3 +52,17 @@ def remove_files(files: List[str], dir: str) -> None:
             print_warning(f'{file} does not exist. Ignore deletion')
         except Exception as e:
             print_error(f'Failed to remove {file}', e)
+
+def generate_csv(file_name: str, header: List[str], data: List) -> None:
+    '''
+    This function generates a csv file for the data which should be used 
+    for the SQL statement.
+
+    :param file_name: The name of the csv file.
+    :param header: All headers in the csv file.
+    :param data: The data which should be added to the csv file (in correct format)
+    '''
+    with open(file_name, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        data.insert(0, header)
+        writer.writerows(data)
