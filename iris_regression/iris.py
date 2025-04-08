@@ -100,7 +100,7 @@ def init_img_tables(data_size: int, type: str, paths: dict) -> None:
     '''
 
     files = []
-    tables_names = ['data', 'one_hot']
+    tables_names = ['img', 'one_hot']
     for file in tables_names:
         files.append(f'{file}.arrow')
         files.append(f'{file}.arrow.sample')
@@ -133,7 +133,7 @@ def init_weigths(hidden_layer: int, type: str, paths: dict) -> None:
     '''
 
     files = []
-    tables_names = ['weights_layer1_layer2', 'weights_layer2_layer3']
+    tables_names = ['w_xh', 'w_ho']
     for file in tables_names:
         files.append(f'{file}.arrow')
         files.append(f'{file}.arrow.sample')
