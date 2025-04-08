@@ -55,8 +55,8 @@ WITH RECURSIVE weights (iter, layer, input, output, value) AS (
             WHERE n.layer = 1 AND n.iter = (SELECT MAX(iter) FROM weights_now)  -- w_ho
             GROUP BY m.sample_id, n.output) calculation_2
   ), l_ho(sample_id, output, value) AS (
-     SELECT m.sample_id, m.output, 2 * (m.value - n.value)
-     FROM a_ho AS m INNER JOIN one_hot AS n ON m.sample_id = n.sample_id AND m.output = n.species
+     SELECT m.sample_id, m.output, 2 * (m.value - n.isValid)
+     FROM a_ho AS m INNER JOIN one_hot AS n ON m.sample_id = n.sample_id AND m.output = n.species_id
   ), d_ho(sample_id, output, value) AS (
      SELECT m.sample_id, m.output, m.value * n.value * (1 - n.value)
      FROM l_ho AS m INNER JOIN a_ho AS n ON m.sample_id = n.sample_id AND m.output = n.output
@@ -74,13 +74,13 @@ WITH RECURSIVE weights (iter, layer, input, output, value) AS (
      WHERE m.sample_id < {}
      GROUP BY m.feature_id, n.output
      UNION
-     SELECT 1, m.feature_id as input, n.output, SUM(m.value * n.value)
+     SELECT 1, m.output as input, n.output, SUM(m.value * n.value)
      FROM a_xh AS m INNER JOIN d_ho AS n ON m.sample_id = n.sample_id
-     GROUP BY m.feature_id, n.output
+     GROUP BY m.output, n.output
   )
   SELECT iter + 1, w.layer, w.input, w.output, w.value - {} * d_w.value
   FROM weights_now AS w, d_w
-  WHERE iter < {} AND w.layer = d_w.layer AND w.intput = d_w.input AND w.output = d_w.output
+  WHERE iter < {} AND w.layer = d_w.layer AND w.input = d_w.input AND w.output = d_w.output
   )
 )
 SELECT max(precision) FROM (
@@ -89,21 +89,21 @@ SELECT max(precision) FROM (
        SELECT *, RANK() OVER (PARTITION BY m.sample_id, iter ORDER BY value DESC) AS rank
        FROM (
          SELECT sample_id, output, 1 / (1 + exp(-1 * result)) AS value, iter
-         FROM (SELECT m.sample_id, n.output, 1/(1+exp(-SUM (m.vvalue*n.value))) as value, m.iter
+         FROM (SELECT m.sample_id, n.output, SUM(m.value * n.value) as result, m.iter
                 FROM (
                    SELECT sample_id, output, 1 / (1 + exp(-1 * result)) AS value, iter
                    FROM (SELECT m.sample_id, n.output, SUM(m.value * n.value) AS result, iter
                            FROM data AS m INNER JOIN weights AS n ON m.feature_id = n.input
                            WHERE n.layer = 0                                                  -- and n.iter=(select max(iter) from w)
                            GROUP BY m.sample_id, n.output, iter) calculation_3
-               ) AS m INNER JOIN w AS n ON m.output = n.sample_id
+               ) AS m INNER JOIN weights AS n ON m.output = n.input
                 WHERE n.layer = 1 and n.iter = m.iter
                 GROUP BY m.sample_id, n.output, m.iter) calculation_4
        ) m ) pred,
-    (SELECT *, RANK() OVER (PARTITION BY m.sample_id ORDER BY value DESC) AS rank FROM one_hot m) test
+    (SELECT *, RANK() OVER (PARTITION BY m.sample_id ORDER BY isValid DESC) AS rank FROM one_hot m) test
     WHERE pred.sample_id = test.sample_id AND pred.rank = 1 AND test.rank = 1
-    GROUP BY iter, pred.output = test.output
-    HAVING (pred.output = test.output) = true
+    GROUP BY iter, pred.output = test.species_id
+    HAVING (pred.output = test.species_id) = true
     ORDER BY iter
-)
+) result
 '''
