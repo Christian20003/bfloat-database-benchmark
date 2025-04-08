@@ -27,11 +27,11 @@ def main():
     # Iterate over all benchmarks
     for iteration in iterations:
         for key, value in CONFIG.items():
+            if 'setup' not in key:
+                continue
             network_size = value["network_size"]
             data_size = value["data_size"]
             print_title(f'### START BENCHMARKING IRIS WITH {network_size} neurons, {data_size} samples ###')
-            if 'setup' not in key:
-                continue
             for type in types:
                 if type == 'tfloat':
                     init_iris('irisdummy', data_size, 'float', args)
