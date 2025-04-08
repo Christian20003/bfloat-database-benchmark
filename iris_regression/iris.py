@@ -27,24 +27,26 @@ def main():
     # Iterate over all benchmarks
     for iteration in iterations:
         for key, value in CONFIG.items():
-            print_title(f'### START BENCHMARKING IRIS WITH {value["network_size"]} neurons, {value["data_size"]} samples ###')
+            network_size = value["network_size"]
+            data_size = value["data_size"]
+            print_title(f'### START BENCHMARKING IRIS WITH {network_size} neurons, {data_size} samples ###')
             if 'setup' not in key:
                 continue
             for type in types:
                 if type == 'tfloat':
-                    init_iris('irisdummy', value['data_size'], 'float', args)
+                    init_iris('irisdummy', data_size, 'float', args)
                     tfloat_switch('iris', 'irisdummy', args)
                 else:
-                    init_iris('iris', value['data_size'], type, args)
-                init_img_tables(value['data_size'], type, args)
-                init_weigths(value['network_size'], type, args)
-                generate_sql_file(value['data_size'], CONFIG['learning_rate'], iteration, args)
+                    init_iris('iris', data_size, type, args)
+                init_img_tables(data_size, type, args)
+                init_weigths(network_size, type, args)
+                generate_sql_file(data_size, CONFIG['learning_rate'], iteration, args)
                 output = time_benchmark(args)
                 results = parse_time_metrics(output)
                 database = parse_table_output(output, 1, 0, 0)
                 file = memory_benchmark(args, 'iris')
                 results = parse_memory_metrics(results, file)
-                write_to_csv(results, 'Iris', type, [value['data_size', value['network_size'], database[0]]])
+                write_to_csv(results, 'Iris', type, [data_size, network_size, database[0]])
 
 
 def generate_iris_csv(amount: int) -> None:
@@ -60,9 +62,10 @@ def generate_iris_csv(amount: int) -> None:
         data = [row for row in reader]
     length = len(data)
     for counter in range(amount):
-        data = data + data[1:length]
+        for element in data[1:length].copy():
+            data.append(element.copy())
     for idx, entry in enumerate(data):
-        entry = str(idx + 1) + ',' + entry
+        entry.insert(0, idx + 1)
     with open('./iris2.csv', mode='w') as file:
         writer = csv.writer(file)
         writer.writerows(data)
@@ -83,7 +86,7 @@ def init_iris(table_name: str, data_size: int, type: str, paths: dict) -> None:
     statements = [
         'SET persist=1;\n',
         f'CREATE TABLE {table_name}(id int, sepal_length {type}, sepal_width {type}, petal_length {type}, petal_width {type}, species int);\n',
-        f"COPY {table_name} from './iris2.csv' delimiter ',', HEADER CSV"
+        f"COPY {table_name} from './iris2.csv' delimiter ',' HEADER CSV;\n"
     ]
     execute_sql(statements, paths['exe'], paths['storage'])
 
@@ -97,7 +100,8 @@ def init_img_tables(data_size: int, type: str, paths: dict) -> None:
     '''
 
     files = []
-    for file in ['img', 'one_hot']:
+    tables_names = ['data', 'one_hot']
+    for file in tables_names:
         files.append(f'{file}.arrow')
         files.append(f'{file}.arrow.sample')
         files.append(f'{file}.metadata.json')
@@ -105,17 +109,17 @@ def init_img_tables(data_size: int, type: str, paths: dict) -> None:
 
     statements = [
         'SET persist=1;\n',
-        f'CREATE TABLE img(i int, j int, v {type});\n',
-        'CREATE TABLE one_hot(i int, j int, v int, dummy int);\n',
-        'INSERT INTO img (SELECT id, 1, sepal_length / 10 FROM iris);\n',
-        'INSERT INTO img (SELECT id, 2, sepal_width / 10 FROM iris);\n',
-        'INSERT INTO img (SELECT id, 3, petal_length / 10 FROM iris);\n',
-        'INSERT INTO img (select id, 4, petal_width / 10 FROM iris);\n',
-        f'''INSERT INTO one_hot (SELECT n.i, n.j, coalesce(i.v, 0), i.v '
-            FROM (SELECT id, species+1 AS species, 1 AS v FROM iris) i RIGHT OUTER JOIN 
-                (SELECT a.a AS i, b.b AS j 
-                    FROM (SELECT generate_series AS a FROM generate_series(1, {data_size})) a, 
-                        (SELECT generate_series AS b FROM generate_series(1,4)) b) n ON n.i=i.id AND n.j=i.species ORDER BY i,j);\n'''
+        f'CREATE TABLE {tables_names[0]}(sample_id int, feature_id int, value {type});\n',
+        f'CREATE TABLE {tables_names[1]}(sample_id int, species_id int, isValid int, dummy int);\n',
+        f'INSERT INTO {tables_names[0]} (SELECT id, 1, sepal_length / 10 FROM iris);\n',
+        f'INSERT INTO {tables_names[0]} (SELECT id, 2, sepal_width / 10 FROM iris);\n',
+        f'INSERT INTO {tables_names[0]} (SELECT id, 3, petal_length / 10 FROM iris);\n',
+        f'INSERT INTO {tables_names[0]} (SELECT id, 4, petal_width / 10 FROM iris);\n',
+        f'''INSERT INTO one_hot (SELECT result.sample_id, result.species_id, coalesce(samples.value, 0), samples.value
+            FROM (SELECT id, species+1 AS species, 1 AS value FROM iris) samples RIGHT OUTER JOIN 
+            (SELECT data_table.id AS sample_id, species_table.id AS species_id
+            FROM (SELECT generate_series AS id FROM generate_series(1, {data_size})) data_table, 
+            (SELECT generate_series AS id FROM generate_series(1,4)) species_table) result ON result.sample_id = samples.id AND result.species_id=samples.species ORDER BY sample_id, species_id);\n'''
     ]
     execute_sql(statements, paths['exe'], paths['storage'])
 
@@ -129,7 +133,8 @@ def init_weigths(hidden_layer: int, type: str, paths: dict) -> None:
     '''
 
     files = []
-    for file in ['w_xh', 'w_ho']:
+    tables_names = ['weights_layer1_layer2', 'weights_layer2_layer3']
+    for file in tables_names:
         files.append(f'{file}.arrow')
         files.append(f'{file}.arrow.sample')
         files.append(f'{file}.metadata.json')
@@ -137,10 +142,10 @@ def init_weigths(hidden_layer: int, type: str, paths: dict) -> None:
 
     statements = [
         'SET persist=1;\n',
-        f'CREATE TABLE w_xh(i int, j int, v {type});\n',
-        f'CREATE TABLE w_ho(i int, j int, v {type});\n',
-        f'INSERT INTO w_xh (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, 4) i, generate_series(1, {hidden_layer}));\n',
-        f'INSERT INTO w_ho (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, {hidden_layer}) i, generate_series(1, 3));\n'
+        f'CREATE TABLE {tables_names[0]}(input int, output int, value {type});\n',
+        f'CREATE TABLE {tables_names[1]}(input int, output int, value {type});\n',
+        f'INSERT INTO {tables_names[0]} (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, 4) i, generate_series(1, {hidden_layer}) j);\n',
+        f'INSERT INTO {tables_names[1]} (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, {hidden_layer}) i, generate_series(1, 3) j);\n'
     ]
     execute_sql(statements, paths['exe'], paths['storage'])
 
