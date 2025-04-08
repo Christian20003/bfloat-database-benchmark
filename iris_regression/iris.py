@@ -42,6 +42,7 @@ def main():
                 init_weigths(network_size, type, args)
                 generate_sql_file(data_size, CONFIG['learning_rate'], iteration, args)
                 output = time_benchmark(args)
+                print(output)
                 results = parse_time_metrics(output)
                 database = parse_table_output(output, 1, 0, 0)
                 file = memory_benchmark(args, 'iris')
@@ -115,7 +116,7 @@ def init_img_tables(data_size: int, type: str, paths: dict) -> None:
         'INSERT INTO img (SELECT id, 2, sepal_width / 10 FROM iris);\n',
         'INSERT INTO img (SELECT id, 3, petal_length / 10 FROM iris);\n',
         'INSERT INTO img (select id, 4, petal_width / 10 FROM iris);\n',
-        f'''INSERT INTO one_hot (SELECT n.i, n.j, coalesce(i.v, 0), i.v '
+        f'''INSERT INTO one_hot (SELECT n.i, n.j, coalesce(i.v, 0), i.v
             FROM (SELECT id, species+1 AS species, 1 AS v FROM iris) i RIGHT OUTER JOIN 
             (SELECT a.a AS i, b.b AS j 
             FROM (SELECT generate_series AS a FROM generate_series(1, {data_size})) a, 
@@ -144,8 +145,8 @@ def init_weigths(hidden_layer: int, type: str, paths: dict) -> None:
         'SET persist=1;\n',
         f'CREATE TABLE w_xh(i int, j int, v {type});\n',
         f'CREATE TABLE w_ho(i int, j int, v {type});\n',
-        f'INSERT INTO w_xh (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, 4) i, generate_series(1, {hidden_layer}));\n',
-        f'INSERT INTO w_ho (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, {hidden_layer}) i, generate_series(1, 3));\n'
+        f'INSERT INTO w_xh (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, 4) i, generate_series(1, {hidden_layer}) j);\n',
+        f'INSERT INTO w_ho (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, {hidden_layer}) i, generate_series(1, 3) j);\n'
     ]
     execute_sql(statements, paths['exe'], paths['storage'])
 

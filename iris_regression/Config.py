@@ -43,13 +43,13 @@ with recursive w (iter,id,i,j,v) as (
   with w_now as (
      SELECT * from w
   ), a_xh(i,j,v) as (
-     SELECT i, j, 1/(1+exp(-1*result)) as v
+     SELECT i, j, 1/(1+exp((2-1)*result)) as v
      FROM (SELECT m.i, n.j, SUM(m.v*n.v) as result
             FROM img AS m INNER JOIN w_now AS n ON m.j=n.i
             WHERE m.i < {} and n.id=0 and n.iter=(select max(iter) from w_now) -- w_xh
             GROUP BY m.i, n.j) calculation_1
   ), a_ho(i,j,v) as (
-     SELECT i, j, 1/(1+exp(-1*result)) as v
+     SELECT i, j, 1/(1+exp((2-1)*result)) as v
      FROM (SELECT m.i, n.j, SUM(m.v*n.v) as result --sig(SUM (m.v*n.v))
             FROM a_xh AS m INNER JOIN w_now AS n ON m.j=n.i
             WHERE n.id=1 and n.iter=(select max(iter) from w_now)  -- w_ho
@@ -88,11 +88,11 @@ SELECT max(precision) FROM (
     FROM (
        SELECT *, rank() over (partition by m.i,iter order by v desc) as rank
        FROM (
-          SELECT i, j, 1/(1+exp(-1*result)) as v, iter
+          SELECT i, j, 1/(1+exp((2-1)*result)) as v, iter
           FROM (SELECT m.i, n.j, SUM(m.v*n.v) as result, m.iter
                FROM (
-                  SELECT i, j, 1/(1+exp(-1*result)) as v, iter
-                  FROM (SELECT m.i, n.j, 1/(1+exp(-SUM (m.v*n.v))) as v, iter
+                  SELECT i, j, 1/(1+exp((2-1)*result)) as v, iter
+                  FROM (SELECT m.i, n.j, SUM(m.v*n.v) as result, iter
                         FROM img AS m INNER JOIN w AS n ON m.j=n.i
                         WHERE n.id=0 -- and n.iter=(select max(iter) from w)
                         GROUP BY m.i, n.j, iter) calculation_4) AS m INNER JOIN w AS n ON m.j=n.i
@@ -104,5 +104,5 @@ SELECT max(precision) FROM (
     GROUP BY iter, pred.j=test.j
     HAVING (pred.j=test.j)=true
     ORDER BY iter
-)
+) result;\n
 '''
