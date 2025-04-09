@@ -64,19 +64,23 @@ def extract_time_data(data: List[List[str]]) -> Tuple[List[float], List[float], 
 def extract_memory_data(data: List[List[str]]) -> Tuple[List[float], List[float], List[float]]:
     '''
     This function returns the memory data for a specific type (heap, stack and 
-    total memory). Heap and total memory is calculated in MB whereas the stack
-    is calculated in KB.
+    total memory).
 
     :param data: A list of entries related to a specific type from a csv file (without header).
 
     :return: A tuple with three elements for each memory metric.
     '''
-    kb = 1024
-    mb = kb*kb
-    y_heap = [float(element[HEAP_INDEX]) / mb for element in data]
-    y_stack = [float(element[STACK_INDEX]) / kb for element in data]
-    y_total_memory = [float(element[TOTAL_MEMORY_INDEX]) / (1024*1024) for element in data]
+    gb = 1024*1024*1024
+    y_heap = [float(element[HEAP_INDEX]) / gb for element in data]
+    y_stack = [float(element[STACK_INDEX]) / gb for element in data]
+    y_total_memory = [float(element[TOTAL_MEMORY_INDEX]) / gb for element in data]
     return y_heap, y_stack, y_total_memory
+
+def extract_duck_db(data: List[List[str]]):
+    gb = 1024*1024*1024
+    y_total_time = [float(element[17]) for element in data]
+    y_total_memory = [float(element[18]) / gb for element in data]
+    return y_total_time, y_total_memory
  
 def transform_data(data: List[List[str]]) -> dict:
     '''
@@ -110,4 +114,14 @@ def transform_data(data: List[List[str]]) -> dict:
                 'y_total_memory': y_total_memory
             }
         })
+    entries = extract_entries('float', data)
+    duck_db_time, duck_db_memory = extract_duck_db(entries)
+    x_values = [int(element[POINT_INDEX]) for element in entries]
+    result.update({
+        'duck_db': {
+            'x_values': x_values,
+            'y_total_time': duck_db_time,
+            'y_total_memory': duck_db_memory
+        }
+    })
     return result

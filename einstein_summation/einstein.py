@@ -20,6 +20,7 @@ from Execute import time_benchmark, memory_benchmark
 from Plot import plot_results
 from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
 from Config import CONFIG
+from duck_db import duck_db_benchmark
 import numpy as np
 import random
 
@@ -37,6 +38,7 @@ def main():
         tensorA = generate_tensor(2, axis_1, CONFIG['value_upper_bound'], CONFIG['value_lower_bound'])
         tensorB = generate_tensor(axis_2, axis_1, CONFIG['value_upper_bound'], CONFIG['value_lower_bound'])
         tensorC = generate_tensor(axis_2, 1, CONFIG['value_upper_bound'], CONFIG['value_lower_bound'])
+        time, memory = duck_db_benchmark(tensorA, tensorB, tensorC, args['statement'], f'{2*axis_1 + axis_1*axis_2 + axis_2}')
         # Iterate over all specified types
         for type in types:
             print_information(f'Execute benchmark with type: {type}', mark=True)
@@ -60,6 +62,8 @@ def main():
             tensorC_np = Value.values_to_numpy(tensorC, axis_2)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
+            results['duckdbt'] = time
+            results['duckdbm'] = memory
             output = parse_table_output(output, 2, 1, 1)
             file = memory_benchmark(args, f'{type}{2*axis_1 + axis_1*axis_2 + axis_2}')
             results = parse_memory_metrics(results, file)

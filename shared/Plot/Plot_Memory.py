@@ -21,15 +21,15 @@ def plot_memory_multiple(data: dict, x_label: str) -> None:
         plt.clf()
         style_index = 0
         for type_key, value in data.items():
+            if type_key == 'duck_db' and y_key != 'y_total_memory':
+                continue
+            else:
             # plot the data
-            plt.plot(value['x_values'], value[y_key], linestyle=styles[style_index], color=colors[style_index], marker='o', label=f'Type: {type_key}')
+                plt.plot(value['x_values'], value[y_key], linestyle=styles[style_index], color=colors[style_index], marker='o', label=f'Type: {type_key}')
             style_index += 1
         plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2))
         plt.ylim(bottom=0)
         plt.xlabel(x_label)
-        if y_key == 'y_stack':
-            plt.ylabel('Used memory in KB')
-        else:
-            plt.ylabel('Used memory in MB')
+        plt.ylabel('Used memory in GB')
         plt.xscale('log')
         plt.savefig(file_value)

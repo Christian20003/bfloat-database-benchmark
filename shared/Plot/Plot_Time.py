@@ -21,8 +21,11 @@ def plot_time_multiple(data: dict, x_label: str) -> None:
         plt.clf()
         style_index = 0
         for type_key, value in data.items():
-            # plot the data
-            plt.plot(value['x_values'], value[y_key], linestyle=styles[style_index], color=colors[style_index], marker='o', label=f'Type: {type_key}')
+            if type_key == 'duck_db' and y_key != 'y_total_time':
+                continue
+            else:
+                # plot the data
+                plt.plot(value['x_values'], value[y_key], linestyle=styles[style_index], color=colors[style_index], marker='o', label=f'Type: {type_key}')
             style_index += 1
         plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2))
         plt.ylim(bottom=0)

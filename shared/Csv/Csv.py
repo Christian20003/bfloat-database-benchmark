@@ -29,6 +29,8 @@ def init_csv_file(additional_header: List[str]) -> None:
             'Heap',
             'Stack',
             'TotalMemory'
+            'DuckDBTime',
+            'DuckDBMemory'
         ]
         header = header + additional_header
         writer.writerow(header)
@@ -62,6 +64,8 @@ def write_to_csv(results: dict, name: str, type: str, additional_results: List) 
             results['memory']['heap'],
             results['memory']['stack'],
             results['memory']['total'],
+            results['duckdbt'],
+            results['duckdbm']
         ]
         data = data + additional_results
         writer.writerow(data)
