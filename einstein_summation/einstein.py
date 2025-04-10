@@ -46,6 +46,7 @@ def main():
             if type == 'tfloat':
                 dummy_tables = ['matrixadummy', 'matrixbdummy', 'vectorvdummy']
                 create_tables(dummy_tables, 'float', args)
+                create_tables(table_names, type, args)
                 insert_data(tensorA, dummy_tables[0], './matrixa.csv', args)
                 insert_data(tensorB, dummy_tables[1], './matrixb.csv', args)
                 insert_data(tensorC, dummy_tables[2], './matrixc.csv', args)

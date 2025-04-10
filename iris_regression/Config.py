@@ -37,7 +37,7 @@ CONFIG = {
 }
 CTE = '''
 WITH RECURSIVE weights_now (iter, layer, input, output, value) AS (
-  (SELECT 0 AS iter, 0 AS layer, intput, output, value FROM weights_layer1_layer2 UNION SELECT 0 AS iter, 1 AS layer, input, output, value FROM weights_layer2_layer3)
+  (SELECT 0 AS iter, 0 AS layer, input, output, value FROM weights_layer1_layer2 UNION SELECT 0 AS iter, 1 AS layer, input, output, value FROM weights_layer2_layer3)
   UNION ALL
   (
   WITH a_xh(sample_id, output, value) AS (

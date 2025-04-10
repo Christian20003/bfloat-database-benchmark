@@ -27,7 +27,7 @@ def plot_time_multiple(data: dict, x_label: str) -> None:
                 # plot the data
                 plt.plot(value['x_values'], value[y_key], linestyle=styles[style_index], color=colors[style_index], marker='o', label=f'Type: {type_key}')
             style_index += 1
-        plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2))
+        plt.legend(loc='lower left', bbox_to_anchor=(0, 1, 1, 0.2), mode='expand', ncol=4)
         plt.ylim(bottom=0)
         plt.xlabel(x_label)
         plt.ylabel('Time in ms')
