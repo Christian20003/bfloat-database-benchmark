@@ -20,12 +20,13 @@ from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
 from Format import print_warning, print_information, print_success, print_title
 from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
+from duck_db import duck_db_benchmark
 import random
 
 def main():
-    args = parse_args('Kmeans')
+    args = parse_args('Regression')
     types = CONFIG['types']
-    init_csv_file('Size', 'correctResult', 'lingoDBResult')
+    init_csv_file(['Size', 'correctResult', 'lingoDBResult'])
     # Iterate over all benchmarks
     for key, value in CONFIG.items():
         if 'case' not in key:
@@ -33,6 +34,7 @@ def main():
         print_title(f'### START BENCHMARKING LINEAR REGRESSION WITH {value["number"]} POINTS ###')
         slope, intercept = generate_regression_line(value['param_upper_bound'], value['param_lower_bound'])
         points = generate_points(value["number"], value["param_upper_bound"], value["param_lower_bound"], slope, intercept, CONFIG['noise_std_dev'])
+        time, memory = duck_db_benchmark(points, float(value['lr']), args['statement'], value['number'])
         for type in types:
             print_information(f'Execute benchmark with type: {type}')
             print_information(f'Create Point-table with {len(points)} entries.')
@@ -47,6 +49,8 @@ def main():
                 insert_points(points, 'points', './points.csv', args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
+            results['duckdbt'] = time
+            results['duckdbm'] = memory
             values = parse_table_output(output, 3, 1, 2)
             file = memory_benchmark(args, f'{type}{value['number']}')
             results = parse_memory_metrics(results, file)

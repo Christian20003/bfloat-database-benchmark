@@ -20,6 +20,7 @@ from Parse_Table import parse_table_output
 from Execute import time_benchmark, memory_benchmark
 from Format import print_warning, print_information, print_success, print_title
 from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
+from duck_db import duck_db_benchmark
 from sklearn.cluster import KMeans
 import numpy as np
 import random
@@ -36,6 +37,7 @@ def main():
         print_title(f'### START BENCHMARKING KMEANS WITH {value["number"]} POINTS ###')
         points = generate_points(value["number"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
         cluster = generate_points(value["cluster"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
+        time, memory = duck_db_benchmark(cluster, points, args['statement'], value['number'])
         # Iterate over all specified types
         for type in types:
             table_names = ['points', 'clusters_0']
@@ -55,6 +57,8 @@ def main():
                 insert_points(points, table_names[0], './points.csv', args)
             output = time_benchmark(args)
             results = parse_time_metrics(output)
+            results['duckdbt'] = time
+            results['duckdbm'] = memory
             clusters = parse_table_output(output, 4, 2, 3)
             file = memory_benchmark(args, f'{type}{value["number"]}')
             results = parse_memory_metrics(results, file)
