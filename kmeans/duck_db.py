@@ -12,9 +12,9 @@ from typing import List
 from Point import Point
 from Helper import execute_sql, generate_csv, remove_files
 from Parse_Memory import parse_memory_metrics
-import datetime
+from datetime import datetime
+from time import time
 import subprocess
-import time
 
 def duck_db_benchmark(cluster: List[Point], points: List[Point], file_path: str, key_name: str) -> None:
     print('PSEUDO-DUCKDB BENCHMARK')
