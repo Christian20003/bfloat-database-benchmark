@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 
 from typing import List
 from Value import Value
-from Helper import execute_sql, generate_csv
+from Helper import execute_sql, generate_csv, remove_files
 from Parse_Memory import parse_memory_metrics
 import datetime
 import subprocess
@@ -39,12 +39,13 @@ def insert_data(tensor: List[Value], table_name: str, csv_file: str) -> None:
     :raise RuntimeError: If the data could not be inserted.
     '''
 
+    remove_files(['data.db', '.'])
     data = [[value.row, value.column, value.value] for value in tensor]
     generate_csv(csv_file, ['rowIndex', 'columnIndex', 'val'], data)
     statements = [f'CREATE TABLE {table_name}(rowIndex int, columnIndex int, val float);\n']
     copy = f"copy {table_name} from '{csv_file}' delimiter ',' HEADER;\n"
     statements.append(copy)
-    statements.append('.exit;\n')
+    statements.append('.exit\n')
     execute_sql(statements, '/home/goellner/.duckdb/cli/latest/duckdb', 'data.db')
 
 def time_benchmark(file_path: str):
@@ -61,7 +62,7 @@ def time_benchmark(file_path: str):
 def memory_benchmark(file_path: str, key_name: str):
     file_name = f'massif.{key_name}.duckdb.{int(time() * 1000)}'
     database  = subprocess.Popen(
-        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', f'--massif-out-file={file_name}', '/home/goellner/.duckdb/cli/latest/duckdb', f'-f {file_path}','./data.db']
+        ['valgrind', '--quiet', '--tool=massif', '--stacks=yes', f'--massif-out-file={file_name}', '/home/goellner/.duckdb/cli/latest/duckdb', '-f', file_path,'./data.db']
     )
     _, error = database.communicate()
     return file_name

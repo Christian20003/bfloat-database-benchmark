@@ -27,7 +27,7 @@ import random
 def main():
     args = parse_args('Einstein_Summation')
     types = CONFIG['types']
-    init_csv_file('Size', 'correctResult', 'lingoDBResult')
+    init_csv_file(['Size', 'correctResult', 'lingoDBResult'])
     # Iterate over all cluser benchmarks
     for key, value in CONFIG.items():
         if 'setup' not in key:
@@ -45,7 +45,7 @@ def main():
             table_names = ['matrixa', 'matrixb', 'vectorv']
             if type == 'tfloat':
                 dummy_tables = ['matrixadummy', 'matrixbdummy', 'vectorvdummy']
-                create_tables(dummy_tables, type, args)
+                create_tables(dummy_tables, 'float', args)
                 insert_data(tensorA, dummy_tables[0], './matrixa.csv', args)
                 insert_data(tensorB, dummy_tables[1], './matrixb.csv', args)
                 insert_data(tensorC, dummy_tables[2], './matrixc.csv', args)
