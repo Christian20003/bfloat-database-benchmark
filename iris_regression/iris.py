@@ -18,6 +18,7 @@ from Execute import time_benchmark, memory_benchmark
 from Parse_Time import parse_time_metrics
 from Parse_Table import parse_table_output
 from Parse_Memory import parse_memory_metrics
+from duck_db import duck_db_benchmark
 
 def main():
     args = parse_args('Kmeans')
@@ -31,6 +32,8 @@ def main():
                 continue
             network_size = value["network_size"]
             data_size = value["data_size"]
+            generate_sql_file(data_size, CONFIG['learning_rate'], iteration, args)
+            time, memory = duck_db_benchmark(data_size, network_size, args['statement'], f'{data_size}:{network_size}')
             print_title(f'### START BENCHMARKING IRIS WITH {network_size} neurons, {data_size} samples ###')
             for type in types:
                 if type == 'tfloat':
@@ -40,11 +43,12 @@ def main():
                     init_iris('iris', data_size, type, args)
                 init_img_tables(data_size, type, args)
                 init_weigths(network_size, type, args)
-                generate_sql_file(data_size, CONFIG['learning_rate'], iteration, args)
                 output = time_benchmark(args)
                 results = parse_time_metrics(output)
+                results['duckdbt'] = time
+                results['duckdbm'] = memory
                 database = parse_table_output(output, 1, 0, 0)
-                file = memory_benchmark(args, 'iris')
+                file = memory_benchmark(args, f'{data_size}:{network_size}')
                 results = parse_memory_metrics(results, file)
                 write_to_csv(results, 'Iris', type, [data_size, network_size, database[0]])
 
