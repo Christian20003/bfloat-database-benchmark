@@ -28,7 +28,7 @@ def init_csv_file(additional_header: List[str]) -> None:
             'TotalTime',
             'Heap',
             'Stack',
-            'TotalMemory'
+            'TotalMemory',
             'DuckDBTime',
             'DuckDBMemory'
         ]
