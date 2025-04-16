@@ -3,29 +3,59 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Benchmark')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Csv')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Plot')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Types')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 
+from typing import List
 from Config import CONFIG
-from Point import Point
-from Plot import plot_results
-from typing import List, Tuple
-from Csv import init_csv_file, write_to_csv
-from Parse_Args import parse_args
-from Parse_Memory import parse_memory_metrics
-from Parse_Time import parse_time_metrics
-from Parse_Table import parse_table_output
-from Execute import time_benchmark, memory_benchmark
-from Format import print_warning, print_information, print_success, print_title
-from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
-from duck_db import duck_db_benchmark
-from sklearn.cluster import KMeans
-import numpy as np
 import random
+import Format
+import Database
+import Create_CSV
 
-def main():
+def main() -> None:
+    databases = CONFIG['databases']
+    scenarios = CONFIG['setups']
+
+    for database in databases:
+        if database['create_csv']:
+            Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
+        for scenario in scenarios:
+            for type in database['types']:
+                points = generate_points(scenario['p_amount'], scenario['min'], scenario['max'])
+                cluster = generate_points(scenario['c_amount'], scenario['min'], scenario['max'])
+                
+                prep_database = Database.Database(database['execution'], database['start_sql'], database['end_sql'])
+                prep_database.create_table('points', ['x', 'y'], [type, type])
+                prep_database.create_table('clusters_0', ['x', 'y'], [type, type])
+                prep_database.insert_from_csv('points', './points.csv', ['x', 'y'], points)
+                prep_database.insert_from_csv('cluster_0', './cluster.csv', ['x', 'y'], cluster)
+                prep_database.execute_sql()
+
+                time = 0
+                memory = 0
+
+                Create_CSV.append_row(database['csv_file'], [time, memory])
+
+
+
+def generate_points(number: int, min: int, max: int) -> List[List[str]]:
+    '''
+    This function generates a specified number of random points and stores them as string.
+
+    :param number: The number of points.
+    :param min: The maximum value for x and y.
+    :param max: The minimum value for x and y.
+
+    :return: A list of point objects.
+    '''
+
+    result = []
+    for _ in range(number):
+        result.append([random.uniform(min, max), random.uniform(min, max)])
+    return result
+
+""" def main():
     args = parse_args('Kmeans')
     types = CONFIG['types']
     iterations = CONFIG['iterations']
@@ -173,7 +203,7 @@ def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarr
 
         result = np.delete(result, closest_index, axis=0)
     return correct, calculation
-
+ """
 
 if __name__ == "__main__":
     main()
