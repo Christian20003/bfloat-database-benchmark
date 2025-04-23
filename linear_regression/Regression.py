@@ -34,7 +34,8 @@ def main():
         points = normalize_points(points)
         for database in databases:
             for type in database['types']:
-                prep_database = Database.Database(database['execution'], database['start_sql'], database['end_sql'])
+                Format.print_title(f'START BENCHMARK - LINEAR-REGRESSION WITH {scenario["p_amount"]} POINTS')
+                prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
                 prep_database.create_table('points', ['x', 'y'], [type, type])
                 prep_database.insert_from_csv('points', './points.csv', ['x', 'y'], points)
                 prep_database.execute_sql()
@@ -93,7 +94,7 @@ def generate_points(number: int, upper_bound: int, lower_bound: int, slope: floa
         x = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
         error = "{:.4f}".format(random.uniform(upper_bound / 10, lower_bound / 10))
         y = slope * float(x) + float(intercept) + float(error)
-        result.append([x, y])
+        result.append([float(x), float(y)])
     return result
 
 def normalize_points(points: List[List[float]]) -> List[List[float]]:
@@ -105,9 +106,9 @@ def normalize_points(points: List[List[float]]) -> List[List[float]]:
     :returns: A list of normalized points.
     '''
 
-    max = max([entry[0] for entry in points])
-    min = min([entry[0] for entry in points])
-    return [[((entry[0] - min) / (max - min)), entry[1]] for entry in points]
+    max_x = max([entry[0] for entry in points])
+    min_x = min([entry[0] for entry in points])
+    return [[((entry[0] - min_x) / (max_x - min_x)), entry[1]] for entry in points]
     
 def regression_tensorflow(points: List[List[float]], learning_rate: float, iterations: int, type: str) -> Tuple[float, float]:
     '''

@@ -9,8 +9,8 @@ CONFIG = {
             'files': ['regression.db'],
             'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb regression.db',
             'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} regression.db',
-            'start-sql': '',
-            'end-sql': '.exit',
+            'start-sql': [],
+            'end-sql': ['.exit'],
             'types': ['float', 'tfloat']
         }
     ],

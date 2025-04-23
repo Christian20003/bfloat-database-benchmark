@@ -34,7 +34,8 @@ def main() -> None:
         cluster = generate_points(scenario['c_amount'], scenario['min'], scenario['max'])
         for database in databases:
             for type in database['types']:
-                prep_database = Database.Database(database['execution'], database['start_sql'], database['end_sql'])
+                Format.print_title(f'START BENCHMARK - KMEANS WITH {scenario["p_amount"]} POINTS AND {scenario["c_amount"]} CLUSTERS')
+                prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
                 prep_database.create_table('points', ['x', 'y'], [type, type])
                 prep_database.create_table('clusters_0', ['x', 'y'], [type, type])
                 prep_database.insert_from_csv('points', './points.csv', ['x', 'y'], points)

@@ -40,8 +40,11 @@ class Database:
         
         statement = f'CREATE TABLE {table_name}('
         for idx in range(len(columns)):
-            statement += f'{columns[idx]} {types[idx]},'
-        statement[len(statement) - 1] = ')'
+            statement += f'{columns[idx]} {types[idx]}'
+            if idx != len(columns) - 1:
+                statement += ','
+            else:
+                statement += ')'
         statement += ';\n'
         self.statements.append(statement)
 
@@ -59,11 +62,12 @@ class Database:
         statement = f"COPY {table_name} FROM '{csv_file}' delimiter ',' HEADER;\n"
         self.statements.append(statement)
 
-        with open(csv_file, 'w') as file:
-            writer = csv.writer(file)
-            writer.writerow(header)
-            writer.writerows(data)
-        self.csv_files.append(csv_file)
+        if len(header) != 0 and len(data) != 0:
+            with open(csv_file, 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(header)
+                writer.writerows(data)
+            self.csv_files.append(csv_file)
 
     def insert_from_select(self, table_name: str, select_stmt: str) -> None:
         '''
