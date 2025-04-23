@@ -2,10 +2,13 @@ CONFIG = {
     "iterations": 10,
     "databases": [
         {
+            'name': 'duckdb',
             'create_csv': True,
             'csv_file': 'DuckDB_Kmeans_Results.csv',
             'csv_header': ['Type', 'Points', 'Cluster', 'Iterations', 'Execution', 'Memory', 'Accuracy', 'DuckDB', 'Tensorflow'],
+            'files': ['kmeans.db'],
             'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb kmeans.db',
+            'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} kmeans.db',
             'start-sql': '',
             'end-sql': '.exit',
             'types': ['float', 'tfloat']

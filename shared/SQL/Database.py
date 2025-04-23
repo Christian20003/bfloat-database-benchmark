@@ -79,15 +79,7 @@ class Database:
 
     def execute_sql(self) -> None:
         '''
-        This function executes a list of SQL statements (without benchmarking).
-
-        :param statements: A list of SQL statements (Every element should end with ";\n").
-        :param exe: The path to the executable of the database.
-        :param dir: The path to the directory where the data should be stored.
-
-        :returns: The output of the executions
-
-        :raise RuntimeError: If the database process failed.
+        This function executes a list of SQL statements for preparation.
         '''
 
         self.statements = self.statements + self.end

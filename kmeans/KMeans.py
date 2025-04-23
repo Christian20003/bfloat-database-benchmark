@@ -5,6 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Csv')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
 from typing import List
 from Config import CONFIG, STATEMENT
@@ -12,6 +13,7 @@ import random
 import Format
 import Database
 import Create_CSV
+import Helper
 import numpy as np
 import tensorflow as tf
 
@@ -24,9 +26,13 @@ def main() -> None:
     for database in databases:
         if database['create_csv']:
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
-        for scenario in scenarios:
-            points = generate_points(scenario['p_amount'], scenario['min'], scenario['max'])
-            cluster = generate_points(scenario['c_amount'], scenario['min'], scenario['max'])
+
+    for scenario in scenarios:
+        if scenario['ignore']:
+            continue
+        points = generate_points(scenario['p_amount'], scenario['min'], scenario['max'])
+        cluster = generate_points(scenario['c_amount'], scenario['min'], scenario['max'])
+        for database in databases:
             for type in database['types']:
                 prep_database = Database.Database(database['execution'], database['start_sql'], database['end_sql'])
                 prep_database.create_table('points', ['x', 'y'], [type, type])
@@ -42,6 +48,7 @@ def main() -> None:
                 accuracy = evaluate_accuray(tf_output, _, scenario['min'], scenario['max'])
 
                 Create_CSV.append_row(database['csv_file'], [time, memory])
+                Helper.remove_files(database['files'], './')
 
 
 
