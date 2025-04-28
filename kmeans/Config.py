@@ -1,68 +1,108 @@
 CONFIG = {
     "iterations": 10,
-    "types": ["float", "tfloat"],
-    "cluster1": {
-        "cluster": 4,
-        "number": 10,
-        "x_upper_bound": 10,
-        "y_upper_bound": 10,
-        "x_lower_bound": -10,
-        "y_lower_bound": -10,
-    },
-    "cluster2": {
-        "cluster": 4,
-        "number": 100,
-        "x_upper_bound": 10,
-        "y_upper_bound": 10,
-        "x_lower_bound": -10,
-        "y_lower_bound": -10,
-    },
-    "cluster3": {
-        "cluster": 4,
-        "number": 1000,
-        "x_upper_bound": 100,
-        "y_upper_bound": 100,
-        "x_lower_bound": -100,
-        "y_lower_bound": -100,
-    },
-    "cluster4": {
-        "cluster": 4,
-        "number": 10000,
-        "x_upper_bound": 100,
-        "y_upper_bound": 100,
-        "x_lower_bound": -100,
-        "y_lower_bound": -100,
-    },
-    "cluster5": {
-        "cluster": 4,
-        "number": 100000,
-        "x_upper_bound": 100,
-        "y_upper_bound": 100,
-        "x_lower_bound": -100,
-        "y_lower_bound": -100,
-    },
-    "cluster6": {
-        "cluster": 4,
-        "number": 1000000,
-        "x_upper_bound": 100,
-        "y_upper_bound": 100,
-        "x_lower_bound": -100,
-        "y_lower_bound": -100,
-    },
-    "cluster7": {
-        "cluster": 4,
-        "number": 2500000,
-        "x_upper_bound": 100,
-        "y_upper_bound": 100,
-        "x_lower_bound": -100,
-        "y_lower_bound": -100,
-    },
-    "cluster8": {
-        "cluster": 4,
-        "number": 5000000,
-        "x_upper_bound": 100,
-        "y_upper_bound": 100,
-        "x_lower_bound": -100,
-        "y_lower_bound": -100,
-    },
+    "databases": [
+        {
+            'name': 'duckdb',
+            'create_csv': True,
+            'csv_file': 'DuckDB_Kmeans_Results.csv',
+            'csv_header': ['Type', 'Points', 'Cluster', 'Iterations', 'Execution', 'Heap', 'RSS', 'Accuracy', 'DuckDB', 'Tensorflow'],
+            'files': ['./kmeans.db'],
+            'execution': '/home/proglin/duckdb/build/release/duckdb kmeans.db',
+            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} kmeans.db',
+            'start-sql': [],
+            'end-sql': ['.exit'],
+            'types': ['float', 'bfloat']
+        }
+    ],
+    'setups': [
+        {
+            'c_amount': 4,
+            'p_amount': 10,
+            'min': -10,
+            'max': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 100,
+            'min': -10,
+            'max': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 1000,
+            'min': -100,
+            'max': 100,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000,
+            'min': -100,
+            'max': 100,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 100000,
+            'min': -100,
+            'max': 100,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 1000000,
+            'min': -500,
+            'max': 500,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'min': -500,
+            'max': 500,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 100000000,
+            'min': -1000,
+            'max': 1000,
+            'ignore': False
+        }
+    ]
 }
+STATEMENT = '''
+WITH RECURSIVE 
+points_start (pid, x, y) AS (SELECT * FROM points),
+clusters (iter, cid, x, y) AS (
+    (SELECT 0, id, x, y FROM clusters_0)
+    UNION ALL
+    SELECT iter + 1, cid, AVG(px), AVG(py) FROM (
+        SELECT iter, cid, px, py
+        FROM (
+            SELECT c.iter, p.pid, p.x AS px, p.y AS py, c.cid
+            FROM points_start p
+            JOIN clusters c ON NOT EXISTS (
+                SELECT 1 FROM clusters d
+                WHERE c.iter = d.iter 
+                AND (d.x - p.x)^2 + (d.y - p.y)^2 < (c.x - p.x)^2 + (c.y - p.y)^2
+            ))
+        UNION
+        SELECT iter, cid, x AS px, y AS py FROM clusters
+        WHERE cid NOT IN (SELECT cid FROM (
+            SELECT c.iter, p.pid, p.x AS px, p.y AS py, c.cid
+            FROM points_start p
+            JOIN clusters c ON NOT EXISTS (
+                SELECT 1 FROM clusters d
+                WHERE c.iter = d.iter 
+                AND (d.x - p.x)^2 + (d.y - p.y)^2 < (c.x - p.x)^2 + (c.y - p.y)^2
+            )
+        ))
+    ) AS result
+    WHERE iter < {}
+    GROUP BY cid, iter
+)
+SELECT * FROM clusters WHERE iter = {} ORDER BY cid;
+'''

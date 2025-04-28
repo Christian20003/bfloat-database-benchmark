@@ -5,6 +5,7 @@ class color:
    BLUE = '\033[94m'
    GREEN = '\033[92m'
    YELLOW = '\033[93m'
+   ORANGE = '\033[33m'
    RED = '\033[91m'
    BOLD = '\033[1m'
    UNDERLINE = '\033[4m'
@@ -17,7 +18,7 @@ def print_title(message: str = 'Dummy Title') -> None:
    :param message: The message to be printed on the console.
    '''
    
-   print(f'{color.BOLD} {message} {color.END} \n')
+   print(f'{color.CYAN}{color.BOLD} {message} {color.END} \n')
 
 def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 0) -> None:
    '''
@@ -28,7 +29,8 @@ def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   raise RuntimeError(f'{start} {color.RED} {message} {color.END} \n', error)
+   print(f'{start} {color.RED} {message} {color.END}')
+   raise RuntimeError(error)
 
 def print_information(message: str = 'Dummy Information', mark: bool = False, tabs: int = 0) -> None:
    '''
@@ -39,7 +41,7 @@ def print_information(message: str = 'Dummy Information', mark: bool = False, ta
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   highlight = color.BLUE if mark else ''
+   highlight = color.ORANGE if mark else ''
    print(f'{start} {highlight} {message} {color.END} \n')
 
 def print_warning(message: str = 'Dummy Warning', tabs: int = 0) -> None:

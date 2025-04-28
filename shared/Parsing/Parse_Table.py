@@ -1,5 +1,47 @@
+from typing import List
 import numpy as np
 import re
+import json
+
+def output_to_numpy(database_name: str, output: str, total_columns: int, relevant_columns: List[int]) -> np.ndarray:
+    '''
+    This function parses the database output into a numpy array.
+
+    :param database_name: The name of the database.
+    :param output: The output of the database.
+    :param total_columns: The number of columns in the output.
+    :param relevant_columns: The number of the columns which should be considered in the resulting array.
+
+    :returns: The output as numpy array.
+    '''
+    
+    output = output.decode('utf-8')
+    if database_name == 'duckdb':
+        return json_to_numpy(output, relevant_columns)
+
+def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
+    '''
+    This function parses a json output from a database into a numpy array by
+    considering only specified columns.
+
+    :param output: The json output of the database.
+    :param relevant_columns: The columns wich should be extracted.
+
+    :returns: The output as numpy array. 
+    '''
+
+    json_obj = json.loads(output)
+    result = []
+    for item in json_obj:
+        index = 0
+        row = []
+        for _, value in item.items():
+            if index in relevant_columns:
+                row.append(float(value))
+            index += 1
+        if len(row) != 0:
+            result.append(row)
+    return np.array(result)
 
 def parse_table_output(output: str, total_columns: int, start: int, stop: int) -> np.ndarray:
     '''

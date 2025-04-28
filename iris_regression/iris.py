@@ -4,166 +4,73 @@ import csv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Benchmark')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Csv')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Plot')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Types')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
-from Format import print_title
-from Csv import init_csv_file, write_to_csv
-from Parse_Args import parse_args
-from Config import CONFIG, CTE
-from Helper import execute_sql, remove_files, tfloat_switch
-from Execute import time_benchmark, memory_benchmark
-from Parse_Time import parse_time_metrics
-from Parse_Table import parse_table_output
-from Parse_Memory import parse_memory_metrics
-from duck_db import duck_db_benchmark
+from typing import List
+from Config import CONFIG, STATEMENT
+import random
+import Format
+import Database
+import Create_CSV
+import Helper
+import numpy as np
+import tensorflow as tf
 
 def main():
-    args = parse_args('Kmeans')
-    types = CONFIG['types']
-    iterations = CONFIG['iterations']
-    init_csv_file(['dataSize', 'networkSize', 'accuracy'])
-    # Iterate over all benchmarks
-    for iteration in iterations:
-        for key, value in CONFIG.items():
-            if 'setup' not in key:
-                continue
-            network_size = value["network_size"]
-            data_size = value["data_size"]
-            generate_sql_file(data_size, CONFIG['learning_rate'], iteration, args)
-            time, memory = duck_db_benchmark(data_size, network_size, args['statement'], f'{data_size}:{network_size}')
-            print_title(f'### START BENCHMARKING IRIS WITH {network_size} neurons, {data_size} samples ###')
-            for type in types:
-                if type == 'tfloat':
-                    init_iris('irisdummy', data_size, 'float', args)
-                    tfloat_switch('iris', 'irisdummy', args)
-                else:
-                    init_iris('iris', data_size, type, args)
-                init_img_tables(data_size, type, args)
-                init_weigths(network_size, type, args)
-                output = time_benchmark(args)
-                results = parse_time_metrics(output)
-                results['duckdbt'] = time
-                results['duckdbm'] = memory
-                database = parse_table_output(output, 1, 0, 0)
-                file = memory_benchmark(args, f'{data_size}:{network_size}')
-                results = parse_memory_metrics(results, file)
-                write_to_csv(results, 'Iris', type, [data_size, network_size, database[0]])
+    databases = CONFIG['databases']
+    scenarios = CONFIG['setups']
+
+    for database in databases:
+        if database['create_csv']:
+            Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
+
+    for scenario in scenarios:
+        if scenario['ignore']:
+            continue
+        generate_statement(scenario['iterations'])
+        for database in databases:
+            for type in database['types']:
+                Format.print_title(f'START BENCHMARK - IRIS-REGRESSION WITH HIDDEN_LAYER_WIDTH: {scenario["network_size"]} AND {scenario["data_size"]} SAMPLES')
+                prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
+                prep_database.create_table('iris', ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], [type, type, type, type, 'int'])
+                prep_database.create_table('iris2', ['id', 'sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], ['int', type, type, type, type, 'int'])
+                prep_database.create_table('img', ['i', 'j', 'v'], ['int', 'int', type])
+                prep_database.create_table('one_hot', ['i', 'j', 'v', 'dummy'], ['int', 'int', 'int', 'int'])
+                prep_database.create_table('w_xh', ['i', 'j', 'v'], ['int', 'int', type])
+                prep_database.create_table('w_ho', ['i', 'j', 'v'], ['int', 'int', type])
+                for _ in range(0, scenario['data_size'], 150):
+                    prep_database.insert_from_csv('iris', './iris.csv', [], [])
+                prep_database.insert_from_select('iris2', 'SELECT row_number() OVER (), * FROM iris')
+                prep_database.insert_from_select('img', 'SELECT id, 1, sepal_length/10 FROM iris2')
+                prep_database.insert_from_select('img', 'SELECT id, 2, sepal_width/10 FROM iris2')
+                prep_database.insert_from_select('img', 'SELECT id, 3, petal_length/10 FROM iris2')
+                prep_database.insert_from_select('img', 'SELECT id, 4, petal_width/10 FROM iris2')
+                prep_database.insert_from_select('one_hot', 'select n.i, n.j, coalesce(i.v,0), i.v from (select id,species+1 as species,1 as v from iris2) i right outer join (select a.a as i, b.b as j from (select generate_series as a from generate_series(1,150)) a, (select generate_series as b from generate_series(1,4)) b) n on n.i=i.id and n.j=i.species order by i,j')
+                prep_database.insert_from_select('w_xh', f'select i.*,j.*,random()*2-1 from generate_series(1,4) i, generate_series(1,{scenario["network_size"]}) j')
+                prep_database.insert_from_select('w_ho', f'select i.*,j.*,random()*2-1 from generate_series(1,{scenario["network_size"]}) i, generate_series(1,3) j')
+                prep_database.execute_sql()
+
+                time = 0
+                memory = 0
+
+                #tf_output = kmeans_tensorflow(points, cluster, CONFIG['iterations'], type)
+                #accuracy = evaluate_accuray(tf_output, _, scenario['min'], scenario['max'])
+
+                Create_CSV.append_row(database['csv_file'], [time, memory])
+                Helper.remove_files(database['files'], './')
 
 
-def generate_iris_csv(amount: int) -> None:
+def generate_statement(iterations: int) -> None:
     '''
-    This function generates the the iris.csv file.
+    This function generates the SQL file.
 
-    :param amount: How many time the content should be copied.
-    '''
-    data = []
-    with open('./iris.csv', mode='r') as file:
-        reader = csv.reader(file)
-        next(reader)
-        data = [row for row in reader]
-    length = len(data)
-    for counter in range(amount):
-        for element in data[1:length].copy():
-            data.append(element.copy())
-    for idx, entry in enumerate(data):
-        entry.insert(0, idx + 1)
-    with open('./iris2.csv', mode='w') as file:
-        writer = csv.writer(file)
-        writer.writerows(data)
-        
-def init_iris(table_name: str, data_size: int, type: str, paths: dict) -> None:
-    '''
-    This function initializes the iris table with a defines number of tuples.
-
-    :param table_name: The name of the resulting table.
-    :param data_size: The number of tuples in the table.
-    :param type: The type of important columns of the resulting table.
-    :param paths: A dictionary with important paths of executables and directories. 
+    :param iterations: The number of iterations in the recursive CTE.
     '''
 
-    files = [f'{table_name}.arrow', f'{table_name}.arrow.sample', f'{table_name}.metadata.json']
-    remove_files(files, paths['storage'])
-    generate_iris_csv(int(data_size / 150))
-    statements = [
-        'SET persist=1;\n',
-        f'CREATE TABLE {table_name}(id int, sepal_length {type}, sepal_width {type}, petal_length {type}, petal_width {type}, species int);\n',
-        f"COPY {table_name} from './iris2.csv' delimiter ',' HEADER CSV;\n"
-    ]
-    execute_sql(statements, paths['exe'], paths['storage'])
-
-def init_img_tables(data_size: int, type: str, paths: dict) -> None:
-    '''
-    This function initializes the image table.
-
-    :param data_size: The number of tuples in the table (iris table).
-    :param type: The type of important columns of the resulting table.
-    :param paths: A dictionary with important paths of executables and directories. 
-    '''
-
-    files = []
-    tables_names = ['data', 'one_hot']
-    for file in tables_names:
-        files.append(f'{file}.arrow')
-        files.append(f'{file}.arrow.sample')
-        files.append(f'{file}.metadata.json')
-    remove_files(files, paths['storage'])
-
-    statements = [
-        'SET persist=1;\n',
-        f'CREATE TABLE {tables_names[0]}(sample_id int, feature_id int, value {type});\n',
-        f'CREATE TABLE {tables_names[1]}(sample_id int, species_id int, isValid int, dummy int);\n',
-        f'INSERT INTO {tables_names[0]} (SELECT id, 1, sepal_length / 10 FROM iris);\n',
-        f'INSERT INTO {tables_names[0]} (SELECT id, 2, sepal_width / 10 FROM iris);\n',
-        f'INSERT INTO {tables_names[0]} (SELECT id, 3, petal_length / 10 FROM iris);\n',
-        f'INSERT INTO {tables_names[0]} (SELECT id, 4, petal_width / 10 FROM iris);\n',
-        f'''INSERT INTO one_hot (SELECT result.sample_id, result.species_id, coalesce(samples.value, 0), samples.value
-            FROM (SELECT id, species+1 AS species, 1 AS value FROM iris) samples RIGHT OUTER JOIN 
-            (SELECT data_table.id AS sample_id, species_table.id AS species_id
-            FROM (SELECT generate_series AS id FROM generate_series(1, {data_size})) data_table, 
-            (SELECT generate_series AS id FROM generate_series(1,4)) species_table) result ON result.sample_id = samples.id AND result.species_id=samples.species ORDER BY sample_id, species_id);\n'''
-    ]
-    execute_sql(statements, paths['exe'], paths['storage'])
-
-def init_weigths(hidden_layer: int, type: str, paths: dict) -> None:
-    '''
-    This function creates the weight tables.
-
-    :param hidden_layer: The number of neurons in the hidden layer.
-    :param type: The type of important columns of the resulting table.
-    :param paths: A dictionary with important paths of executables and directories.
-    '''
-
-    files = []
-    tables_names = ['weights_layer1_layer2', 'weights_layer2_layer3']
-    for file in tables_names:
-        files.append(f'{file}.arrow')
-        files.append(f'{file}.arrow.sample')
-        files.append(f'{file}.metadata.json')
-    remove_files(files, paths['storage'])
-
-    statements = [
-        'SET persist=1;\n',
-        f'CREATE TABLE {tables_names[0]}(input int, output int, value {type});\n',
-        f'CREATE TABLE {tables_names[1]}(input int, output int, value {type});\n',
-        f'INSERT INTO {tables_names[0]} (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, 4) i, generate_series(1, {hidden_layer}) j);\n',
-        f'INSERT INTO {tables_names[1]} (SELECT i.generate_series, j.generate_series, random()*2-1 FROM generate_series(1, {hidden_layer}) i, generate_series(1, 3) j);\n'
-    ]
-    execute_sql(statements, paths['exe'], paths['storage'])
-
-def generate_sql_file(data_size: int, lr: float, iterations: int, paths: dict) -> None:
-    '''
-    This function generates the Statement.sql file for the benchmark.
-
-    :param data_size: The number of training samples.
-    :param lr: The learning rate.
-    :param iterations: Number of iterations in the CTE.
-    :param paths: A dictionary with important paths of executables and directories.
-    '''
-    with open(paths['statement'], mode='w') as file:
-        file.write(CTE.format(data_size, data_size, lr, iterations))
+    with open('./Statement.sql', 'w') as file:
+        file.write(STATEMENT.format(iterations))
 
 if __name__ == '__main__':
     main()

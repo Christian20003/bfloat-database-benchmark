@@ -3,177 +3,157 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Benchmark')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Csv')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Plot')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Types')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
-from Config import CONFIG
-from Point import Point
-from Plot import plot_results
-from typing import List, Tuple
-from Csv import init_csv_file, write_to_csv
-from Parse_Args import parse_args
-from Parse_Memory import parse_memory_metrics
-from Parse_Time import parse_time_metrics
-from Parse_Table import parse_table_output
-from Execute import time_benchmark, memory_benchmark
-from Format import print_warning, print_information, print_success, print_title
-from Helper import remove_files, execute_sql, generate_csv, tfloat_switch
-from duck_db import duck_db_benchmark
-from sklearn.cluster import KMeans
-import numpy as np
+from Config import CONFIG, STATEMENT
 import random
+import Format
+import Database
+import Create_CSV
+import Memory
+import Time
+import Helper
+import numpy as np
+import pandas as pd
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
 
-def main():
-    args = parse_args('Kmeans')
-    types = CONFIG['types']
-    iterations = CONFIG['iterations']
-    init_csv_file(['Size', 'correctResult', 'lingoDBResult'])
-    # Iterate over all cluser benchmarks
-    for key, value in CONFIG.items():
-        if 'cluster' not in key:
+def main() -> None:
+    databases = CONFIG['databases']
+    scenarios = CONFIG['setups']
+
+    generate_statement(CONFIG['iterations'])
+
+    for database in databases:
+        if database['create_csv']:
+            Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
+
+    for scenario in scenarios:
+        if scenario['ignore']:
             continue
-        print_title(f'### START BENCHMARKING KMEANS WITH {value["number"]} POINTS ###')
-        points = generate_points(value["number"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
-        cluster = generate_points(value["cluster"], value["x_upper_bound"], value["y_upper_bound"], value["x_lower_bound"], value["y_lower_bound"])
-        time, memory = duck_db_benchmark(cluster, points, args['statement'], value['number'])
-        # Iterate over all specified types
-        for type in types:
-            table_names = ['points', 'clusters_0']
-            print_information(f'Execute benchmark with type: {type}')
-            print_information(f'Create Point-table with {len(points)} entries and Cluster-table with {len(cluster)} entries.')
-            if type == 'tfloat':
-                dummy_tables = ['pointsdummy', 'clusterdummy']
-                create_tables(table_names, type, args)
-                create_tables(dummy_tables, 'float', args)
-                insert_points(cluster, dummy_tables[1], './cluster.csv', args)
-                insert_points(points, dummy_tables[0], './points.csv', args)
-                tfloat_switch(table_names[1], dummy_tables[1], args)
-                tfloat_switch(table_names[0], dummy_tables[0], args)
-            else:
-                create_tables(table_names, type, args)
-                insert_points(cluster, table_names[1], './cluster.csv', args)
-                insert_points(points, table_names[0], './points.csv', args)
-            output = time_benchmark(args)
-            results = parse_time_metrics(output)
-            results['duckdbt'] = time
-            results['duckdbm'] = memory
-            clusters = parse_table_output(output, 4, 2, 3)
-            file = memory_benchmark(args, f'{type}{value["number"]}')
-            results = parse_memory_metrics(results, file)
-            eval = evaluate_accuray(points, cluster, clusters, iterations, type)
-            write_to_csv(results, 'KMeans', type, [value['number'], eval[0], eval[1]])
-        print('\n')
-    plot_results('Number of points')
+        generate_points(scenario['p_amount'], scenario['min'], scenario['max'], './points.csv')
+        generate_points(scenario['c_amount'], scenario['min'], scenario['max'], './clusters.csv')
+        for database in databases:
+            for type in database['types']:
+                Format.print_title(f'START BENCHMARK - KMEANS WITH {scenario["p_amount"]} POINTS AND {scenario["c_amount"]} CLUSTERS')
+                prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
+                prep_database.create_table('points', ['id', 'x', 'y'], ['int', type, type])
+                prep_database.create_table('clusters_0', ['id', 'x', 'y'], ['int', type, type])
+                prep_database.insert_from_csv('points', './points.csv')
+                prep_database.insert_from_csv('clusters_0', './clusters.csv')
+                prep_database.execute_sql()
 
-def generate_points(number: int, x_upper: int, y_upper: int, x_lower: int, y_lower: int) -> List[Point]:
+                execution_string = database['execution-bench'].format('Statement.sql')
+                time, output = Time.benchmark(execution_string, database['name'], 4, [2,3])
+                heap, rss = Memory.benchmark(execution_string, f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["c_amount"]}')
+
+                tf_output = kmeans_tensorflow('./points.csv', './clusters.csv', CONFIG['iterations'], type)
+                accuracy = evaluate_accuray(tf_output, output, scenario['min'], scenario['max'])
+
+                Create_CSV.append_row(database['csv_file'], [type, scenario["p_amount"], scenario["c_amount"], CONFIG['iterations'], time, heap, rss, accuracy, output, tf_output])
+                Helper.remove_files(database['files'])
+    Helper.remove_files(['./points.csv', './clusters.csv', './Statement.sql'])
+
+
+def generate_points(number: int, min: int, max: int, file_name: str) -> None:
     '''
     This function generates a specified number of random points.
+    Finally all points will be written into the given csv file.
 
     :param number: The number of points.
-    :param x_upper: The maximum value for x.
-    :param y_upper: The maximum value for y.
-    :param x_lower: The minimum value for x.
-    :param y_lower: The minimum value for y.
+    :param min: The maximum value for x and y.
+    :param max: The minimum value for x and y.
+    :param file_name: The name of the csv file.
 
     :return: A list of point objects.
     '''
 
     result = []
     for value in range(number):
-        x = "{:.4f}".format(random.uniform(x_lower, x_upper))
-        y = "{:.4f}".format(random.uniform(y_lower, y_upper))
-        result.append(Point(value, x, y))
-    return result
+        result.append([value, random.uniform(min, max), random.uniform(min, max)])
+    Create_CSV.create_csv_file(file_name, ['id', 'x', 'y'])
+    Create_CSV.append_rows(file_name, result)
+    result.clear()
 
-def create_tables(table_names: List[str], type: str, paths: dict) -> None:
+def generate_statement(iterations: int) -> None:
     '''
-    This function creates tables which can be inserted with values.
+    This function generates the SQL file.
 
-    :param table_names: The name of the tables.
-    :param type: The current datatype.
-    :param paths: A dictionary with paths to all necessary executables and directories.
-
-    :raise RuntimeError: If the tables could not be generated.
-    '''
-    
-    # Remove tables from previous tests
-    files = []
-    for name in table_names:
-        files.append(f'{name}.arrow')
-        files.append(f'{name}.arrow.sample')
-        files.append(f'{name}.metadata.json')
-    remove_files(files, paths['storage'])
-
-
-    # Define all statements to create tables with the help of LingoDB
-    statements = ['SET persist=1;\n']
-    for name in table_names:
-        statements.append(f'CREATE TABLE {name}(id int, x {type}, y {type});\n')
-    execute_sql(statements, paths['exe'], paths['storage'])
-
-def insert_points(points: List[Point], table_name: str, csv_file: str, paths: dict) -> None:
-    '''
-    This function inserts all given points into a table.
-
-    :param points: A list of points which should be inserted.
-    :param table_name: The name of table in which the points should be inserted.
-    :param csv_file: The file where the data is stored.
-    :param paths: A dictionary with paths to all necessary executables and directories.
-
-    :raise RuntimeError: If the data could not be inserted.
+    :param iterations: The number of iterations in the recursive CTE.
     '''
 
-    print_information(f'Inserting {len(points)} of points (This can take a while)', tabs=1)
-    data = [[point.id, point.x, point.y] for point in points]
-    generate_csv(csv_file, ['id', 'x', 'y'], data)
-    statements = ['SET persist=1;\n']
-    copy = f"copy {table_name} from '{csv_file}' delimiter ',' HEADER;\n"
-    statements.append(copy)
-    execute_sql(statements, paths['exe'], paths['storage'])    
+    with open('./Statement.sql', 'w') as file:
+        file.write(STATEMENT.format(iterations, iterations))
 
-def evaluate_accuray(points: List[Point], cluster: List[Point], result: np.ndarray, iterations: int, type: str) -> Tuple[str, str]:
+def kmeans_tensorflow(points_csv: str, cluster_csv: str, iterations: int, type: str) -> np.ndarray:
     '''
-    This function evaluates the precision of the database output with the KMeans algorithm of 'Sklearn'.
+    This function implements the kmeans algorithm with tensorflow.
 
-    :param points: The list of randomly generated points.
-    :param cluster: The list of randomly generated cluster centers.
-    :param result: A numpy array containing the clusters from the database execution.
-    :param iterations: The number of iterations of the KMeans algorithm.
-    :param type: The datatype of the current running benchmark.
+    :param points_csv: The name of the csv file where the points are stored.
+    :param cluster_csv: The name of the csv file where the clusters are stored.
+    :param iterations: The number of iterations.
+    :param type: The datatype for point and cluster values.
 
-    :returns: Two strings containing the correct result from numpy and the database result.
+    :returns: A numpy array containing all clusters.
     '''
 
-    # Prepare and execute Kmeans from sklearn
-    points = Point.points_to_numpy(points)
-    cluster = Point.points_to_numpy(cluster)
-    kmeans = KMeans(n_clusters=cluster.shape[0], init=cluster, n_init=1, max_iter=iterations)
-    kmeans.fit(points)
-    centers = kmeans.cluster_centers_
-    correct = np.array_str(centers)
-    calculation = np.array_str(result)
+    points = pd.read_csv(points_csv).to_numpy()
+    cluster = pd.read_csv(cluster_csv).to_numpy()
+    datatype = tf.bfloat16 if type == 'tfloat' else tf.float32
+    tf_points = tf.Variable([[float(entry[1]), float(entry[2])] for entry in points], dtype=datatype)
+    tf_cluster = tf.Variable([[float(entry[1]), float(entry[2])] for entry in cluster], dtype=datatype)
+    for _ in range(iterations):
+       # Calculate distances from points to centroids
+       distances = tf.reduce_sum(tf.square(tf.expand_dims(tf_points, 1) - tf_cluster), axis=2)
+       
+       # Assign clusters based on closest centroid
+       cluster_assignments = tf.argmin(distances, axis=1)
+       # Update centroids
+       for i in range(len(cluster)):
+            assigned_points = tf.boolean_mask(tf_points, tf.equal(cluster_assignments, i))
+            if not tf.equal(tf.size(assigned_points), 0):
+                new_centroid = tf.reduce_mean(assigned_points, axis=0)
+                tf_cluster[i].assign(new_centroid)
+    """ kmeans = KMeans(n_clusters=4, init=[[float(entry[1]), float(entry[2])] for entry in cluster], max_iter=iterations)
+    kmeans.fit([[float(entry[1]), float(entry[2])] for entry in points])
+    print(kmeans.cluster_centers_) """
+    return tf_cluster.numpy()
+
+def evaluate_accuray(tensorflow_result: np.ndarray, database_result: np.ndarray, min: int, max: int) -> float:
+    '''
+    This function evaluates the precision of the database output with the output from tensorflow.
+
+    :param tensorflow_result: The clusters from tensorflow.
+    :param database_result: The clusters from the database.
+    :param min: The minimum x, y value of a cluster center.
+    :param max: The maximum x, y value of a cluster center.
+
+    :returns: The overall accuarcy of the database output compared with the tensorflow output.
+    '''
+
+    accuracies = []
     # Find the nearest pairs and print the solution of comparison.
-    for idx, center in enumerate(centers):
-        distance = np.linalg.norm(result - center, axis=1)
-        if len(distance) == 0:
+    for idx, center in enumerate(tensorflow_result):
+        distances = np.linalg.norm(database_result - center, axis=1)
+        if len(distances) == 0:
             break
-        closest_index = np.argmin(distance)
-        closest = result[closest_index]
+        closest_index = np.argmin(distances)
+        closest = database_result[closest_index]
 
-        value = f'{distance[closest_index]:.2f}'
-        print_information(f'Cluster {idx + 1}', True, 1)
-        print_information(f'Lingo-DB with {type}: {closest}', tabs=2)
-        print_information(f'Sklearn with float: {center}', tabs=2)
-        if value.startswith('0.00'):
-            print_success(f'Distance: {distance[closest_index]:.2f}', tabs=2)
-        else:
-            print_warning(f'Distance: {distance[closest_index]:.2f}', tabs=2)
+        Format.print_information(f'Cluster {idx + 1}', True, 1)
+        Format.print_information(f'Database: {closest}', tabs=2)
+        Format.print_information(f'Tensorflow: {center}', tabs=2)
 
-        result = np.delete(result, closest_index, axis=0)
-    return correct, calculation
+        min = min * -1 if min < 0 else min
+        accuracy = (1 - (distances[closest_index] / (max + min))) * 100
+        accuracies.append(accuracy)
+        Format.print_success(f'Accuracy: {accuracy:.2f}', tabs=2)
 
+        database_result = np.delete(database_result, closest_index, axis=0)
+    
+    return sum(accuracies) / len(accuracies)
 
 if __name__ == "__main__":
     main()
