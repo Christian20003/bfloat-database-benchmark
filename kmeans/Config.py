@@ -79,14 +79,27 @@ points_start (pid, x, y) AS (SELECT * FROM points),
 clusters (iter, cid, x, y) AS (
     (SELECT 0, id, x, y FROM clusters_0)
     UNION ALL
-    SELECT iter+1, cid, AVG(px), AVG(py) FROM (
-        SELECT iter, pid, p.x AS px, p.y AS py, MIN(cid) AS cid
-        FROM points_start p, clusters c
-        WHERE NOT EXISTS (
-            SELECT * FROM clusters d
-            WHERE c.iter = d.iter AND (d.x-p.x)^2 + (d.y-p.y)^2 < (c.x-p.x)^2 + (c.y-p.y)^2
-        )
-        GROUP BY iter, pid, p.x, p.y
+    SELECT iter + 1, cid, AVG(px), AVG(py) FROM (
+        SELECT iter, cid, px, py
+        FROM (
+            SELECT c.iter, p.pid, p.x AS px, p.y AS py, c.cid
+            FROM points_start p
+            JOIN clusters c ON NOT EXISTS (
+                SELECT 1 FROM clusters d
+                WHERE c.iter = d.iter 
+                AND (d.x - p.x)^2 + (d.y - p.y)^2 < (c.x - p.x)^2 + (c.y - p.y)^2
+            ))
+        UNION
+        SELECT iter, cid, x AS px, y AS py FROM clusters
+        WHERE cid NOT IN (SELECT cid FROM (
+            SELECT c.iter, p.pid, p.x AS px, p.y AS py, c.cid
+            FROM points_start p
+            JOIN clusters c ON NOT EXISTS (
+                SELECT 1 FROM clusters d
+                WHERE c.iter = d.iter 
+                AND (d.x - p.x)^2 + (d.y - p.y)^2 < (c.x - p.x)^2 + (c.y - p.y)^2
+            )
+        ))
     ) AS result
     WHERE iter < {}
     GROUP BY cid, iter

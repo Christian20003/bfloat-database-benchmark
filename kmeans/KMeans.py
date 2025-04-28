@@ -147,7 +147,7 @@ def evaluate_accuray(tensorflow_result: np.ndarray, database_result: np.ndarray,
         Format.print_information(f'Tensorflow: {center}', tabs=2)
 
         min = min * -1 if min < 0 else min
-        accuracy = (1 - (distances[closest_index] / (max + min)))
+        accuracy = (1 - (distances[closest_index] / (max + min))) * 100
         accuracies.append(accuracy)
         Format.print_success(f'Accuracy: {accuracy:.2f}', tabs=2)
 
