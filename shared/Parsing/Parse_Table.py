@@ -37,7 +37,7 @@ def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
         row = []
         for _, value in item.items():
             if index in relevant_columns:
-                row.append(value)
+                row.append(float(value))
             index += 1
         if len(row) != 0:
             result.append(row)

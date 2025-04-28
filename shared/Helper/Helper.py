@@ -6,18 +6,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Type
 from typing import List
 from Format import print_error, print_warning
 
-def remove_files(files: List[str], dir: str) -> None:
+def remove_files(files: List[str]) -> None:
     '''
     This function deletes a list of files.
 
     :param files: A list of file names.
-    :param dir: The directory of the files.
 
     :raise RuntimeError: If something went wrong during deletion. 
     '''
+
     for file in files:
         try:
-            os.unlink(os.path.join(dir, file))
+            os.remove(file)
         except FileNotFoundError:
             print_warning(f'{file} does not exist. Ignore deletion')
         except Exception as e:

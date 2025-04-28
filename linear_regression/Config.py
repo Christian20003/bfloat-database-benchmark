@@ -1,17 +1,17 @@
 CONFIG = {
-    'iterations': 5,
+    'iterations': 100,
     'databases': [
         {
             'name': 'duckdb',
             'create_csv': True,
             'csv_file': 'DuckDB_Regression_Results.csv',
-            'csv_header': ['Type', 'Points', 'Iterations', 'Execution', 'Heap', 'RSS', 'Accuracy', 'DuckDB', 'Tensorflow', 'Truth'],
-            'files': ['regression.db'],
-            'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb regression.db',
-            'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} regression.db',
+            'csv_header': ['Type', 'Points', 'Iterations', 'Execution', 'Heap', 'RSS', 'MAPE', 'DuckDB', 'Tensorflow', 'Truth'],
+            'files': ['./regression.db'],
+            'execution': '/home/proglin/duckdb/build/release/duckdb regression.db',
+            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} regression.db',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'tfloat']
+            'types': ['float', 'bfloat']
         }
     ],
     'setups': [
@@ -76,7 +76,7 @@ CONFIG = {
 
 STATEMENT = '''
 WITH RECURSIVE gd (idx, a, b) AS (
-    SELECT 0, 1, 1
+    SELECT * FROM gd_start
 UNION ALL
     SELECT idx + 1, a - {} * avg(2 * x * (a * x + b - y)), b - {} * avg(2 * (a * x + b - y))
     FROM gd, points 

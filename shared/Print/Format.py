@@ -17,7 +17,7 @@ def print_title(message: str = 'Dummy Title') -> None:
    :param message: The message to be printed on the console.
    '''
    
-   print(f'{color.BOLD} {message} {color.END} \n')
+   print(f'{color.PURPLE}{color.BOLD} {message} {color.END} \n')
 
 def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 0) -> None:
    '''

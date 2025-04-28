@@ -24,8 +24,8 @@ class Database:
         '''
 
         self.exe = execute_string.split()
-        self.statements = start_statements
-        self.end = end_statements
+        self.statements = start_statements.copy()
+        self.end = end_statements.copy()
 
     def create_table(self, table_name: str, columns: List[str], types: List[str]) -> None:
         '''
