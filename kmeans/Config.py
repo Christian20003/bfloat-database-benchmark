@@ -5,13 +5,13 @@ CONFIG = {
             'name': 'duckdb',
             'create_csv': True,
             'csv_file': 'DuckDB_Kmeans_Results.csv',
-            'csv_header': ['Type', 'Points', 'Cluster', 'Iterations', 'Execution', 'Memory', 'Accuracy', 'DuckDB', 'Tensorflow'],
-            'files': ['kmeans.db'],
-            'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb kmeans.db',
-            'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} kmeans.db',
+            'csv_header': ['Type', 'Points', 'Cluster', 'Iterations', 'Execution', 'Heap', 'RSS', 'Accuracy', 'DuckDB', 'Tensorflow'],
+            'files': ['./kmeans.db'],
+            'execution': '/home/proglin/duckdb/build/release/duckdb kmeans.db',
+            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} kmeans.db',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'tfloat']
+            'types': ['float', 'bfloat']
         }
     ],
     'setups': [

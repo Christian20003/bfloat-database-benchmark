@@ -58,6 +58,7 @@ def main():
                     [type, scenario['p_amount'], CONFIG['iterations'], time, heap, rss, db_mape, np.array([output[0][0], output[0][1]]), np.array([tf_slope, tf_intercept]), np.array([slope, intercept])]
                     )
                 Helper.remove_files(database['files'])
+    Helper.remove_files(['./points.csv', './Statement.sql'])
 
 def generate_statement(learning_rate: float, iterations: int) -> None:
     '''

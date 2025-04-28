@@ -7,14 +7,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
-from typing import List
 from Config import CONFIG, STATEMENT
 import random
 import Format
 import Database
 import Create_CSV
+import Memory
+import Time
 import Helper
 import numpy as np
+import pandas as pd
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 def main() -> None:
@@ -30,44 +33,49 @@ def main() -> None:
     for scenario in scenarios:
         if scenario['ignore']:
             continue
-        points = generate_points(scenario['p_amount'], scenario['min'], scenario['max'])
-        cluster = generate_points(scenario['c_amount'], scenario['min'], scenario['max'])
+        generate_points(scenario['p_amount'], scenario['min'], scenario['max'], './points.csv')
+        generate_points(scenario['c_amount'], scenario['min'], scenario['max'], './clusters.csv')
         for database in databases:
             for type in database['types']:
                 Format.print_title(f'START BENCHMARK - KMEANS WITH {scenario["p_amount"]} POINTS AND {scenario["c_amount"]} CLUSTERS')
                 prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
-                prep_database.create_table('points', ['x', 'y'], [type, type])
-                prep_database.create_table('clusters_0', ['x', 'y'], [type, type])
-                prep_database.insert_from_csv('points', './points.csv', ['x', 'y'], points)
-                prep_database.insert_from_csv('cluster_0', './cluster.csv', ['x', 'y'], cluster)
+                prep_database.create_table('points', ['id', 'x', 'y'], ['int', type, type])
+                prep_database.create_table('clusters_0', ['id', 'x', 'y'], ['int', type, type])
+                prep_database.insert_from_csv('points', './points.csv')
+                prep_database.insert_from_csv('clusters_0', './clusters.csv')
                 prep_database.execute_sql()
 
-                time = 0
-                memory = 0
+                execution_string = database['execution-bench'].format('Statement.sql')
+                time, output = Time.benchmark(execution_string, database['name'], 4, [2,3])
+                heap, rss = Memory.benchmark(execution_string, f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["c_amount"]}')
 
-                tf_output = kmeans_tensorflow(points, cluster, CONFIG['iterations'], type)
-                accuracy = evaluate_accuray(tf_output, _, scenario['min'], scenario['max'])
+                tf_output = kmeans_tensorflow('./points.csv', './clusters.csv', CONFIG['iterations'], type)
+                accuracy = evaluate_accuray(tf_output, output, scenario['min'], scenario['max'])
 
-                Create_CSV.append_row(database['csv_file'], [time, memory])
-                Helper.remove_files(database['files'], './')
+                Create_CSV.append_row(database['csv_file'], [type, scenario["p_amount"], scenario["c_amount"], CONFIG['iterations'], time, heap, rss, accuracy, output, tf_output])
+                Helper.remove_files(database['files'])
+    Helper.remove_files(['./points.csv', './clusters.csv', './Statement.sql'])
 
 
-
-def generate_points(number: int, min: int, max: int) -> List[List[str]]:
+def generate_points(number: int, min: int, max: int, file_name: str) -> None:
     '''
-    This function generates a specified number of random points and stores them as string.
+    This function generates a specified number of random points.
+    Finally all points will be written into the given csv file.
 
     :param number: The number of points.
     :param min: The maximum value for x and y.
     :param max: The minimum value for x and y.
+    :param file_name: The name of the csv file.
 
     :return: A list of point objects.
     '''
 
     result = []
-    for _ in range(number):
-        result.append([random.uniform(min, max), random.uniform(min, max)])
-    return result
+    for value in range(number):
+        result.append([value, random.uniform(min, max), random.uniform(min, max)])
+    Create_CSV.create_csv_file(file_name, ['id', 'x', 'y'])
+    Create_CSV.append_rows(file_name, result)
+    result.clear()
 
 def generate_statement(iterations: int) -> None:
     '''
@@ -79,23 +87,23 @@ def generate_statement(iterations: int) -> None:
     with open('./Statement.sql', 'w') as file:
         file.write(STATEMENT.format(iterations, iterations))
 
-def kmeans_tensorflow(points: List[List[str]], cluster: List[List[str]], iterations: int, type: str) -> np.ndarray:
+def kmeans_tensorflow(points_csv: str, cluster_csv: str, iterations: int, type: str) -> np.ndarray:
     '''
     This function implements the kmeans algorithm with tensorflow.
 
-    :param points: The list of points which should be assigned to a cluster.
-    :param cluster: The list of intial clusters.
+    :param points_csv: The name of the csv file where the points are stored.
+    :param cluster_csv: The name of the csv file where the clusters are stored.
     :param iterations: The number of iterations.
     :param type: The datatype for point and cluster values.
 
     :returns: A numpy array containing all clusters.
     '''
 
-    points = [[float(entry[0]), float(entry[1])] for entry in points]
-    cluster = [[float(entry[0]), float(entry[1])] for entry in cluster]
+    points = pd.read_csv(points_csv).to_numpy()
+    cluster = pd.read_csv(cluster_csv).to_numpy()
     datatype = tf.bfloat16 if type == 'tfloat' else tf.float32
-    tf_points = tf.constant(points, datatype)
-    tf_cluster = tf.constant(cluster, datatype)
+    tf_points = tf.Variable([[float(entry[1]), float(entry[2])] for entry in points], dtype=datatype)
+    tf_cluster = tf.Variable([[float(entry[1]), float(entry[2])] for entry in cluster], dtype=datatype)
     for _ in range(iterations):
        # Calculate distances from points to centroids
        distances = tf.reduce_sum(tf.square(tf.expand_dims(tf_points, 1) - tf_cluster), axis=2)
@@ -104,10 +112,13 @@ def kmeans_tensorflow(points: List[List[str]], cluster: List[List[str]], iterati
        cluster_assignments = tf.argmin(distances, axis=1)
        # Update centroids
        for i in range(len(cluster)):
-           assigned_points = tf.boolean_mask(tf_points, tf.equal(cluster_assignments, i))
-           new_centroid = tf.reduce_mean(assigned_points, axis=0)
-           tf_cluster[i].assign(new_centroid)
-
+            assigned_points = tf.boolean_mask(tf_points, tf.equal(cluster_assignments, i))
+            if not tf.equal(tf.size(assigned_points), 0):
+                new_centroid = tf.reduce_mean(assigned_points, axis=0)
+                tf_cluster[i].assign(new_centroid)
+    """ kmeans = KMeans(n_clusters=4, init=[[float(entry[1]), float(entry[2])] for entry in cluster], max_iter=iterations)
+    kmeans.fit([[float(entry[1]), float(entry[2])] for entry in points])
+    print(kmeans.cluster_centers_) """
     return tf_cluster.numpy()
 
 def evaluate_accuray(tensorflow_result: np.ndarray, database_result: np.ndarray, min: int, max: int) -> float:
