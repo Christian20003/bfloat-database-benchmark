@@ -189,15 +189,15 @@ def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slo
     intercept_db_sign = '+' if intercept_db >= 0 else '-'
     slope_db = slope_db * -1 if slope_db < 0 else slope_db
     intercept_db = intercept_db * -1 if intercept_db < 0 else intercept_db
-    Format.print_information(f'Result of Database with {type}: {slope_db_sign}{slope_db} * x {intercept_db_sign} {intercept_db}', mark=True, tabs=1)
-    Format.print_information(f'Average difference between forecast value and actual value is {"{:.2f}".format(db_mape)}%', mark=True, tabs=2)
+    Format.print_information(f'Result of Database with {type}: {slope_db_sign}{slope_db} * x {intercept_db_sign} {intercept_db}', tabs=1)
+    Format.print_information(f'Average difference between forecast value and actual value is {"{:.2f}".format(db_mape)}%', tabs=2)
 
     slope_tf_sign = '' if slope_tf >= 0 else '-'
     intercept_tf_sign = '+' if intercept_tf >= 0 else '-'
     slope_tf = slope_tf * -1 if slope_tf < 0 else slope_tf
     intercept_tf = intercept_tf * -1 if intercept_tf < 0 else intercept_tf
-    Format.print_information(f'Result of Tensorflow with {type}: {slope_tf_sign}{slope_tf} * x {intercept_tf_sign} {intercept_tf}', mark=True, tabs=1)
-    Format.print_information(f'Average difference between forecast value and actual value is {"{:.2f}".format(tf_mape)}%', mark=True, tabs=2)
+    Format.print_information(f'Result of Tensorflow with {type}: {slope_tf_sign}{slope_tf} * x {intercept_tf_sign} {intercept_tf}', tabs=1)
+    Format.print_information(f'Average difference between forecast value and actual value is {"{:.2f}".format(tf_mape)}%', tabs=2)
 
     return db_mape, tf_mape
 

@@ -25,10 +25,11 @@ def benchmark(execution: str, file_name: str) -> Tuple[float, float]:
     Format.print_information('Start the memory benchmark - This will take some time', mark=True)
     bench_execution  = subprocess.Popen(
         ['heaptrack', '-o', 'mem_data'] + execution.split(),
-        stdout=subprocess.PIPE
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
     )
     _, error = bench_execution.communicate()
-    if error:
+    if error and 'DEBUGINFOD_URLS' not in error.decode('utf-8'):
         Format.print_error('Something went wrong during the memory-benchmark', error)
     
     data_file = './mem_data.zst'
