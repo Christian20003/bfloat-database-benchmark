@@ -5,7 +5,7 @@ CONFIG = {
             'name': 'duckdb',
             'create_csv': True,
             'csv_file': 'DuckDB_Regression_Results.csv',
-            'csv_header': ['Type', 'Points', 'Iterations', 'Execution', 'Memory', 'Accuracy', 'DuckDB', 'Tensorflow', 'Truth'],
+            'csv_header': ['Type', 'Points', 'Iterations', 'Execution', 'Heap', 'RSS', 'Accuracy', 'DuckDB', 'Tensorflow', 'Truth'],
             'files': ['regression.db'],
             'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb regression.db',
             'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} regression.db',

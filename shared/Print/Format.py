@@ -28,7 +28,8 @@ def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   raise RuntimeError(f'{start} {color.RED} {message} {color.END} \n', error)
+   print(f'{start} {color.RED} {message} {color.END}')
+   raise RuntimeError(error)
 
 def print_information(message: str = 'Dummy Information', mark: bool = False, tabs: int = 0) -> None:
    '''

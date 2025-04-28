@@ -24,3 +24,15 @@ def append_row(file_name: str, data: List[str]) -> None:
     with open(file_name, 'a') as file:
         writer = csv.writer(file)
         writer.writerow(data)
+
+def append_rows(file_name: str, data: List[List[str]]) -> None:
+    '''
+    This function appends multiple rows to a CSV file.
+
+    :param file_name: The name of the CSV file (with path).
+    :param data: A list of data which includes multiple rows.
+    '''
+    
+    with open(file_name, 'a') as file:
+        writer = csv.writer(file)
+        writer.writerows(data)

@@ -6,12 +6,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Prin
 from typing import List
 import Format
 import subprocess
-import csv
 
 class Database:
 
     statements: List[str] = []
-    csv_files: List[str] = []
     
     def __init__(self, execute_string: str, start_statements: List[str], end_statements: List[str]):
         '''
@@ -48,26 +46,17 @@ class Database:
         statement += ';\n'
         self.statements.append(statement)
 
-    def insert_from_csv(self, table_name: str, csv_file: str, header: List[str], data: List[List[str]]) -> None:
+    def insert_from_csv(self, table_name: str, csv_file: str) -> None:
         '''
         This method adds a copy statement to the list in which a table gets all entries
-        from a CSV file. Therefore the CSV file will be generated as well.
+        from a CSV file.
 
         :param table_name: The name of the table.
         :param csv_file: The name of the CSV file.
-        :param header: A list of header data of the csv file.
-        :param data: A list of rows which should be stored in the CSV file.
         '''
 
         statement = f"COPY {table_name} FROM '{csv_file}' delimiter ',' HEADER;\n"
         self.statements.append(statement)
-
-        if len(header) != 0 and len(data) != 0:
-            with open(csv_file, 'w') as file:
-                writer = csv.writer(file)
-                writer.writerow(header)
-                writer.writerows(data)
-            self.csv_files.append(csv_file)
 
     def insert_from_select(self, table_name: str, select_stmt: str) -> None:
         '''
@@ -99,12 +88,5 @@ class Database:
             database.stdin.flush()
         _, error = database.communicate()
         if error:
-            print(error)
-
-        for file in self.csv_files:
-            try:
-                os.remove(file)
-            except Exception:
-                Format.print_warning(f'The file {file} could not be removed')
-                continue
+            Format.print_error('Something went wrong during preparation', error)
     
