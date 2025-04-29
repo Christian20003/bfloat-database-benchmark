@@ -43,6 +43,32 @@ def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
             result.append(row)
     return np.array(result)
 
+def box_to_numpy(output: str, relevant_columns: List[int], ignore_lines_start: int, ignore_lines_end: int) -> np.ndarray:
+    '''
+    This function parses a box-string output from a database into a numpy array by
+    considering only specified columns.
+
+    :param output: The json output of the database.
+    :param relevant_columns: The columns wich should be extracted.
+    :param ignore_lines_start: How many lines of the output at the beginning should be ignored.
+    :param ignore_lines_end: How many lines of the output at the end should be ignored.
+
+    :returns: The output as numpy array. 
+    '''
+    
+    result = []
+    print(output)
+    for number, line in enumerate(output.splitlines()):
+        if number <= ignore_lines_start or number >= len(output.splitlines()) - ignore_lines_end:
+            continue
+        columns = re.findall(r'-?\d+\.\d+e[+-]?\d+|-?\d+\.\d+|-?\d+', line)
+        rel_cols = [float(columns[i]) for i in relevant_columns]
+        if len(rel_cols) == 1:
+            result.append(rel_cols[0])
+        else:
+            result.append(rel_cols)
+    return np.array(result)
+
 def parse_table_output(output: str, total_columns: int, start: int, stop: int) -> np.ndarray:
     '''
     This function parses the table output of the database into a numpy array. This function
