@@ -71,6 +71,20 @@ CONFIG = {
             'min': -300,
             'ignore': False
         },
+        {
+            'lr': 0.01,
+            'p_amount': 50000000,
+            'max': 300,
+            'min': -300,
+            'ignore': False
+        },
+        {
+            'lr': 0.01,
+            'p_amount': 50000000,
+            'max': 300,
+            'min': -300,
+            'ignore': False
+        },
     ] 
 }
 

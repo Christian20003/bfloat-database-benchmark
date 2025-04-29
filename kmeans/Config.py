@@ -70,6 +70,13 @@ CONFIG = {
             'min': -1000,
             'max': 1000,
             'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 500000000,
+            'min': -1000,
+            'max': 1000,
+            'ignore': False
         }
     ]
 }
