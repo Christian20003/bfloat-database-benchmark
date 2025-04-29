@@ -5,13 +5,13 @@ CONFIG = {
             'name': 'duckdb',
             'create_csv': True,
             'csv_file': 'DuckDB_Iris_Results.csv',
-            'csv_header': ['Type', 'Network_Size', 'Data_Size', 'Iterations', 'Execution', 'Memory', 'DuckDB', 'Tensorflow'],
-            'files': ['iris.db'],
-            'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb iris.db',
-            'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} iris.db',
+            'csv_header': ['Type', 'Network_Size', 'Data_Size', 'Iterations', 'Execution', 'Heap', 'RSS', 'DuckDB', 'Tensorflow'],
+            'files': ['./iris.db'],
+            'execution': '/home/proglin/duckdb/build/release/duckdb iris.db',
+            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} iris.db',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'tfloat']
+            'types': ['float', 'bfloat']
         }
     ],
     'setups': [

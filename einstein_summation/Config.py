@@ -6,13 +6,13 @@ CONFIG = {
             'name': 'duckdb',
             'create_csv': True,
             'csv_file': 'DuckDB_Einstein_Results.csv',
-            'csv_header': ['Type', 'Matrix_A', 'Matrix_B', 'Vector_V', 'Execution', 'Memory', 'Loss', 'DuckDB', 'Tensorflow'],
-            'files': ['einstein.db'],
-            'execution': '/home/goellner/.duckdb/cli/1.2.2/duckdb einstein.db',
-            'execution-bench': '/home/goellner/.duckdb/cli/1.2.2/duckdb -f {} einstein.db',
+            'csv_header': ['Type', 'Matrix_A', 'Matrix_B', 'Vector_V', 'Execution', 'Heap', 'RSS', 'Loss', 'DuckDB', 'Tensorflow'],
+            'files': ['./einstein.db'],
+            'execution': '/home/proglin/duckdb/build/release/duckdb einstein.db',
+            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} einstein.db',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'tfloat']
+            'types': ['float', 'bfloat']
         }
     ],
     'setups': [
@@ -79,6 +79,5 @@ WITH A(rowIndex, columnIndex, val) AS (SELECT * FROM matrixa),
     SELECT A.rowIndex AS rowIndex, SUM(A.val * B.val * v.val) AS val
     FROM A, B, v
     WHERE A.columnIndex = B.columnIndex AND B.rowIndex = v.rowIndex
-    GROUP BY A.rowIndex
-    ORDER BY A.rowIndex;
+    GROUP BY A.rowIndex;
 '''

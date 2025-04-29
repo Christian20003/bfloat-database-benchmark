@@ -1,6 +1,5 @@
 import sys
 import os
-import csv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Benchmark')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Csv')))
@@ -8,15 +7,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
-from typing import List
 from Config import CONFIG, STATEMENT
-import random
 import Format
 import Database
 import Create_CSV
+import Time
+import Memory
 import Helper
-import numpy as np
-import tensorflow as tf
 
 def main():
     databases = CONFIG['databases']
@@ -41,7 +38,7 @@ def main():
                 prep_database.create_table('w_xh', ['i', 'j', 'v'], ['int', 'int', type])
                 prep_database.create_table('w_ho', ['i', 'j', 'v'], ['int', 'int', type])
                 for _ in range(0, scenario['data_size'], 150):
-                    prep_database.insert_from_csv('iris', './iris.csv', [], [])
+                    prep_database.insert_from_csv('iris', './iris.csv')
                 prep_database.insert_from_select('iris2', 'SELECT row_number() OVER (), * FROM iris')
                 prep_database.insert_from_select('img', 'SELECT id, 1, sepal_length/10 FROM iris2')
                 prep_database.insert_from_select('img', 'SELECT id, 2, sepal_width/10 FROM iris2')
@@ -52,13 +49,11 @@ def main():
                 prep_database.insert_from_select('w_ho', f'select i.*,j.*,random()*2-1 from generate_series(1,{scenario["network_size"]}) i, generate_series(1,3) j')
                 prep_database.execute_sql()
 
-                time = 0
-                memory = 0
+                execution_string = database['execution-bench'].format('Statement.sql')
+                time, output = Time.benchmark(execution_string, database['name'], 1, [0])
+                heap, rss = Memory.benchmark(execution_string, f'{database["name"]}_{type}_{scenario["data_size"]}_{scenario["network_size"]}')
 
-                #tf_output = kmeans_tensorflow(points, cluster, CONFIG['iterations'], type)
-                #accuracy = evaluate_accuray(tf_output, _, scenario['min'], scenario['max'])
-
-                Create_CSV.append_row(database['csv_file'], [time, memory])
+                Create_CSV.append_row(database['csv_file'], [type, scenario["network_size"], scenario["data_size"], scenario['iterations'], time, heap, rss, output, '-'])
                 Helper.remove_files(database['files'], './')
 
 
