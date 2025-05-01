@@ -89,7 +89,8 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
                     #y_values = [value/(1024*1024*1024) for value in y_values]
                     sorted_values = sorted(zip(x_values, y_values))
                     x_values, y_values = zip(*sorted_values)
-                    label = ' '.join(f'{key}: {combination[key]}' for key in line_keys)
+                    label = ' '.join(f'{key}: {combination[key]},' for key in line_keys)
+                    label = label[:-1]
                     label = label + f' in {y_name}'
                     final_data.update({
                         label: {
@@ -106,17 +107,17 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
 if __name__ == "__main__":
     data = {
         'file_1': {
-            'file': './DuckDB_Kmeans_Results.csv',
-            'line_keys': ['Type'],
-            'x_keys': ['Points'],
+            'file': './DuckDB_Iris_Results.csv',
+            'line_keys': ['Type', 'Network_Size'],
+            'x_keys': ['Data_Size'],
             'y_keys': {
-                'DuckDB': ['RSS']
+                'DuckDB': ['Heap']
             }
         }
     }
     config = {
-        'x_label': 'Number of tuples',
-        'y_label': 'RSS Memory in GB',
+        'x_label': 'Number of samples',
+        'y_label': 'Heap in GB',
         'file_name': 'Execution_Kmeans.pdf'
     }
     plot_results(data, config)

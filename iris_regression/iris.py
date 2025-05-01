@@ -54,7 +54,8 @@ def main():
                 heap, rss = Memory.benchmark(execution_string, f'{database["name"]}_{type}_{scenario["data_size"]}_{scenario["network_size"]}')
 
                 Create_CSV.append_row(database['csv_file'], [type, scenario["network_size"], scenario["data_size"], scenario['iterations'], time, heap, rss, output, '-'])
-                Helper.remove_files(database['files'], './')
+                Helper.remove_files(database['files'])
+    Helper.remove_files(['./Statement.sql'])
 
 
 def generate_statement(iterations: int) -> None:

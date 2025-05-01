@@ -16,49 +16,49 @@ CONFIG = {
     ],
     'setups': [
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 20,
             'data_size': 150,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 20,
             'data_size': 300,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 20,
             'data_size': 600,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 20,
             'data_size': 1200,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 50,
             'data_size': 150,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 50,
             'data_size': 300,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 50,
             'data_size': 600,
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 100,
             'network_size': 50,
             'data_size': 1200,
             'ignore': False
