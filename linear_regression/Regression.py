@@ -34,8 +34,8 @@ def main():
             continue
         generate_statement(scenario['lr'], CONFIG['iterations'])
         slope, intercept = generate_regression_line(scenario['max'], scenario['min'])
-        points = generate_points(scenario['p_amount'], scenario['max'], scenario['min'], slope, intercept)
-        normalize_points(points, './points.csv')
+        generate_points(scenario['p_amount'], scenario['max'], scenario['min'], slope, intercept)
+        #normalize_points(points, './points.csv')
         for database in databases:
             for type in database['types']:
                 Format.print_title(f'START BENCHMARK - LINEAR-REGRESSION WITH {scenario["p_amount"]} POINTS')
@@ -81,7 +81,7 @@ def generate_regression_line(upper_bound: int, lower_bound: int) -> Tuple[float,
     :return: A tuple including the slope and the offset of the generated regression line.
     '''
 
-    slope = "{:.4f}".format(random.uniform(upper_bound / 13, lower_bound / 13))
+    slope = "{:.4f}".format(random.gauss(0, 1))
     intercept = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
     return float(slope), float(intercept)
 
@@ -102,11 +102,13 @@ def generate_points(number: int, upper_bound: int, lower_bound: int, slope: floa
 
     result = []
     for value in range(number):
-        x = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
+        x = "{:.4f}".format(random.gauss(0, 1))
         error = "{:.4f}".format(random.uniform(upper_bound / 10, lower_bound / 10))
         y = slope * float(x) + float(intercept) + float(error)
         result.append([value, float(x), float(y)])
-    return result
+    Create_CSV.create_csv_file('./points.csv', ['id', 'x', 'y'])
+    Create_CSV.append_rows('./points.csv', result)
+    result.clear()
 
 def normalize_points(points: List[List[float]], file_name: str) -> None:
     '''

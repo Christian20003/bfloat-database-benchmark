@@ -99,9 +99,10 @@ def kmeans_tensorflow(points_csv: str, cluster_csv: str, iterations: int, type: 
     :returns: A numpy array containing all clusters.
     '''
 
+    Format.print_information('Calculating tensorflow result - This can take some time', mark=True)
     points = pd.read_csv(points_csv).to_numpy()
     cluster = pd.read_csv(cluster_csv).to_numpy()
-    datatype = tf.bfloat16 if type == 'tfloat' else tf.float32
+    datatype = tf.bfloat16 if type == 'bfloat' else tf.float32
     tf_points = tf.Variable([[float(entry[1]), float(entry[2])] for entry in points], dtype=datatype)
     tf_cluster = tf.Variable([[float(entry[1]), float(entry[2])] for entry in cluster], dtype=datatype)
     for _ in range(iterations):
@@ -133,6 +134,7 @@ def evaluate_accuray(tensorflow_result: np.ndarray, database_result: np.ndarray,
     :returns: The overall accuarcy of the database output compared with the tensorflow output.
     '''
 
+    Format.print_information('Calculating accuracy - This can take some time', mark=True)
     accuracies = []
     # Find the nearest pairs and print the solution of comparison.
     for idx, center in enumerate(tensorflow_result):

@@ -86,7 +86,7 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
                 try:
                     x_values = extract_coordinate_values(x_keys, combination, data)
                     y_values = extract_coordinate_values(y_key, combination, data)
-                    y_values = [value/(1024*1024*1024) for value in y_values]
+                    #y_values = [value/(1024*1024*1024) for value in y_values]
                     sorted_values = sorted(zip(x_values, y_values))
                     x_values, y_values = zip(*sorted_values)
                     label = ' '.join(f'{key}: {combination[key]}' for key in line_keys)
@@ -106,18 +106,17 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
 if __name__ == "__main__":
     data = {
         'file_1': {
-            'file': './test.csv',
+            'file': './DuckDB_Kmeans_Results.csv',
             'line_keys': ['Type'],
-            'x_keys': ['Size'],
+            'x_keys': ['Points'],
             'y_keys': {
-                'LingoDB': ['TotalMemory'],
-                'DuckDB': ['DuckDBMemory']
+                'DuckDB': ['RSS']
             }
         }
     }
     config = {
         'x_label': 'Number of tuples',
-        'y_label': 'Memory in GB',
-        'file_name': 'Execution.pdf'
+        'y_label': 'RSS Memory in GB',
+        'file_name': 'Execution_Kmeans.pdf'
     }
     plot_results(data, config)

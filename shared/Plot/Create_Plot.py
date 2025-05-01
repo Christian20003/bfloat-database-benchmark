@@ -42,4 +42,5 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
         plt.xscale('log')
     if y_as_log:
         plt.yscale('log')
-    plt.savefig(file_name)
+    #plt.savefig(file_name)
+    plt.show()
