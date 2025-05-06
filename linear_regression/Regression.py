@@ -102,7 +102,7 @@ def generate_points(number: int, upper_bound: int, lower_bound: int, slope: floa
 
     result = []
     for value in range(number):
-        x = value + 1 #"{:.4f}".format(random.gauss(0, 1))
+        x = float("{:.4f}".format(random.random()))
         #error = "{:.4f}".format(random.uniform(upper_bound / 10, lower_bound / 10))
         y = slope * x + intercept #+ float(error)
         result.append([value, float(x), float(y)])
