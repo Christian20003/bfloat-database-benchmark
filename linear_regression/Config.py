@@ -7,8 +7,8 @@ CONFIG = {
             'csv_file': 'DuckDB_Regression_Results.csv',
             'csv_header': ['Type', 'Points', 'Iterations', 'Execution', 'Heap', 'RSS', 'MAPE', 'DuckDB', 'Tensorflow', 'Truth'],
             'files': ['./regression.db'],
-            'execution': '/home/proglin/duckdb/build/release/duckdb regression.db',
-            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} regression.db',
+            'execution': '/home/goellner/duckdb/build/release/duckdb regression.db',
+            'execution-bench': '/home/goellner/duckdb/build/release/duckdb -json -f {} regression.db',
             'start-sql': [],
             'end-sql': ['.exit'],
             'types': ['float', 'bfloat']
@@ -80,7 +80,7 @@ CONFIG = {
         },
         {
             'lr': 0.01,
-            'p_amount': 50000000,
+            'p_amount': 500000000,
             'max': 300,
             'min': -300,
             'ignore': False

@@ -81,9 +81,9 @@ def generate_regression_line(upper_bound: int, lower_bound: int) -> Tuple[float,
     :return: A tuple including the slope and the offset of the generated regression line.
     '''
 
-    slope = "{:.4f}".format(random.gauss(0, 1))
-    intercept = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
-    return float(slope), float(intercept)
+    #slope = "{:.4f}".format(random.gauss(0, 1))
+    #intercept = "{:.4f}".format(random.uniform(upper_bound, lower_bound))
+    return 0.25, 15
 
 
 def generate_points(number: int, upper_bound: int, lower_bound: int, slope: float, intercept: float) -> List[List[float]]:
@@ -102,9 +102,9 @@ def generate_points(number: int, upper_bound: int, lower_bound: int, slope: floa
 
     result = []
     for value in range(number):
-        x = "{:.4f}".format(random.gauss(0, 1))
-        error = "{:.4f}".format(random.uniform(upper_bound / 10, lower_bound / 10))
-        y = slope * float(x) + float(intercept) + float(error)
+        x = value + 1 #"{:.4f}".format(random.gauss(0, 1))
+        #error = "{:.4f}".format(random.uniform(upper_bound / 10, lower_bound / 10))
+        y = slope * x + intercept #+ float(error)
         result.append([value, float(x), float(y)])
     Create_CSV.create_csv_file('./points.csv', ['id', 'x', 'y'])
     Create_CSV.append_rows('./points.csv', result)
