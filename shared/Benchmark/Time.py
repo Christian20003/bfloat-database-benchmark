@@ -47,6 +47,6 @@ def python_time(execution: str) -> Tuple[float, str]:
     )
     output, error = database.communicate()
     time = (datetime.now() - start).total_seconds()
-    if error:
+    if error and 'compilation' not in error.decode('utf-8'):
         Format.print_error('Something went wrong during the time-benchmark', error)
     return time, output

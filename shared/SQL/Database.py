@@ -94,6 +94,6 @@ class Database:
             database.stdin.write(statement)
             database.stdin.flush()
         _, error = database.communicate()
-        if error:
+        if error and 'compilation' not in error.decode('utf-8'):
             Format.print_error('Something went wrong during preparation', error)
     

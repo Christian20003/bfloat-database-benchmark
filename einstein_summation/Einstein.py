@@ -42,7 +42,7 @@ def main():
             if database['ignore']:
                 continue
             for type in database['types']:
-                Format.print_title(f'START BENCHMARK - EINSTEIN-SUMMATION WITH {scenario["dimension_1"]}X{scenario["dimension_2"]} * {scenario["dimension_2"]}X{scenario["dimension_3"]} * {scenario["dimension_3"]}X1 AND TYPE {type}')
+                Format.print_title(f'START BENCHMARK - EINSTEIN-SUMMATION WITH {scenario["dimension_1"]}X{scenario["dimension_2"]} * {scenario["dimension_2"]}X{scenario["dimension_3"]} * {scenario["dimension_3"]}X1, TYPE {type} AND DATABASE {database["name"]}')
                 if database['name'] == 'postgres':
                     executables = database['prep']
                     Postgres.create_database(executables[0], executables[1], executables[2])
