@@ -27,6 +27,9 @@ class Database:
         self.statements = start_statements.copy()
         self.end = end_statements.copy()
 
+    def clear(self):
+        self.statements = []
+
     def create_table(self, table_name: str, columns: List[str], types: List[str]) -> None:
         '''
         This method adds a create statement to the list.
@@ -44,6 +47,10 @@ class Database:
             else:
                 statement += ')'
         statement += ';\n'
+        self.statements.append(statement)
+
+    def drop_table(self, table_name: str) -> None:
+        statement = f'DROP TABLE {table_name}'
         self.statements.append(statement)
 
     def insert_from_csv(self, table_name: str, csv_file: str) -> None:

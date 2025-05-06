@@ -18,6 +18,8 @@ def output_to_numpy(database_name: str, output: str, total_columns: int, relevan
     output = output.decode('utf-8')
     if database_name == 'duckdb':
         return json_to_numpy(output, relevant_columns)
+    if database_name == 'umbra':
+        return raw_to_numpy(output, relevant_columns, 1, 1)
 
 def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
     '''
@@ -43,7 +45,7 @@ def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
             result.append(row)
     return np.array(result)
 
-def box_to_numpy(output: str, relevant_columns: List[int], ignore_lines_start: int, ignore_lines_end: int) -> np.ndarray:
+def raw_to_numpy(output: str, relevant_columns: List[int], ignore_lines_start: int, ignore_lines_end: int) -> np.ndarray:
     '''
     This function parses a box-string output from a database into a numpy array by
     considering only specified columns.

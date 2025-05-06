@@ -8,10 +8,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 
 from typing import List
-from Config import CONFIG, STATEMENT
+from Config import CONFIG, STATEMENT, STATEMENT_FILE
 import random
 import Format
 import Database
+import Postgres
 import Create_CSV
 import Time
 import Memory
@@ -34,12 +35,17 @@ def main():
     for scenario in scenarios:
         if scenario['ignore']:
             continue
-        generate_tensor(scenario['dimension_1'], scenario['dimension_2'], CONFIG['max'], CONFIG['min'], './matrixa.csv')
-        generate_tensor(scenario['dimension_2'], scenario['dimension_3'], CONFIG['max'], CONFIG['min'], './matrixb.csv')
-        generate_tensor(scenario['dimension_3'], 1, CONFIG['max'], CONFIG['min'], './vectorv.csv')
+        generate_tensor(scenario['dimension_1'], scenario['dimension_2'], './matrixa.csv')
+        generate_tensor(scenario['dimension_2'], scenario['dimension_3'], './matrixb.csv')
+        generate_tensor(scenario['dimension_3'], 1, './vectorv.csv')
         for database in databases:
+            if database['ignore']:
+                continue
             for type in database['types']:
-                Format.print_title(f'START BENCHMARK - EINSTEIN-SUMMATION WITH {scenario["dimension_1"]}X{scenario["dimension_2"]} * {scenario["dimension_2"]}X{scenario["dimension_3"]} * {scenario["dimension_3"]}X1')
+                Format.print_title(f'START BENCHMARK - EINSTEIN-SUMMATION WITH {scenario["dimension_1"]}X{scenario["dimension_2"]} * {scenario["dimension_2"]}X{scenario["dimension_3"]} * {scenario["dimension_3"]}X1 AND TYPE {type}')
+                if database['name'] == 'postgres':
+                    executables = database['prep']
+                    Postgres.create_database(executables[0], executables[1], executables[2])
                 prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
                 prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
                 prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
@@ -49,16 +55,18 @@ def main():
                 prep_database.insert_from_csv('vectorv', './vectorv.csv')
                 prep_database.execute_sql()
 
-                execution_string = database['execution-bench'].format('Statement.sql')
-                time, output = Time.benchmark(execution_string, database['name'], 2, [1])
-                heap, rss = Memory.benchmark(execution_string, f'{database["name"]}_{type}_{scenario["dimension_1"]}')
+                time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
+                heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}')
                 output = np.array([entry[0] for entry in output])
 
                 tf_output = einstein_tensorflow('./matrixa.csv', './matrixb.csv', './vectorv.csv', type)
                 loss = evaluate_accuray(output, tf_output)
 
-                Create_CSV.append_row(database['csv_file'], [type, scenario['dimension_1']*scenario['dimension_2'], scenario['dimension_2']*scenario['dimension_3'], scenario['dimension_3'], time, heap, rss, loss, output, tf_output])
+                Create_CSV.append_row(database['csv_file'], [type, scenario['dimension_1']*scenario['dimension_2'], scenario['dimension_2']*scenario['dimension_3'], scenario['dimension_3'], time, heap, rss, loss, np.sum(output), np.sum(tf_output)])
                 Helper.remove_files(database['files'])
+                if database['name'] == 'postgres':
+                    Postgres.stop_database(database['prep'][3])
+                    Helper.remove_dir('./postgres_database')
     Helper.remove_files(['./matrixa.csv', './matrixb.csv', './vectorv.csv', './Statement.sql'])
 
 def generate_statement() -> None:
@@ -66,24 +74,22 @@ def generate_statement() -> None:
     This function generates the SQL file.
     '''
 
-    with open('./Statement.sql', 'w') as file:
+    with open(f'./{STATEMENT_FILE}', 'w') as file:
         file.write(STATEMENT)
 
-def generate_tensor(rows: int, columns: int, upper_bound: int, lower_bound: int, file_name: str) -> None:
+def generate_tensor(rows: int, columns: int, file_name: str) -> None:
     '''
     This function generates a list of tensor entries with random values and stores them in a csv file.
 
     :param rows: The number of rows in the tensor.
     :param columns: The number of columns in the tensor.
-    :param upper_bound: The maximum value for the entries in the tensor.
-    :param lower_bound: The minimum value for the entries in the tensor.
     :param file_name: The name of the csv file where the data should be stored.
     '''
 
     result = []
     for row in range(rows):
         for column in range(columns):
-            value = "{:.4f}".format(random.uniform(lower_bound, upper_bound))
+            value = random.random()
             result.append([row, column, value])
 
     Create_CSV.create_csv_file(file_name, ['rowIndex', 'columnIndex', 'val'])

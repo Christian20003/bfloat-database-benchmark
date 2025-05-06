@@ -22,3 +22,9 @@ def remove_files(files: List[str]) -> None:
             print_warning(f'{file} does not exist. Ignore deletion')
         except Exception as e:
             print_error(f'Failed to remove {file}', e)
+
+def remove_dir(dir_name: str) -> None:
+    try:
+        os.system(f'rm -rf {dir_name}')
+    except Exception as e:
+        print_error(f'Failed to remove {dir_name}', e)
