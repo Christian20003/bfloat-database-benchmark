@@ -81,35 +81,53 @@ CONFIG = {
     ]
 }
 STATEMENT = '''
-WITH RECURSIVE 
-points_start (pid, x, y) AS (SELECT * FROM points),
+WITH RECURSIVE points_start (pid, x, y) AS (SELECT * FROM points),
 clusters (iter, cid, x, y) AS (
     (SELECT 0, id, x, y FROM clusters_0)
     UNION ALL
-    SELECT iter + 1, cid, AVG(px), AVG(py) FROM (
-        SELECT iter, cid, px, py
-        FROM (
-            SELECT c.iter, p.pid, p.x AS px, p.y AS py, c.cid
-            FROM points_start p
-            JOIN clusters c ON NOT EXISTS (
-                SELECT 1 FROM clusters d
-                WHERE c.iter = d.iter 
-                AND (d.x - p.x)^2 + (d.y - p.y)^2 < (c.x - p.x)^2 + (c.y - p.y)^2
-            ))
-        UNION
-        SELECT iter, cid, x AS px, y AS py FROM clusters
-        WHERE cid NOT IN (SELECT cid FROM (
-            SELECT c.iter, p.pid, p.x AS px, p.y AS py, c.cid
-            FROM points_start p
-            JOIN clusters c ON NOT EXISTS (
-                SELECT 1 FROM clusters d
-                WHERE c.iter = d.iter 
-                AND (d.x - p.x)^2 + (d.y - p.y)^2 < (c.x - p.x)^2 + (c.y - p.y)^2
+    (WITH assignment(iter, cid, x, y) AS (
+        SELECT iter, cid, AVG(px), AVG(py) FROM (
+            SELECT iter, pid, p.x AS px, p.y AS py, MIN(cid) AS cid
+            FROM points_start p, clusters c
+            WHERE NOT EXISTS (
+                SELECT * FROM clusters d
+                WHERE c.iter = d.iter AND (d.x-p.x)^2 + (d.y-p.y)^2 < (c.x-p.x)^2 + (c.y-p.y)^2
             )
-        ))
-    ) AS result
+            GROUP BY iter, pid, p.x, p.y
+        )
+        GROUP BY cid, iter),
+        add_missing(iter, cid, x, y) AS (
+            (SELECT * FROM assignment)
+            UNION ALL
+            (SELECT MAX(iter), cid, x, y FROM clusters WHERE cid NOT IN (SELECT cid FROM assignment) GROUP BY cid, x, y)
+        )
+    SELECT iter+1, cid, x, y
+    FROM add_missing
     WHERE iter < {}
-    GROUP BY cid, iter
+    )
 )
 SELECT * FROM clusters WHERE iter = {} ORDER BY cid;
+'''
+
+'''
+
+WITH RECURSIVE
+points_start (pid, x, y) AS (SELECT * FROM points limit 1000000),
+clusters (iter, cid, x, y) AS (
+    (SELECT 0, id, x, y FROM clusters_0)
+    UNION ALL
+    SELECT iter+1, cid, AVG(px), AVG(py) FROM (
+        SELECT iter, pid, p.x AS px, p.y AS py, MIN(cid) AS cid
+        FROM points_start p, clusters c
+        WHERE NOT EXISTS (
+            SELECT * FROM clusters d
+            WHERE c.iter = d.iter AND (d.x-p.x)^2 + (d.y-p.y)^2 < (c.x-p.x)^2 + (c.y-p.y)^2
+        )
+        GROUP BY iter, pid, p.x, p.y
+    ) AS result
+    WHERE iter < 10
+    GROUP BY cid, iter
+)
+SELECT * FROM clusters WHERE iter = 10 ORDER BY cid;
+
 '''

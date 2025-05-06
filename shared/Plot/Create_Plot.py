@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-COLORS = ['maroon', 'cornflowerblue', 'forestgreen', 'orange', 'mediumorchid']
+COLORS = ['maroon', 'cornflowerblue', 'forestgreen', 'orange', 'mediumorchid', 'yellow']
 STYLES = ['solid', 'dashed', 'dotted', 'dashdot', (0, (3, 5, 1, 5, 1, 5))]
 
 def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc: str = 'lower left', x_as_log: bool = True, y_as_log: bool = False) -> None:
