@@ -59,7 +59,7 @@ def main():
                 prep_database.execute_sql()
 
                 time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
-                heap, rss = Memory.benchmark_server(database['execution-bench'], database['prep'][1] , database['prep'][3], f'{database["name"]}_{type}_{scenario["dimension_1"]}')
+                heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}')
                 output = np.array([entry[0] for entry in output])
 
                 tf_output = einstein_tensorflow('./matrixa.csv', './matrixb.csv', './vectorv.csv', type)

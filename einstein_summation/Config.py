@@ -15,7 +15,7 @@ CONFIG = {
         {
             'name': 'duckdb',
             'create_csv': True,
-            'ignore': True,
+            'ignore': False,
             'csv_file': 'DuckDB_Einstein_Results.csv',
             'csv_header': [
                 'Type', 
@@ -71,7 +71,7 @@ CONFIG = {
         {
             'name': 'postgres',
             'create_csv': True,
-            'ignore': False,
+            'ignore': True,
             'csv_file': 'Postgres_Einstein_Results.csv',
             'csv_header': [
                 'Type', 
