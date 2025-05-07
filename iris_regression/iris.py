@@ -6,14 +6,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
-from Config import CONFIG, STATEMENT
+from Config import CONFIG, STATEMENT, STATEMENT_FILE
 import Format
 import Database
 import Create_CSV
+import Postgres
 import Time
 import Memory
 import Helper
+import Settings
 
 def main():
     databases = CONFIG['databases']
@@ -29,7 +32,10 @@ def main():
         generate_statement(scenario['iterations'])
         for database in databases:
             for type in database['types']:
-                Format.print_title(f'START BENCHMARK - IRIS-REGRESSION WITH HIDDEN_LAYER_WIDTH: {scenario["network_size"]} AND {scenario["data_size"]} SAMPLES')
+                Format.print_title(f'START BENCHMARK - IRIS-REGRESSION WITH HIDDEN_LAYER_WIDTH: {scenario["network_size"]} AND {scenario["data_size"]} SAMPLES, TYPE: {type}, DATABASE: {database["name"]}')
+                if database['name'] == 'postgres':
+                    executables = database['prep']
+                    Postgres.create_database(executables[0], executables[1], executables[2])
                 prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
                 prep_database.create_table('iris', ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], [type, type, type, type, 'int'])
                 prep_database.create_table('iris2', ['id', 'sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], ['int', type, type, type, type, 'int'])
@@ -49,13 +55,15 @@ def main():
                 prep_database.insert_from_select('w_ho', f'select i.*,j.*,random()*2-1 from generate_series(1,{scenario["network_size"]}) i, generate_series(1,3) j')
                 prep_database.execute_sql()
 
-                execution_string = database['execution-bench'].format('Statement.sql')
-                time, output = Time.benchmark(execution_string, database['name'], 1, [0])
-                heap, rss = Memory.benchmark(execution_string, f'{database["name"]}_{type}_{scenario["data_size"]}_{scenario["network_size"]}')
+                time, output = Time.benchmark(database['execution-bench'], database['name'], 1, [0])
+                heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["data_size"]}_{scenario["network_size"]}')
 
                 Create_CSV.append_row(database['csv_file'], [type, scenario["network_size"], scenario["data_size"], scenario['iterations'], time, heap, rss, output, '-'])
                 Helper.remove_files(database['files'])
-    Helper.remove_files(['./Statement.sql'])
+                if database['name'] == 'postgres':
+                    Postgres.stop_database(database['prep'][3])
+                    Helper.remove_dir(Settings.POSTGRESQL_DIR)
+    Helper.remove_files([STATEMENT_FILE])
 
 
 def generate_statement(iterations: int) -> None:
@@ -65,7 +73,7 @@ def generate_statement(iterations: int) -> None:
     :param iterations: The number of iterations in the recursive CTE.
     '''
 
-    with open('./Statement.sql', 'w') as file:
+    with open(STATEMENT_FILE, 'w') as file:
         file.write(STATEMENT.format(iterations))
 
 if __name__ == '__main__':

@@ -71,7 +71,7 @@ CONFIG = {
         {
             'name': 'postgres',
             'create_csv': True,
-            'ignore': True,
+            'ignore': False,
             'csv_file': 'Postgres_Einstein_Results.csv',
             'csv_header': [
                 'Type', 
@@ -240,5 +240,6 @@ WITH A(rowIndex, columnIndex, val) AS (SELECT * FROM matrixa),
     SELECT A.rowIndex AS rowIndex, SUM(A.val * B.val * v.val) AS val
     FROM A, B, v
     WHERE A.columnIndex = B.columnIndex AND B.rowIndex = v.rowIndex
-    GROUP BY A.rowIndex;
+    GROUP BY A.rowIndex
+    ORDER BY A.rowIndex;
 '''

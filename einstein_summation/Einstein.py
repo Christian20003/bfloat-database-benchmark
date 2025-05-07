@@ -6,9 +6,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
 from typing import List
 from Config import CONFIG, STATEMENT, STATEMENT_FILE
+from collections import defaultdict
 import random
 import Format
 import Database
@@ -16,6 +18,7 @@ import Postgres
 import Create_CSV
 import Time
 import Memory
+import Settings
 import Helper
 import numpy as np
 import pandas as pd
@@ -50,9 +53,9 @@ def main():
                 prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
                 prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
                 prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
-                prep_database.insert_from_csv('matrixa', './matrixa.csv')
-                prep_database.insert_from_csv('matrixb', './matrixb.csv')
-                prep_database.insert_from_csv('vectorv', './vectorv.csv')
+                prep_database.insert_from_csv('matrixa', './matrixa.csv' if database['name'] != 'postgres' else '../matrixa.csv')
+                prep_database.insert_from_csv('matrixb', './matrixb.csv' if database['name'] != 'postgres' else '../matrixa.csv')
+                prep_database.insert_from_csv('vectorv', './vectorv.csv' if database['name'] != 'postgres' else '../matrixa.csv')
                 prep_database.execute_sql()
 
                 time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
@@ -66,7 +69,7 @@ def main():
                 Helper.remove_files(database['files'])
                 if database['name'] == 'postgres':
                     Postgres.stop_database(database['prep'][3])
-                    Helper.remove_dir('./postgres_database')
+                    Helper.remove_dir(Settings.POSTGRESQL_DIR)
     Helper.remove_files(['./matrixa.csv', './matrixb.csv', './vectorv.csv', './Statement.sql'])
 
 def generate_statement() -> None:
@@ -105,15 +108,17 @@ def list_to_array(tensor: List[List[float]]) -> np.ndarray:
     :returns: The data as numpy array.
     '''
 
-    rows = [entry[0] for entry in tensor]
-    rows = set(rows)
-    result = []
-    for row in rows:
-        elements = [entry[2] for entry in tensor if entry[0] == row]
-        if len(elements) == 1:
-            result.append(elements[0])
-        else:
-            result.append(elements)
+    # Use a defaultdict to group elements by their row index
+    grouped = defaultdict(list)
+    
+    for entry in tensor:
+        row_index = entry[0]
+        value = entry[2]
+        grouped[row_index].append(value)
+    
+    # Create the result array from the grouped values
+    result = [values[0] if len(values) == 1 else values for values in grouped.values()]
+    
     return np.array(result)
 
 def einstein_tensorflow(matrix_a_csv: str, matrix_b_csv: str, vector_v_csv: str, type: str) -> np.ndarray:

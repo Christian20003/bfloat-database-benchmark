@@ -21,7 +21,7 @@ def output_to_numpy(database_name: str, output: str, total_columns: int, relevan
     if database_name == 'umbra':
         return raw_to_numpy(output, relevant_columns, 1, 1)
     if database_name == 'postgres':
-        return raw_to_numpy(output, relevant_columns, 2, 1)
+        return raw_to_numpy(output, relevant_columns, 1, 2)
 
 def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
     '''
@@ -61,16 +61,12 @@ def raw_to_numpy(output: str, relevant_columns: List[int], ignore_lines_start: i
     '''
     
     result = []
-    print(output)
     for number, line in enumerate(output.splitlines()):
         if number <= ignore_lines_start or number >= len(output.splitlines()) - ignore_lines_end:
             continue
         columns = re.findall(r'-?\d+\.\d+e[+-]?\d+|-?\d+\.\d+|-?\d+', line)
         rel_cols = [float(columns[i]) for i in relevant_columns]
-        if len(rel_cols) == 1:
-            result.append(rel_cols[0])
-        else:
-            result.append(rel_cols)
+        result.append(rel_cols)
     return np.array(result)
 
 def parse_table_output(output: str, total_columns: int, start: int, stop: int) -> np.ndarray:
