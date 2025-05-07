@@ -22,7 +22,7 @@ def print_title(message: str = 'Dummy Title') -> None:
 
 def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 0) -> None:
    '''
-   This function prints an error message to the console as RuntimeError.
+   This function prints an error message to the console.
 
    :param message: The message to be printed on the console.
    :param error: The error object which has been thrown.
@@ -30,7 +30,7 @@ def print_error(message: str = 'Dummy Error', error: object = None, tabs: int = 
    '''
    start = '\t' * tabs
    print(f'{start} {color.RED} {message} {color.END}')
-   raise RuntimeError(error)
+   print(error)
 
 def print_information(message: str = 'Dummy Information', mark: bool = False, tabs: int = 0) -> None:
    '''
