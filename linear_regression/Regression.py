@@ -119,8 +119,8 @@ def regression_tensorflow(points_csv: str, learning_rate: float, iterations: int
     datatype = tf.bfloat16 if type == 'bfloat' else tf.float32
     tf_X = tf.constant([entry[1] for entry in points], datatype)
     tf_Y = tf.constant([entry[2] for entry in points], datatype)
-    slope = tf.Variable(1.0, dtype=datatype)
-    intercept = tf.Variable(1.0, dtype=datatype)
+    slope = tf.Variable(10.0, dtype=datatype)
+    intercept = tf.Variable(10.0, dtype=datatype)
     lr = tf.Variable(learning_rate, dtype=datatype)
 
     for _ in range(iterations):
