@@ -23,7 +23,7 @@ def main():
     scenarios = CONFIG['setups']
 
     for database in databases:
-        if database['create_csv']:
+        if database['create_csv'] and not database['ignore']:
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
 
     for scenario in scenarios:
@@ -31,6 +31,8 @@ def main():
             continue
         generate_statement(scenario['iterations'])
         for database in databases:
+            if database['ignore']:
+                continue
             for type in database['types']:
                 Format.print_title(f'START BENCHMARK - IRIS-REGRESSION WITH HIDDEN_LAYER_WIDTH: {scenario["network_size"]} AND {scenario["data_size"]} SAMPLES, TYPE: {type}, DATABASE: {database["name"]}')
                 if database['name'] == 'postgres':

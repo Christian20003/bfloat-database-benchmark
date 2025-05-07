@@ -32,7 +32,7 @@ def main():
     generate_statement()
 
     for database in databases:
-        if database['create_csv']:
+        if database['create_csv'] and not database['ignore']:
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
 
     for scenario in scenarios:

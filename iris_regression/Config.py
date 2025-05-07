@@ -16,6 +16,7 @@ CONFIG = {
         {
             'name': 'duckdb',
             'create_csv': True,
+            'ignore': False,
             'csv_file': 'DuckDB_Iris_Results.csv',
             'csv_header': [
                 'Type', 
@@ -38,7 +39,7 @@ CONFIG = {
         {
             'name': 'umbra',
             'create_csv': True,
-            'ignore': False,
+            'ignore': True,
             'csv_file': 'Umbra_Iris_Results.csv',
             'csv_header': [
                 'Type', 
