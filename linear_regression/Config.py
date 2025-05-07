@@ -90,11 +90,19 @@ CONFIG = {
 
 STATEMENT = '''
 WITH RECURSIVE gd (idx, a, b) AS (
-    SELECT * FROM gd_start
+SELECT * FROM gd_start
 UNION ALL
-    SELECT idx + 1, a - {} * avg(2 * x * (a * x + b - y)), b - {} * avg(2 * (a * x + b - y))
-    FROM gd, points 
-    WHERE idx < {} GROUP BY idx, a, b
+(WITH current_gd (idx, a, b) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b) AS (
+    SELECT idx, a - {} * avg(2 * x * (a * x + b - y)), b - {} * avg(2 * (a * x + b - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b
+  )
+  SELECT idx + 1, a, b
+  FROM subresult
+  WHERE idx < {}
+  )
 )
 SELECT * FROM gd WHERE idx = {};
 '''

@@ -20,6 +20,8 @@ def output_to_numpy(database_name: str, output: str, total_columns: int, relevan
         return json_to_numpy(output, relevant_columns)
     if database_name == 'umbra':
         return raw_to_numpy(output, relevant_columns, 1, 1)
+    if database_name == 'postgres':
+        return raw_to_numpy(output, relevant_columns, 2, 1)
 
 def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
     '''
