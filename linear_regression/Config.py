@@ -13,7 +13,7 @@ STATEMENT_FILE = 'Statement.sql'
 CONFIG = {
     'iterations': 100,
     'slope': 0.75,
-    'intercept': 8,
+    'intercept': -2.582,
     'databases': [
         {
             'name': 'duckdb',

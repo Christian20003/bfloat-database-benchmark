@@ -49,7 +49,7 @@ def main():
                 prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
                 prep_database.create_table('gd_start', ['idx', 'a', 'b'], ['int', type, type])
                 prep_database.create_table('points', ['id', 'x', 'y'], ['int', type, type])
-                prep_database.insert_from_select('gd_start', 'select 0, 1, 1')
+                prep_database.insert_from_select('gd_start', 'select 0, 10, 10')
                 prep_database.insert_from_csv('points', './points.csv')
                 prep_database.execute_sql()
 
