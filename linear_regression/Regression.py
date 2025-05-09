@@ -93,12 +93,15 @@ def generate_points(number: int, slope: float, intercept: float) -> List[List[fl
     :return: A list of point objects.
     '''
 
+    Create_CSV.create_csv_file('./points.csv', ['id', 'x', 'y'])
     result = []
     for value in range(number):
         x = float("{:.4f}".format(random.random()))
         y = slope * x + intercept
         result.append([value, float(x), float(y)])
-    Create_CSV.create_csv_file('./points.csv', ['id', 'x', 'y'])
+        if len(result) >= 100000000:
+            Create_CSV.append_rows('./points.csv', result)
+            result.clear()
     Create_CSV.append_rows('./points.csv', result)
     result.clear()
     
