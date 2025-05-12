@@ -11,9 +11,9 @@ POSTGRES_DB_DATABASE_FILE = 'regression'
 STATEMENT_FILE = 'Statement.sql'
 
 CONFIG = {
-    'iterations': 100,
     'slope': 0.75,
     'intercept': -2.582,
+    'max_points': 1000000000,
     'databases': [
         {
             'name': 'duckdb',
@@ -25,8 +25,18 @@ CONFIG = {
                 'Points', 
                 'Iterations', 
                 'Execution', 
-                'Heap', 'RSS', 
-                'MAPE', 
+                'Heap', 
+                'RSS',
+                'DuckDB-MAE',
+                'Tensorflow-MAE',
+                'DuckDB-MSE',
+                'Tensorflow-MSE',
+                'DuckDB-MAPE',
+                'Tensorflow-MAPE',
+                'DuckDB-sMAPE',
+                'Tensorflow-sMAPE',
+                'DuckDB-MPE', 
+                'Tensorflow-MPE', 
                 'DuckDB', 
                 'Tensorflow', 
                 'Truth'
@@ -36,7 +46,8 @@ CONFIG = {
             'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'bfloat']
+            'types': ['float', 'bfloat'],
+            'aggregations': ['standard', 'kahan']
         },
         {
             'name': 'umbra',
@@ -101,94 +112,132 @@ CONFIG = {
         }
     ],
     'setups': [
+        # setups with increasing amount of points
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 10,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 100,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 1000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 10000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 100000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 1000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 2500000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 5000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 7500000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 10000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 25000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 50000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 75000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 100000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 250000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 500000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 750000000,
             'ignore': False
         },
         {
+            'iterations': 100,
             'lr': 0.05,
             'p_amount': 1000000000,
+            'ignore': False
+        },
+        # setups with increasing amount of iterations
+        {
+            'iterations': 10,
+            'lr': 0.05,
+            'p_amount': 100000000,
+            'ignore': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'p_amount': 100000000,
+            'ignore': False
+        },
+        {
+            'iterations': 1000,
+            'lr': 0.05,
+            'p_amount': 100000000,
             'ignore': False
         },
     ] 
@@ -201,7 +250,7 @@ UNION ALL
 (WITH current_gd (idx, a, b) AS (
     SELECT * FROM gd
     ), subresult (idx, a, b) AS (
-    SELECT idx, a - {} * avg(2 * x * (a * x + b - y)), b - {} * avg(2 * (a * x + b - y))
+    SELECT idx, a - {} * {}(2 * x * (a * x + b - y)), b - {} * {}(2 * (a * x + b - y))
     FROM current_gd, points 
     GROUP BY idx, a, b
   )

@@ -1,3 +1,5 @@
+STATEMENT_FILE = 'Statement.sql'
+
 CONFIG = {
     "iterations": 10,
     "databases": [

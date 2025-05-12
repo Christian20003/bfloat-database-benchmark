@@ -28,3 +28,17 @@ def remove_dir(dir_name: str) -> None:
         os.system(f'rm -rf {dir_name}')
     except Exception as e:
         print_error(f'Failed to remove {dir_name}', e)
+
+def copy_csv_file(src: str, dst: str, number_lines: int) -> None:
+    '''
+    This function copies a CSV file from src to dst and limits the number of lines to number_lines.
+
+    :param src: The source file name.
+    :param dst: The destination file name.
+    :param number_lines: The number of lines to copy.
+    '''
+
+    try:
+        os.system(f'head -n {number_lines} {src} > {dst}')
+    except Exception as e:
+        print_error(f'Failed to copy {src} to {dst}', e)
