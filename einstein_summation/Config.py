@@ -25,7 +25,10 @@ CONFIG = {
                 'Execution', 
                 'Heap', 
                 'RSS', 
-                'Loss', 
+                'DuckDB-L2-Norm',
+                'Tensorflow-L2-Norm', 
+                'DuckDB-MSE',
+                'Tensorflow-MSE',
                 'DuckDB-Sum', 
                 'Tensorflow-Sum'
                 ],
@@ -34,7 +37,8 @@ CONFIG = {
             'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'bfloat']
+            'types': ['float', 'bfloat'],
+            'aggregations': ['standard', 'kahan']
         },
         {
             'name': 'umbra',
@@ -237,7 +241,7 @@ STATEMENT = '''
 WITH A(rowIndex, columnIndex, val) AS (SELECT * FROM matrixa),
     B(rowIndex, columnIndex, val) AS (SELECT * FROM matrixb),
     v(rowIndex, val) AS (SELECT rowIndex, val FROM vectorv)
-    SELECT A.rowIndex AS rowIndex, SUM(A.val * B.val * v.val) AS val
+    SELECT A.rowIndex AS rowIndex, {}(A.val * B.val * v.val) AS val
     FROM A, B, v
     WHERE A.columnIndex = B.columnIndex AND B.rowIndex = v.rowIndex
     GROUP BY A.rowIndex

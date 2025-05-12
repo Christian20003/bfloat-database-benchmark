@@ -224,8 +224,8 @@ def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slo
     db_mae = np.mean(np.abs(points_Y - db_pred))
     tf_mae = np.mean(np.abs(points_Y - tf_pred))
 
-    db_mse = np.mean(np.pow(points_Y - db_pred, 2))
-    tf_mse = np.mean(np.pow(points_Y - tf_pred, 2))
+    db_mse = np.mean(np.power(points_Y - db_pred, 2))
+    tf_mse = np.mean(np.power(points_Y - tf_pred, 2))
 
     db_mape = np.mean(np.abs((points_Y - db_pred) / points_Y)) * 100
     tf_mape = np.mean(np.abs((points_Y - tf_pred) / points_Y)) * 100
