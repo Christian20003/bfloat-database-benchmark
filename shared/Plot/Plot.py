@@ -97,7 +97,8 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
                             'x': list(x_values),
                             'y': list(y_values),
                             'diff_color': True,
-                            'diff_style': False
+                            'diff_style': True,
+                            'diff_marker': True
                         }
                     })
                 except ValueError:
@@ -105,19 +106,61 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
     plot_data(final_data, plot_config['x_label'], plot_config['y_label'], plot_config['file_name'])
 
 if __name__ == "__main__":
-    data = {
+    file_name = './DuckDB_Regression_Results.csv'
+    scenario_name = 'Regression'
+    line_keys = ['Type'] if 'Iris' not in file_name else ['Type', 'Network_Size']
+    x_keys = []
+    if 'Iris' in file_name:
+        x_keys = ['Data_Size']
+    elif 'Einstein' in file_name:
+        x_keys = ['Matrix_A', 'Matrix_B', 'Vector_V']
+    else:
+        x_keys = ['Points']
+    time = {
         'file_1': {
-            'file': './DuckDB_Iris_Results.csv',
-            'line_keys': ['Type', 'Network_Size'],
-            'x_keys': ['Data_Size'],
+            'file': file_name,
+            'line_keys': line_keys,
+            'x_keys': x_keys,
             'y_keys': {
-                'DuckDB': ['Heap']
+                'DuckDB': ['Execution'],
             }
         }
     }
-    config = {
+    rss = {
+        'file_1': {
+            'file': file_name,
+            'line_keys': line_keys,
+            'x_keys': x_keys,
+            'y_keys': {
+                'DuckDB': ['RSS'],
+            }
+        }
+    }
+    heap = {
+        'file_1': {
+            'file': file_name,
+            'line_keys': line_keys,
+            'x_keys': x_keys,
+            'y_keys': {
+                'DuckDB': ['Heap'],
+            }
+        }
+    }
+    config_time = {
+        'x_label': 'Number of samples',
+        'y_label': 'Execution time in seconds',
+        'file_name': f'Execution_{scenario_name}.pdf'
+    }
+    config_rss = {
+        'x_label': 'Number of samples',
+        'y_label': 'RSS memors in GB',
+        'file_name': f'RSS_{scenario_name}.pdf'
+    }
+    config_heap = {
         'x_label': 'Number of samples',
         'y_label': 'Heap in GB',
-        'file_name': 'Execution_Kmeans.pdf'
+        'file_name': f'Heap_{scenario_name}.pdf'
     }
-    plot_results(data, config)
+    plot_results(time, config_time)
+    plot_results(rss, config_rss)
+    plot_results(heap, config_heap)

@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 
 COLORS = ['maroon', 'cornflowerblue', 'forestgreen', 'orange', 'mediumorchid', 'yellow']
-STYLES = ['solid', 'dashed', 'dotted', 'dashdot', (0, (3, 5, 1, 5, 1, 5))]
+STYLES = ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5))]
+MARKERS = ['o', '^', 's', '*','v']
 
 def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc: str = 'lower left', x_as_log: bool = True, y_as_log: bool = False) -> None:
     '''
@@ -11,6 +12,7 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
             y: List[number]
             diff_color: bool
             diff_style: bool
+            diff_marker: bool
     
     :param data: The dictionary containing all data described above.
     :param x_label: The label of the x-axis.
@@ -23,24 +25,33 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
 
     color_idx = 0
     style_idx = 0
+    marker_idx = 0
     for key, value in data.items():
-        plt.plot(value['x'], value['y'], color=COLORS[color_idx], linestyle=STYLES[style_idx], marker='o', label=key)
+        plt.plot(value['x'], value['y'], color=COLORS[color_idx], linestyle=STYLES[style_idx], marker=MARKERS[marker_idx], label=key, linewidth=2)
         if value['diff_color']:
             color_idx += 1
         if value['diff_style']:
             style_idx += 1
+        if value['diff_marker']:
+            marker_idx += 1
         if color_idx > len(COLORS):
             color_idx = 0
         if style_idx > len(STYLES):
             style_idx = 0
+        if marker_idx > len(MARKERS):
+            marker_idx = 0
     columns = 1 if len(data) < 2 else 4
-    plt.legend(loc=legend_loc, bbox_to_anchor=(0, 1, 1, 0.2), mode='expand', ncol=columns)
-    plt.ylim(bottom=0)
+    mode = 'expand' if len(data) > 4 else 'default'
+    ylimit = max(value['y']) / 100
+    plt.tick_params(which='minor', bottom=False, top=False, left=False, right=False)
+    plt.legend(loc=legend_loc, bbox_to_anchor=(0, 1, 1, 0.2), mode=mode, ncol=columns)
+    plt.ylim(bottom=-ylimit)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     if x_as_log:
         plt.xscale('log')
     if y_as_log:
         plt.yscale('log')
-    #plt.savefig(file_name)
-    plt.show()
+    plt.savefig(file_name)
+    #plt.show()
+    plt.clf()
