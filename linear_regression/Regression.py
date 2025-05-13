@@ -116,16 +116,17 @@ def prepare_benchmark(database: dict, type: str, param_start: int, number_parame
     select_stmt = select_stmt[:-2]
     prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
     prep_database.create_table('gd_start', ['idx'] + [letters[value] for value in range(number_parameter)], ['int'] + [type for _ in range(number_parameter)])
-    prep_database.create_table('points', ['id', 'y'] + [f'x{i}' for i in reversed(range(number_parameter))], ['int'] + [type for _ in range(number_parameter)])
+    prep_database.create_table('points', ['id', 'y'] + [f'x{i}' for i in reversed(range(number_parameter))], ['int', type] + [type for _ in range(number_parameter)])
     prep_database.insert_from_select('gd_start', select_stmt)
     prep_database.insert_from_csv('points', setup_file)
     prep_database.execute_sql()
 
-def print_setting(points: int, database: str, type: str, iterations: int, learning_rate: float, agg_func: str) -> None:
+def print_setting(points: int, parameters: int, database: str, type: str, iterations: int, learning_rate: float, agg_func: str) -> None:
     '''
     This function prints the settings for the current benchmark.
 
     :param points: The number of points.
+    :param parameters: The number of parameters.
     :param database: The database name.
     :param type: The datatype for x and y values.
     :param iterations: The number of update iterations.
@@ -134,6 +135,7 @@ def print_setting(points: int, database: str, type: str, iterations: int, learni
     '''
     Format.print_title(f'START BENCHMARK - LINEAR-REGRESSION WITH THE FOLLOWING SETTINGS')
     Format.print_information(f'Points: {points}', tabs=1)
+    Format.print_information(f'Parameters: {parameters}', tabs=1)
     Format.print_information(f'Database: {database}', tabs=1)
     Format.print_information(f'Type: {type}', tabs=1)
     Format.print_information(f'Iterations: {iterations}', tabs=1)

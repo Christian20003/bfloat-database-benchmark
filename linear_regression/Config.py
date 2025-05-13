@@ -266,7 +266,7 @@ CONFIG = {
             'start-sql': [],
             'end-sql': ['.exit'],
             'types': ['float', 'bfloat'],
-            'aggregations': ['standard', 'kahan']
+            'aggregations': ['standard']
         },
         {
             'name': 'umbra',
