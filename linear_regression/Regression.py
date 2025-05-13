@@ -52,7 +52,7 @@ def main():
                     prepare_benchmark(database, type, CONFIG['param_start'], scenario['param_amount'], scenario['p_amount'], data_file, setup_file)
 
                     number_columns = scenario['param_amount'] + 1
-                    relevant_columns = [value for value in range(number_columns)]
+                    relevant_columns = [value + 1 for value in range(number_columns - 1)]
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
                     #heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
 
