@@ -10,10 +10,229 @@ UMBRA_DB_DATABASE_FILE = 'regression'
 POSTGRES_DB_DATABASE_FILE = 'regression'
 STATEMENT_FILE = 'Statement.sql'
 
+STATEMENT_2_PARAM = '''
+WITH RECURSIVE gd (idx, a, b) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b) AS (
+    SELECT idx, a - {} * {}(2 * x1 * (a * x1 + b - y)), b - {} * {}(2 * (a * x1 + b - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b
+  )
+  SELECT idx + 1, a, b
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_3_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c) AS (
+    SELECT idx, 
+            a - {} * {}(2 * pow(x2, 2) * (a * pow(x2, 2) + b * x1 + c - y)), 
+            b - {} * {}(2 * x1 * (a * pow(x2, 2) + b * x1 + c - y)), 
+            c - {} * {}(2 * (a * pow(x2, 2) + b * x1 + c - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b, c
+  )
+  SELECT idx + 1, a, b, c
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_4_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d) AS (
+    SELECT idx, 
+            a - {} * {}(2 * pow(x3, 3) * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y)), 
+            b - {} * {} (2 * pow(x2, 2) * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y)), 
+            c - {} * {}(2 * x1 * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y)), 
+            d - {} * {}(2 * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b, c, d
+  )
+  SELECT idx + 1, a, b, c, d
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_5_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d, e) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d, e) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d, e) AS (
+    SELECT idx, 
+            a - {} * {}(2 * pow(x4, 4) * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
+            b - {} * {}(2 * pow(x3, 3) * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
+            c - {} * {} (2 * pow(x2, 2) * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
+            d - {} * {}(2 * x1 * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
+            e - {} * {}(2 * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b, c, d, e
+  )
+  SELECT idx + 1, a, b, c, d, e
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_6_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d, e, f) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d, e, f) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d, e, f) AS (
+    SELECT idx, 
+           a - {} * {}(2 * pow(x5, 5) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
+           b - {} * {}(2 * pow(x4, 4) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
+           c - {} * {}(2 * pow(x3, 3) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
+           d - {} * {}(2 * pow(x2, 2) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
+           e - {} * {}(2 * x1 * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
+           f - {} * {}(2 * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b, c, d, e, f
+  )
+  SELECT idx + 1, a, b, c, d, e, f
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_7_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d, e, f, g) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d, e, f, g) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d, e, f, g) AS (
+    SELECT idx, a - {} * {}(2 * pow(x6, 6) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
+           b - {} * {}(2 * pow(x5, 5) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
+           c - {} * {}(2 * pow(x4, 4) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
+           d - {} * {}(2 * pow(x3, 3) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
+           e - {} * {}(2 * pow(x2, 2) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)),
+           f - {} * {}(2 * x1 * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)),
+           g - {} * {}(2 * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b, c, d, e, f, g
+  )
+  SELECT idx + 1, a, b, c, d, e, f, g
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_8_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d, e, f, g, h) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d, e, f, g, h) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d, e, f, g, h) AS (
+    SELECT idx, a - {} * {}(2 * pow(x7, 7) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
+           b - {} * {}(2 * pow(x6, 6) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
+           c - {} * {}(2 * pow(x5, 5) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
+           d - {} * {}(2 * pow(x4, 4) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
+           e - {} * {}(2 * pow(x3, 3) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
+           f - {} * {}(2 * pow(x2, 2) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
+           g - {} * {}(2 * x1 * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)),
+           h - {} * {}(2 * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y))
+    FROM current_gd, points
+    GROUP BY idx, a, b, c, d, e, f, g, h
+  )
+  SELECT idx + 1, a, b, c, d, e, f, g, h
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_9_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d, e, f, g, h, i) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d, e, f, g, h, i) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d, e, f, g, h, i) AS (
+    SELECT idx, a - {} * {}(2 * pow(x8, 8) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
+           b - {} * {}(2 * pow(x7, 7) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
+           c - {} * {}(2 * pow(x6, 6) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
+           d - {} * {}(2 * pow(x5, 5) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
+           e - {} * {}(2 * pow(x4, 4) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
+           f - {} * {}(2 * pow(x3, 3) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
+           g - {} * {}(2 * pow(x2, 2) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)),
+           h - {} * {}(2 * x1 * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)),
+           i - {} * {}(2 * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y))
+    FROM current_gd, points
+    GROUP BY idx, a, b, c, d, e, f, g, h, i
+  )
+  SELECT idx + 1, a, b, c, d, e, f, g, h, i
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
+STATEMENT_10_PARAM = '''
+WITH RECURSIVE gd (idx, a, b, c, d, e, f, g, h, i, j) AS (
+SELECT * FROM gd_start
+UNION ALL
+(WITH current_gd (idx, a, b, c, d, e, f, g, h, i, j) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b, c, d, e, f, g, h, i, j) AS (
+    SELECT idx, a - {} * {}(2 * pow(x9, 9) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           b - {} * {}(2 * pow(x8, 8) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           c - {} * {}(2 * pow(x7, 7) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           d - {} * {}(2 * pow(x6, 6) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           e - {} * {}(2 * pow(x5, 5) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           f - {} * {}(2 * pow(x4, 4) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           g - {} * {}(2 * pow(x3, 3) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           h - {} * {}(2 * pow(x2, 2) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
+           i - {} * {}(2 * x1 * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)),
+           j - {} * {}(2 * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y))
+    FROM current_gd, points
+    GROUP BY idx, a, b, c, d, e, f, g, h, i, j
+  )
+  SELECT idx + 1, a, b, c, d, e, f, g, h, i, j
+  FROM subresult
+  WHERE idx < {}
+  )
+)
+SELECT * FROM gd WHERE idx = {};
+'''
+
 CONFIG = {
-    'slope': 0.75,
-    'intercept': -2.582,
-    'max_points': 1000000000,
+    'param_value': 1,
+    'param_start': 10,
+    'max_points': 100,#1000000000,
     'databases': [
         {
             'name': 'duckdb',
@@ -116,148 +335,265 @@ CONFIG = {
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 10,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
+        },
+        # Test setups
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_3_PARAM,
+            'p_amount': 10,
+            'param_amount': 3,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_4_PARAM,
+            'p_amount': 10,
+            'param_amount': 4,
+            'ignore': False,
+            'use_max_points': True
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_5_PARAM,
+            'p_amount': 10,
+            'param_amount': 5,
+            'ignore': False,
+            'use_max_points': True
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 100,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 1000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 10000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 100000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 1000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 2500000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 5000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 7500000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 10000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 25000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 50000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 75000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 100000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 250000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 500000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 750000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
         {
             'iterations': 100,
             'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
             'p_amount': 1000000000,
-            'ignore': False
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': True
         },
-        # setups with increasing amount of iterations
+        # setups with increasing amount of parameters
         {
-            'iterations': 10,
+            'iterations': 100,
             'lr': 0.05,
-            'p_amount': 100000000,
-            'ignore': False
+            'statement': STATEMENT_3_PARAM,
+            'p_amount': 100000,
+            'param_amount': 3,
+            'ignore': False,
+            'use_max_points': False
         },
         {
             'iterations': 100,
             'lr': 0.05,
-            'p_amount': 100000000,
-            'ignore': False
+            'statement': STATEMENT_4_PARAM,
+            'p_amount': 100000,
+            'param_amount': 4,
+            'ignore': False,
+            'use_max_points': False
         },
         {
-            'iterations': 1000,
+            'iterations': 100,
             'lr': 0.05,
-            'p_amount': 100000000,
-            'ignore': False
+            'statement': STATEMENT_5_PARAM,
+            'p_amount': 100000,
+            'param_amount': 5,
+            'ignore': False,
+            'use_max_points': False
         },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_6_PARAM,
+            'p_amount': 100000,
+            'param_amount': 6,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_7_PARAM,
+            'p_amount': 100000,
+            'param_amount': 7,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_8_PARAM,
+            'p_amount': 100000,
+            'param_amount': 8,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_9_PARAM,
+            'p_amount': 1000000,
+            'param_amount': 9,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_10_PARAM,
+            'p_amount': 1000000,
+            'param_amount': 10,
+            'ignore': False,
+            'use_max_points': False
+        }
     ] 
 }
-
-STATEMENT = '''
-WITH RECURSIVE gd (idx, a, b) AS (
-SELECT * FROM gd_start
-UNION ALL
-(WITH current_gd (idx, a, b) AS (
-    SELECT * FROM gd
-    ), subresult (idx, a, b) AS (
-    SELECT idx, a - {} * {}(2 * x * (a * x + b - y)), b - {} * {}(2 * (a * x + b - y))
-    FROM current_gd, points 
-    GROUP BY idx, a, b
-  )
-  SELECT idx + 1, a, b
-  FROM subresult
-  WHERE idx < {}
-  )
-)
-SELECT * FROM gd WHERE idx = {};
-'''
