@@ -47,12 +47,12 @@ def main():
                 continue
             for type in database['types']:
                 for agg in database['aggregations']:
-                    print_setting(scenario['p_amount'], database['name'], type, scenario['iterations'], scenario['lr'], agg)
+                    print_setting(scenario['p_amount'], scenario['param_amount'], database['name'], type, scenario['iterations'], scenario['lr'], agg)
                     generate_statement(scenario['statement'], agg, scenario['lr'], scenario['iterations'], scenario['param_amount'])
                     prepare_benchmark(database, type, CONFIG['param_start'], scenario['param_amount'], scenario['p_amount'], data_file, setup_file)
 
                     number_columns = scenario['param_amount'] + 1
-                    relevant_columns = [1, number_columns - 1]
+                    relevant_columns = [value for value in range(number_columns)]
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
                     #heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
 
