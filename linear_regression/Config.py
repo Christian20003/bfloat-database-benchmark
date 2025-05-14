@@ -37,9 +37,9 @@ UNION ALL
     SELECT * FROM gd
     ), subresult (idx, a, b, c) AS (
     SELECT idx, 
-            a - {} * {}(2 * pow(x2, 2) * (a * pow(x2, 2) + b * x1 + c - y)), 
-            b - {} * {}(2 * x1 * (a * pow(x2, 2) + b * x1 + c - y)), 
-            c - {} * {}(2 * (a * pow(x2, 2) + b * x1 + c - y))
+            a - {} * {}(2 * x2 * (a * x2 + b * x1 + c - y)), 
+            b - {} * {}(2 * x1 * (a * x2 + b * x1 + c - y)), 
+            c - {} * {}(2 * (a * x2 + b * x1 + c - y))
     FROM current_gd, points 
     GROUP BY idx, a, b, c
   )
@@ -59,10 +59,10 @@ UNION ALL
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d) AS (
     SELECT idx, 
-            a - {} * {}(2 * pow(x3, 3) * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y)), 
-            b - {} * {} (2 * pow(x2, 2) * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y)), 
-            c - {} * {}(2 * x1 * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y)), 
-            d - {} * {}(2 * (a * pow(x3, 3) + b * pow(x2, 2) + c * x1 + d - y))
+            a - {} * {}(2 * x3 * (a * x3 + b * x2 + c * x1 + d - y)), 
+            b - {} * {} (2 * x2 * (a * x3 + b * x2 + c * x1 + d - y)), 
+            c - {} * {}(2 * x1 * (a * x3 + b * x2 + c * x1 + d - y)), 
+            d - {} * {}(2 * (a * x3 + b * x2 + c * x1 + d - y))
     FROM current_gd, points 
     GROUP BY idx, a, b, c, d
   )
@@ -82,11 +82,11 @@ UNION ALL
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d, e) AS (
     SELECT idx, 
-            a - {} * {}(2 * pow(x4, 4) * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
-            b - {} * {}(2 * pow(x3, 3) * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
-            c - {} * {} (2 * pow(x2, 2) * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
-            d - {} * {}(2 * x1 * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y)), 
-            e - {} * {}(2 * (a * pow(x4, 4) + b * pow(x3, 3) + c * pow(x2, 2) + d * x1 + e - y))
+            a - {} * {}(2 * x4 * (a * x4 + b * x3 + c * x2 + d * x1 + e - y)), 
+            b - {} * {}(2 * x3 * (a * x4 + b * x3 + c * x2 + d * x1 + e - y)), 
+            c - {} * {}(2 * x2 * (a * x4 + b * x3 + c * x2 + d * x1 + e - y)), 
+            d - {} * {}(2 * x1 * (a * x4 + b * x3 + c * x2 + d * x1 + e - y)), 
+            e - {} * {}(2 * (a * x4 + b * x3 + c * x2 + d * x1 + e - y))
     FROM current_gd, points 
     GROUP BY idx, a, b, c, d, e
   )
@@ -106,12 +106,12 @@ UNION ALL
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d, e, f) AS (
     SELECT idx, 
-           a - {} * {}(2 * pow(x5, 5) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
-           b - {} * {}(2 * pow(x4, 4) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
-           c - {} * {}(2 * pow(x3, 3) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
-           d - {} * {}(2 * pow(x2, 2) * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
-           e - {} * {}(2 * x1 * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y)), 
-           f - {} * {}(2 * (a * pow(x5, 5) + b * pow(x4, 4) + c * pow(x3, 3) + d * pow(x2, 2) + e * x1 + f - y))
+           a - {} * {}(2 * x5 * (a * x5 + b * x4 + c * x3 + d * x2 + e * x1 + f - y)), 
+           b - {} * {}(2 * x4 * (a * x5 + b * x4 + c * x3 + d * x2 + e * x1 + f - y)), 
+           c - {} * {}(2 * x3 * (a * x5 + b * x4 + c * x3 + d * x2 + e * x1 + f - y)), 
+           d - {} * {}(2 * x2 * (a * x5 + b * x4 + c * x3 + d * x2 + e * x1 + f - y)), 
+           e - {} * {}(2 * x1 * (a * x5 + b * x4 + c * x3 + d * x2 + e * x1 + f - y)), 
+           f - {} * {}(2 * (a * x5 + b * x4 + c * x3 + d * x2 + e * x1 + f - y))
     FROM current_gd, points 
     GROUP BY idx, a, b, c, d, e, f
   )
@@ -130,13 +130,14 @@ UNION ALL
 (WITH current_gd (idx, a, b, c, d, e, f, g) AS (
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d, e, f, g) AS (
-    SELECT idx, a - {} * {}(2 * pow(x6, 6) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
-           b - {} * {}(2 * pow(x5, 5) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
-           c - {} * {}(2 * pow(x4, 4) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
-           d - {} * {}(2 * pow(x3, 3) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)), 
-           e - {} * {}(2 * pow(x2, 2) * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)),
-           f - {} * {}(2 * x1 * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y)),
-           g - {} * {}(2 * (a * pow(x6, 6) + b * pow(x5, 5) + c * pow(x4, 4) + d * pow(x3, 3) + e * pow(x2, 2) + f * x1 + g - y))
+    SELECT idx, 
+           a - {} * {}(2 * x6 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y)), 
+           b - {} * {}(2 * x5 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y)), 
+           c - {} * {}(2 * x4 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y)), 
+           d - {} * {}(2 * x3 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y)), 
+           e - {} * {}(2 * x2 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y)),
+           f - {} * {}(2 * x1 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y)),
+           g - {} * {}(2 * (a * x6 + b * x5 + c * x4 + d * x3 + e * x2 + f * x1 + g - y))
     FROM current_gd, points 
     GROUP BY idx, a, b, c, d, e, f, g
   )
@@ -155,14 +156,15 @@ UNION ALL
 (WITH current_gd (idx, a, b, c, d, e, f, g, h) AS (
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d, e, f, g, h) AS (
-    SELECT idx, a - {} * {}(2 * pow(x7, 7) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
-           b - {} * {}(2 * pow(x6, 6) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
-           c - {} * {}(2 * pow(x5, 5) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
-           d - {} * {}(2 * pow(x4, 4) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
-           e - {} * {}(2 * pow(x3, 3) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
-           f - {} * {}(2 * pow(x2, 2) * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)), 
-           g - {} * {}(2 * x1 * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y)),
-           h - {} * {}(2 * (a * pow(x7, 7) + b * pow(x6, 6) + c * pow(x5, 5) + d * pow(x4, 4) + e * pow(x3, 3) + f * pow(x2, 2) + g * x1 + h - y))
+    SELECT idx, 
+           a - {} * {}(2 * x7 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)), 
+           b - {} * {}(2 * x6 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)), 
+           c - {} * {}(2 * x5 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)), 
+           d - {} * {}(2 * x4 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)), 
+           e - {} * {}(2 * x3 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)), 
+           f - {} * {}(2 * x2 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)), 
+           g - {} * {}(2 * x1 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y)),
+           h - {} * {}(2 * (a * x7 + b * x6 + c * x5 + d * x4 + e * x3 + f * x2 + g * x1 + h - y))
     FROM current_gd, points
     GROUP BY idx, a, b, c, d, e, f, g, h
   )
@@ -181,15 +183,16 @@ UNION ALL
 (WITH current_gd (idx, a, b, c, d, e, f, g, h, i) AS (
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d, e, f, g, h, i) AS (
-    SELECT idx, a - {} * {}(2 * pow(x8, 8) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
-           b - {} * {}(2 * pow(x7, 7) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
-           c - {} * {}(2 * pow(x6, 6) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
-           d - {} * {}(2 * pow(x5, 5) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
-           e - {} * {}(2 * pow(x4, 4) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
-           f - {} * {}(2 * pow(x3, 3) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)), 
-           g - {} * {}(2 * pow(x2, 2) * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)),
-           h - {} * {}(2 * x1 * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y)),
-           i - {} * {}(2 * (a * pow(x8, 8) + b * pow(x7, 7) + c * pow(x6, 6) + d * pow(x5, 5) + e * pow(x4, 4) + f * pow(x3, 3) + g * pow(x2, 2) + h * x1 + i - y))
+    SELECT idx, 
+           a - {} * {}(2 * x8 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)), 
+           b - {} * {}(2 * x7 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)), 
+           c - {} * {}(2 * x6 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)), 
+           d - {} * {}(2 * x5 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)), 
+           e - {} * {}(2 * x4 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)), 
+           f - {} * {}(2 * x3 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)), 
+           g - {} * {}(2 * x2 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)),
+           h - {} * {}(2 * x1 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y)),
+           i - {} * {}(2 * (a * x8 + b * x7 + c * x6 + d * x5 + e * x4 + f * x3 + g * x2 + h * x1 + i - y))
     FROM current_gd, points
     GROUP BY idx, a, b, c, d, e, f, g, h, i
   )
@@ -208,16 +211,17 @@ UNION ALL
 (WITH current_gd (idx, a, b, c, d, e, f, g, h, i, j) AS (
     SELECT * FROM gd
     ), subresult (idx, a, b, c, d, e, f, g, h, i, j) AS (
-    SELECT idx, a - {} * {}(2 * pow(x9, 9) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           b - {} * {}(2 * pow(x8, 8) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           c - {} * {}(2 * pow(x7, 7) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           d - {} * {}(2 * pow(x6, 6) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           e - {} * {}(2 * pow(x5, 5) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           f - {} * {}(2 * pow(x4, 4) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           g - {} * {}(2 * pow(x3, 3) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           h - {} * {}(2 * pow(x2, 2) * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)), 
-           i - {} * {}(2 * x1 * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y)),
-           j - {} * {}(2 * (a * pow(x9, 9) + b * pow(x8, 8) + c * pow(x7, 7) + d * pow(x6, 6) + e * pow(x5, 5) + f * pow(x4, 4) + g * pow(x3, 3) + h * pow(x2, 2) + i * x1 + j - y))
+    SELECT idx, 
+           a - {} * {}(2 * x9 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           b - {} * {}(2 * x8 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           c - {} * {}(2 * x7 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           d - {} * {}(2 * x6 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           e - {} * {}(2 * x5 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           f - {} * {}(2 * x4 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           g - {} * {}(2 * x3 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           h - {} * {}(2 * x2 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)), 
+           i - {} * {}(2 * x1 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y)),
+           j - {} * {}(2 * (a * x9 + b * x8 + c * x7 + d * x6 + e * x5 + f * x4 + g * x3 + h * x2 + i * x1 + j - y))
     FROM current_gd, points
     GROUP BY idx, a, b, c, d, e, f, g, h, i, j
   )

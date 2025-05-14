@@ -54,7 +54,7 @@ def main():
                     number_columns = scenario['param_amount'] + 1
                     relevant_columns = [value + 1 for value in range(number_columns - 1)]
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
-                    heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
+                    heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["p_amount"]}_{agg}')
 
                     tf_params = regression_tensorflow(setup_file, scenario['param_amount'], CONFIG['param_start'], scenario['lr'], scenario['iterations'], type)
                     db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
@@ -224,7 +224,7 @@ def regression_tensorflow(points_csv: str, number_parameters: int, param_start: 
     lr = tf.Variable(learning_rate, dtype=datatype)
 
     for _ in range(iterations):
-        Y_preds = tf.reduce_sum([tf_params[idx] * x for idx, x in enumerate(tf_data)], axis=0)
+        Y_preds = tf.reduce_sum([tf_params[idx] * x for idx, x in enumerate(tf_data)], axis=1)
         Y_preds += tf_params[-1]
         loss = Y_preds - tf_Y
         dev_param = tf.reduce_mean([2 * x * loss for x in tf_data], axis=0)
