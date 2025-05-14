@@ -56,7 +56,7 @@ def main():
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
                     heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
 
-                    tf_params = regression_tensorflow(setup_file, scenario['lr'], scenario['iterations'], type)
+                    tf_params = regression_tensorflow(setup_file, scenario['param_amount'], CONFIG['param_start'], scenario['lr'], scenario['iterations'], type)
                     db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
 
                     truth = []
@@ -211,13 +211,13 @@ def regression_tensorflow(points_csv: str, number_parameters: int, param_start: 
     '''
 
     Format.print_information('Calculating tensorflow result - This can take some time', mark=True)
-    points = pd.read_csv(points_csv).to_numpy()
+    points = pd.read_csv(points_csv)
     datatype = tf.float64
     if type == 'bfloat':
         datatype = tf.bfloat16
     elif type == 'float':
         datatype = tf.float32
-    tf_data = [tf.constant([entry[idx], datatype] for idx, entry in enumerate(points[1:]))]
+    tf_data = [tf.constant(points[column].values, datatype) for column in points.columns[1:]]
     tf_Y = tf_data.pop(0)
 
     tf_params = [tf.Variable(param_start, dtype=datatype) for _ in range(number_parameters)]
@@ -227,12 +227,11 @@ def regression_tensorflow(points_csv: str, number_parameters: int, param_start: 
         Y_preds = tf.reduce_sum([tf_params[idx] * x for idx, x in enumerate(tf_data)], axis=0)
         Y_preds += tf_params[-1]
         loss = Y_preds - tf_Y
-        dev_param = tf.reduce_mean(2 * tf_data * loss)
+        dev_param = tf.reduce_mean([2 * x * loss for x in tf_data], axis=0)
         dev_last_param = tf.reduce_mean(2 * loss)
-        tf_params = [param - lr * dev for param, dev in zip(tf_params[:-1], dev_param)]
-        tf_params[-1] = tf_params[-1] - lr * dev_last_param
+        tf_params = [param - lr * dev_param[idx] for idx, param in enumerate(tf_params[:-1])] + [tf_params[-1] - lr * dev_last_param]
 
-    return tf_params.numpy()
+    return [value.numpy() for value in tf_params]
 
 def evaluate_accuracy(points_csv: str, db_params: np.ndarray, tf_params: np.ndarray, type: str) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
     '''
@@ -249,8 +248,8 @@ def evaluate_accuracy(points_csv: str, db_params: np.ndarray, tf_params: np.ndar
     '''
     
     Format.print_information('Calculating accuracy metrics - This can take some time', mark=True)
-    points = pd.read_csv(points_csv).to_numpy()
-    points_X = [np.array([entry[idx]] for idx, entry in enumerate(points[1:]))]
+    points = pd.read_csv(points_csv)
+    points_X = [np.array(points[column].values) for column in points.columns[1:]]
     points_Y = points_X.pop(0)
 
     db_pred = np.sum([db_params[idx] * x for idx, x in enumerate(points_X)], axis=0)

@@ -267,8 +267,8 @@ CONFIG = {
             'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['double', 'float', 'bfloat'],
-            'aggregations': ['standard', 'kahan']
+            'types': ['double', 'float'],
+            'aggregations': ['standard']
         },
         {
             'name': 'umbra',
