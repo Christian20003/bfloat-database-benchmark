@@ -341,8 +341,57 @@ CONFIG = {
             'p_amount': 10,
             'param_amount': 2,
             'ignore': False,
-            'use_max_points': True
+            'use_max_points': False
         },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_3_PARAM,
+            'p_amount': 10,
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_4_PARAM,
+            'p_amount': 10,
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_5_PARAM,
+            'p_amount': 10,
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_6_PARAM,
+            'p_amount': 10,
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': False
+        },
+        {
+            'iterations': 100,
+            'lr': 0.05,
+            'statement': STATEMENT_7_PARAM,
+            'p_amount': 10,
+            'param_amount': 2,
+            'ignore': False,
+            'use_max_points': False
+        },
+
+
+
+
         {
             'iterations': 100,
             'lr': 0.05,

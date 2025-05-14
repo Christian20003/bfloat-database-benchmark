@@ -56,9 +56,12 @@ def main():
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
                     heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
 
-                    tf_slope, tf_intercept = regression_tensorflow(setup_file, scenario['lr'], scenario['iterations'], type)
-                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0][0], output[0][1], tf_slope, tf_intercept, type)
+                    tf_params = regression_tensorflow(setup_file, scenario['lr'], scenario['iterations'], type)
+                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
 
+                    truth = []
+                    for _ in range(scenario['param_amount']):
+                        truth.append(CONFIG['param_value'])
                     Create_CSV.append_row(
                         database['csv_file'], 
                         [
@@ -80,9 +83,9 @@ def main():
                             tf_smape,
                             db_mpe,
                             tf_mpe, 
-                            np.array([output[0][0], output[0][1]]), 
-                            np.array([tf_slope, tf_intercept]), 
-                            np.array([CONFIG['param_value'], CONFIG['param_value']])]
+                            output[0], 
+                            tf_params, 
+                            truth]
                         )
                     Helper.remove_files(database['files'])
                     if database['name'] == 'postgres':
@@ -195,7 +198,7 @@ def generate_points(number_points: int, number_parameter: int, parameter_value: 
     Create_CSV.append_rows(file_name, result)
     result.clear()
     
-def regression_tensorflow(points_csv: str, learning_rate: float, iterations: int, type: str) -> Tuple[float, float]:
+def regression_tensorflow(points_csv: str, number_parameters: int, param_start: int, learning_rate: float, iterations: int, type: str) -> np.ndarray:
     '''
     This function calculates the regression line parameters with tensorflow.
 
@@ -214,23 +217,24 @@ def regression_tensorflow(points_csv: str, learning_rate: float, iterations: int
         datatype = tf.bfloat16
     elif type == 'float':
         datatype = tf.float32
-    tf_X = tf.constant([entry[2] for entry in points], datatype)
-    tf_Y = tf.constant([entry[1] for entry in points], datatype)
-    slope = tf.Variable(10.0, dtype=datatype)
-    intercept = tf.Variable(10.0, dtype=datatype)
+    tf_data = [tf.constant([entry[idx], datatype] for idx, entry in enumerate(points[1:]))]
+    tf_Y = tf_data.pop(0)
+
+    tf_params = [tf.Variable(param_start, dtype=datatype) for _ in range(number_parameters)]
     lr = tf.Variable(learning_rate, dtype=datatype)
 
     for _ in range(iterations):
-        Y_pred = slope * tf_X + intercept
-        loss = Y_pred - tf_Y
-        dev_slope = tf.reduce_mean(2 * tf_X * loss)
-        dev_intercept = tf.reduce_mean(2 * loss)
-        slope = slope - lr * dev_slope
-        intercept = intercept - lr * dev_intercept
+        Y_preds = tf.reduce_sum([tf_params[idx] * x for idx, x in enumerate(tf_data)], axis=0)
+        Y_preds += tf_params[-1]
+        loss = Y_preds - tf_Y
+        dev_param = tf.reduce_mean(2 * tf_data * loss)
+        dev_last_param = tf.reduce_mean(2 * loss)
+        tf_params = [param - lr * dev for param, dev in zip(tf_params[:-1], dev_param)]
+        tf_params[-1] = tf_params[-1] - lr * dev_last_param
 
-    return slope.numpy(), intercept.numpy()
+    return tf_params.numpy()
 
-def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slope_tf: float, intercept_tf: float, type: str) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
+def evaluate_accuracy(points_csv: str, db_params: np.ndarray, tf_params: np.ndarray, type: str) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
     '''
     This function evaluates the accuracy of the database and tensorflow by calculating different error metrics.
 
@@ -246,10 +250,11 @@ def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slo
     
     Format.print_information('Calculating accuracy metrics - This can take some time', mark=True)
     points = pd.read_csv(points_csv).to_numpy()
-    points_X = np.array([entry[2] for entry in points])
-    points_Y = np.array([entry[1] for entry in points])
-    db_pred = slope_db * points_X + intercept_db
-    tf_pred = slope_tf * points_X + intercept_tf
+    points_X = [np.array([entry[idx]] for idx, entry in enumerate(points[1:]))]
+    points_Y = points_X.pop(0)
+
+    db_pred = np.sum([db_params[idx] * x for idx, x in enumerate(points_X)], axis=0)
+    tf_pred = np.sum([tf_params[idx] * x for idx, x in enumerate(points_X)], axis=0)
 
     db_mae = np.mean(np.abs(points_Y - db_pred))
     tf_mae = np.mean(np.abs(points_Y - tf_pred))
@@ -266,17 +271,9 @@ def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slo
     db_mpe = np.mean((points_Y - db_pred) / points_Y) * 100
     tf_mpe = np.mean((points_Y - tf_pred) / points_Y) * 100
 
-    slope_db_sign = '' if slope_db >= 0 else '-'
-    intercept_db_sign = '+' if intercept_db >= 0 else '-'
-    slope_db = slope_db * -1 if slope_db < 0 else slope_db
-    intercept_db = intercept_db * -1 if intercept_db < 0 else intercept_db
-    Format.print_success(f'Result of Database with {type}: {slope_db_sign}{slope_db} * x {intercept_db_sign} {intercept_db}', tabs=1)
+    Format.print_success(f'Parameter result of Database with {type}: {db_params}', tabs=1)
 
-    slope_tf_sign = '' if slope_tf >= 0 else '-'
-    intercept_tf_sign = '+' if intercept_tf >= 0 else '-'
-    slope_tf = slope_tf * -1 if slope_tf < 0 else slope_tf
-    intercept_tf = intercept_tf * -1 if intercept_tf < 0 else intercept_tf
-    Format.print_success(f'Result of Tensorflow with {type}: {slope_tf_sign}{slope_tf} * x {intercept_tf_sign} {intercept_tf}', tabs=1)
+    Format.print_success(f'Parameter result of Tensorflow with {type}: {tf_params}', tabs=1)
 
     return db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe
 
