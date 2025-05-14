@@ -62,7 +62,9 @@ def main():
                     Create_CSV.append_row(
                         database['csv_file'], 
                         [
-                            type, 
+                            type,
+                            agg,
+                            scenario['param_amount'], 
                             scenario['p_amount'], 
                             scenario['iterations'], 
                             time, 
