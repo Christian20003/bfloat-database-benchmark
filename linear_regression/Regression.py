@@ -114,7 +114,7 @@ def prepare_benchmark(database: dict, type: str, param_start: int, number_parame
     select_stmt = select_stmt[:-2]
     prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
     prep_database.create_table('gd_start', ['idx'] + [letters[value] for value in range(number_parameter)], ['int'] + [type for _ in range(number_parameter)])
-    prep_database.create_table('points', ['id', 'y'] + [f'x{i}' for i in reversed(range(number_parameter))], ['int', type] + [type for _ in range(number_parameter)])
+    prep_database.create_table('points', ['id', 'y'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))], ['int', type] + [type for _ in range(number_parameter - 1)])
     prep_database.insert_from_select('gd_start', select_stmt)
     prep_database.insert_from_csv('points', setup_file)
     prep_database.execute_sql()
