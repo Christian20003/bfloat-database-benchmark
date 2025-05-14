@@ -80,7 +80,7 @@ def main():
                             tf_mpe, 
                             np.array([output[0][0], output[0][1]]), 
                             np.array([tf_slope, tf_intercept]), 
-                            np.array([CONFIG['slope'], CONFIG['intercept']])]
+                            np.array([CONFIG['param_value'], CONFIG['param_value']])]
                         )
                     Helper.remove_files(database['files'])
                     if database['name'] == 'postgres':
@@ -175,14 +175,15 @@ def generate_points(number_points: int, number_parameter: int, parameter_value: 
     '''
 
     Format.print_information('Generating points - This can take some time', mark=True)
+    number_parameter -= 1
     header = ['id', 'y']
-    header += [f'x{i}' for i in reversed(range(number_parameter))]
+    header += [f'x{i + 1}' for i in reversed(range(number_parameter))]
     Create_CSV.create_csv_file(file_name, header)
 
     result = []
     for value in range(number_points):
         x_s = [float("{:.4f}".format(random.random())) for _ in range(number_parameter)]
-        y = sum([parameter_value * x for x in x_s])
+        y = sum([parameter_value * x for x in x_s]) + parameter_value
         result.append([value, float(y)] + x_s)
         # Write chunks of 100.000.000 to the csv file to avoid memory issues
         if len(result) >= 100000000:
@@ -206,9 +207,13 @@ def regression_tensorflow(points_csv: str, learning_rate: float, iterations: int
 
     Format.print_information('Calculating tensorflow result - This can take some time', mark=True)
     points = pd.read_csv(points_csv).to_numpy()
-    datatype = tf.bfloat16 if type == 'bfloat' else tf.float32
-    tf_X = tf.constant([entry[1] for entry in points], datatype)
-    tf_Y = tf.constant([entry[2] for entry in points], datatype)
+    datatype = tf.float64
+    if type == 'bfloat':
+        datatype = tf.bfloat16
+    elif type == 'float':
+        datatype = tf.float32
+    tf_X = tf.constant([entry[2] for entry in points], datatype)
+    tf_Y = tf.constant([entry[1] for entry in points], datatype)
     slope = tf.Variable(10.0, dtype=datatype)
     intercept = tf.Variable(10.0, dtype=datatype)
     lr = tf.Variable(learning_rate, dtype=datatype)
@@ -239,8 +244,8 @@ def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slo
     
     Format.print_information('Calculating accuracy metrics - This can take some time', mark=True)
     points = pd.read_csv(points_csv).to_numpy()
-    points_X = np.array([entry[1] for entry in points])
-    points_Y = np.array([entry[2] for entry in points])
+    points_X = np.array([entry[2] for entry in points])
+    points_Y = np.array([entry[1] for entry in points])
     db_pred = slope_db * points_X + intercept_db
     tf_pred = slope_tf * points_X + intercept_tf
 
@@ -253,8 +258,8 @@ def evaluate_accuracy(points_csv: str, slope_db: float, intercept_db: float, slo
     db_mape = np.mean(np.abs((points_Y - db_pred) / points_Y)) * 100
     tf_mape = np.mean(np.abs((points_Y - tf_pred) / points_Y)) * 100
 
-    db_smape = np.mean(np.abs(db_pred - points_Y) / ((points_Y + db_pred) / 2)) * 100
-    tf_smape = np.mean(np.abs(tf_pred - points_Y) / ((points_Y + tf_pred) / 2)) * 100
+    db_smape = np.mean(np.abs(db_pred - points_Y) / ((points_Y + db_pred) / 2))
+    tf_smape = np.mean(np.abs(tf_pred - points_Y) / ((points_Y + tf_pred) / 2))
 
     db_mpe = np.mean((points_Y - db_pred) / points_Y) * 100
     tf_mpe = np.mean((points_Y - tf_pred) / points_Y) * 100
