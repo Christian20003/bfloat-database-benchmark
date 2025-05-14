@@ -271,8 +271,8 @@ CONFIG = {
             'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['double', 'float'],
-            'aggregations': ['standard']
+            'types': ['double', 'float', 'bfloat'],
+            'aggregations': ['standard', 'kahan']
         },
         {
             'name': 'umbra',
@@ -347,55 +347,6 @@ CONFIG = {
             'ignore': False,
             'use_max_points': False
         },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_3_PARAM,
-            'p_amount': 10,
-            'param_amount': 2,
-            'ignore': False,
-            'use_max_points': False
-        },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_4_PARAM,
-            'p_amount': 10,
-            'param_amount': 2,
-            'ignore': False,
-            'use_max_points': False
-        },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_5_PARAM,
-            'p_amount': 10,
-            'param_amount': 2,
-            'ignore': False,
-            'use_max_points': False
-        },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_6_PARAM,
-            'p_amount': 10,
-            'param_amount': 2,
-            'ignore': False,
-            'use_max_points': False
-        },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_7_PARAM,
-            'p_amount': 10,
-            'param_amount': 2,
-            'ignore': False,
-            'use_max_points': False
-        },
-
-
-
-
         {
             'iterations': 100,
             'lr': 0.05,

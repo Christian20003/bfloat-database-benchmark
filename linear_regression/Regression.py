@@ -224,10 +224,10 @@ def regression_tensorflow(points_csv: str, number_parameters: int, param_start: 
     lr = tf.Variable(learning_rate, dtype=datatype)
 
     for _ in range(iterations):
-        Y_preds = tf.reduce_sum([tf_params[idx] * x for idx, x in enumerate(tf_data)], axis=1)
+        Y_preds = tf.reduce_sum([tf_params[idx] * x for idx, x in enumerate(tf_data)], axis=0)
         Y_preds += tf_params[-1]
         loss = Y_preds - tf_Y
-        dev_param = tf.reduce_mean([2 * x * loss for x in tf_data], axis=0)
+        dev_param = tf.reduce_mean([2 * x * loss for x in tf_data], axis=1)
         dev_last_param = tf.reduce_mean(2 * loss)
         tf_params = [param - lr * dev_param[idx] for idx, param in enumerate(tf_params[:-1])] + [tf_params[-1] - lr * dev_last_param]
 
@@ -270,9 +270,9 @@ def evaluate_accuracy(points_csv: str, db_params: np.ndarray, tf_params: np.ndar
     db_mpe = np.mean((points_Y - db_pred) / points_Y) * 100
     tf_mpe = np.mean((points_Y - tf_pred) / points_Y) * 100
 
-    Format.print_success(f'Parameter result of Database with {type}: {db_params}', tabs=1)
+    Format.print_success(f'Parameter result of Database with {type}: {[value for value in db_params]}', tabs=1)
 
-    Format.print_success(f'Parameter result of Tensorflow with {type}: {tf_params}', tabs=1)
+    Format.print_success(f'Parameter result of Tensorflow with {type}: {[value for value in tf_params]}', tabs=1)
 
     return db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe
 
