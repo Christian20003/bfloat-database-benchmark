@@ -54,14 +54,12 @@ def main():
                     number_columns = scenario['param_amount'] + 1
                     relevant_columns = [value + 1 for value in range(number_columns - 1)]
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
-                    #heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
+                    heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}')
 
-                    print(output)
+                    tf_slope, tf_intercept = regression_tensorflow(setup_file, scenario['lr'], scenario['iterations'], type)
+                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0][0], output[0][1], tf_slope, tf_intercept, type)
 
-                    #tf_slope, tf_intercept = regression_tensorflow(setup_file, scenario['lr'], scenario['iterations'], type)
-                    #db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0][0], output[0][1], tf_slope, tf_intercept, type)
-
-                    """ Create_CSV.append_row(
+                    Create_CSV.append_row(
                         database['csv_file'], 
                         [
                             type, 
@@ -83,7 +81,7 @@ def main():
                             np.array([output[0][0], output[0][1]]), 
                             np.array([tf_slope, tf_intercept]), 
                             np.array([CONFIG['slope'], CONFIG['intercept']])]
-                        ) """
+                        )
                     Helper.remove_files(database['files'])
                     if database['name'] == 'postgres':
                         Postgres.stop_database(database['prep'][3])
@@ -184,8 +182,8 @@ def generate_points(number_points: int, number_parameter: int, parameter_value: 
     result = []
     for value in range(number_points):
         x_s = [float("{:.4f}".format(random.random())) for _ in range(number_parameter)]
-        y = sum([parameter_value * (x ** idx) for idx, x in reversed(list(enumerate(x_s)))])
-        result.append([value, float(y)] + list(reversed(x_s)))
+        y = sum([parameter_value * x for x in x_s])
+        result.append([value, float(y)] + x_s)
         # Write chunks of 100.000.000 to the csv file to avoid memory issues
         if len(result) >= 100000000:
             Create_CSV.append_rows(file_name, result)
@@ -211,8 +209,8 @@ def regression_tensorflow(points_csv: str, learning_rate: float, iterations: int
     datatype = tf.bfloat16 if type == 'bfloat' else tf.float32
     tf_X = tf.constant([entry[1] for entry in points], datatype)
     tf_Y = tf.constant([entry[2] for entry in points], datatype)
-    slope = tf.Variable(0, dtype=datatype)
-    intercept = tf.Variable(0, dtype=datatype)
+    slope = tf.Variable(10.0, dtype=datatype)
+    intercept = tf.Variable(10.0, dtype=datatype)
     lr = tf.Variable(learning_rate, dtype=datatype)
 
     for _ in range(iterations):

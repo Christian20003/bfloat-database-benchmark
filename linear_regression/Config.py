@@ -232,7 +232,7 @@ SELECT * FROM gd WHERE idx = {};
 CONFIG = {
     'param_value': 1,
     'param_start': 10,
-    'max_points': 100,#1000000000,
+    'max_points': 1000000000,
     'databases': [
         {
             'name': 'duckdb',
@@ -240,7 +240,9 @@ CONFIG = {
             'ignore': False,
             'csv_file': 'DuckDB_Regression_Results.csv',
             'csv_header': [
-                'Type', 
+                'Type',
+                'Aggregation',
+                'Parameters',
                 'Points', 
                 'Iterations', 
                 'Execution', 
@@ -265,8 +267,8 @@ CONFIG = {
             'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'bfloat'],
-            'aggregations': ['standard']
+            'types': ['double', 'float', 'bfloat'],
+            'aggregations': ['standard', 'kahan']
         },
         {
             'name': 'umbra',
@@ -338,34 +340,6 @@ CONFIG = {
             'statement': STATEMENT_2_PARAM,
             'p_amount': 10,
             'param_amount': 2,
-            'ignore': False,
-            'use_max_points': True
-        },
-        # Test setups
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_3_PARAM,
-            'p_amount': 10,
-            'param_amount': 3,
-            'ignore': False,
-            'use_max_points': True
-        },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_4_PARAM,
-            'p_amount': 10,
-            'param_amount': 4,
-            'ignore': False,
-            'use_max_points': True
-        },
-        {
-            'iterations': 100,
-            'lr': 0.05,
-            'statement': STATEMENT_5_PARAM,
-            'p_amount': 10,
-            'param_amount': 5,
             'ignore': False,
             'use_max_points': True
         },
@@ -529,7 +503,7 @@ CONFIG = {
             'statement': STATEMENT_3_PARAM,
             'p_amount': 100000,
             'param_amount': 3,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -538,7 +512,7 @@ CONFIG = {
             'statement': STATEMENT_4_PARAM,
             'p_amount': 100000,
             'param_amount': 4,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -547,7 +521,7 @@ CONFIG = {
             'statement': STATEMENT_5_PARAM,
             'p_amount': 100000,
             'param_amount': 5,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -556,7 +530,7 @@ CONFIG = {
             'statement': STATEMENT_6_PARAM,
             'p_amount': 100000,
             'param_amount': 6,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -565,7 +539,7 @@ CONFIG = {
             'statement': STATEMENT_7_PARAM,
             'p_amount': 100000,
             'param_amount': 7,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -574,7 +548,7 @@ CONFIG = {
             'statement': STATEMENT_8_PARAM,
             'p_amount': 100000,
             'param_amount': 8,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -583,7 +557,7 @@ CONFIG = {
             'statement': STATEMENT_9_PARAM,
             'p_amount': 1000000,
             'param_amount': 9,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         },
         {
@@ -592,7 +566,7 @@ CONFIG = {
             'statement': STATEMENT_10_PARAM,
             'p_amount': 1000000,
             'param_amount': 10,
-            'ignore': False,
+            'ignore': True,
             'use_max_points': False
         }
     ] 
