@@ -61,8 +61,9 @@ def main():
                     db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
 
                     truth = []
-                    for _ in range(scenario['param_amount']):
+                    for _ in range(scenario['param_amount'] - 1):
                         truth.append(CONFIG['param_value'])
+                    truth.append(-2.156)
                     Create_CSV.append_row(
                         database['csv_file'], 
                         [
@@ -120,7 +121,7 @@ def prepare_benchmark(database: dict, type: str, param_start: int, number_parame
     select_stmt = select_stmt[:-2]
     prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
     prep_database.create_table('gd_start', ['idx'] + [letters[value] for value in range(number_parameter)], ['int'] + [type for _ in range(number_parameter)])
-    prep_database.create_table('points', ['id', 'y'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))], ['int', type] + [type for _ in range(number_parameter - 1)])
+    prep_database.create_table('points', ['id'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))] + ['y'], ['int', type] + [type for _ in range(number_parameter - 1)])
     prep_database.insert_from_select('gd_start', select_stmt)
     prep_database.insert_from_csv('points', setup_file)
     prep_database.execute_sql()
@@ -181,15 +182,14 @@ def generate_points(number_points: int, number_parameter: int, parameter_value: 
 
     Format.print_information('Generating points - This can take some time', mark=True)
     number_parameter -= 1
-    header = ['id', 'y']
-    header += [f'x{i + 1}' for i in reversed(range(number_parameter))]
+    header = ['id'] + [f'x{i + 1}' for i in reversed(range(number_parameter))] + ['y']
     Create_CSV.create_csv_file(file_name, header)
 
     result = []
     for value in range(number_points):
         x_s = [float("{:.4f}".format(random.random())) for _ in range(number_parameter)]
-        y = sum([parameter_value * x for x in x_s]) + parameter_value
-        result.append([value, float(y)] + x_s)
+        y = sum([parameter_value * x for x in x_s]) + (-2.156)
+        result.append([value]+ x_s + [float(y)])
         # Write chunks of 100.000.000 to the csv file to avoid memory issues
         if len(result) >= 100000000:
             Create_CSV.append_rows(file_name, result)
@@ -218,7 +218,7 @@ def regression_tensorflow(points_csv: str, number_parameters: int, param_start: 
     elif type == 'float':
         datatype = tf.float32
     tf_data = [tf.constant(points[column].values, datatype) for column in points.columns[1:]]
-    tf_Y = tf_data.pop(0)
+    tf_Y = tf_data.pop()
 
     tf_params = [tf.Variable(param_start, dtype=datatype) for _ in range(number_parameters)]
     lr = tf.Variable(learning_rate, dtype=datatype)

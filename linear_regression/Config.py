@@ -12,13 +12,21 @@ STATEMENT_FILE = 'Statement.sql'
 
 STATEMENT_2_PARAM = '''
 WITH RECURSIVE gd (idx, a, b) AS (
-    SELECT * FROM gd_start
+SELECT * FROM gd_start
 UNION ALL
-    SELECT idx + 1, a - {} * {}(2 * x * (a * x + b - y)), b - {} * {}(2 * (a * x + b - y))
-    FROM gd, points 
-    WHERE idx < {} GROUP BY idx, a, b
+(WITH current_gd (idx, a, b) AS (
+    SELECT * FROM gd
+    ), subresult (idx, a, b) AS (
+    SELECT idx, a - {} * {}(2 * x * (a * x + b - y)), b - {} * {}(2 * (a * x + b - y))
+    FROM current_gd, points 
+    GROUP BY idx, a, b
+  )
+  SELECT idx + 1, a, b
+  FROM subresult
+  WHERE idx < {}
+  )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_3_PARAM = '''
@@ -226,7 +234,7 @@ SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 CONFIG = {
-    'param_value': 1,
+    'param_value': 0.75,
     'param_start': 10,
     'max_points': 1000000000,
     'databases': [
