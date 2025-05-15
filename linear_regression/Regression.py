@@ -164,7 +164,6 @@ def generate_statement(statement: str, agg_func: str, learning_rate: float, iter
             content.append(learning_rate)
             content.append(agg_func)
         content.append(iterations)
-        content.append(iterations)
         statement = statement.format(*content)
         file.write(statement)
 
