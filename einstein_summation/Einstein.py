@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
 from typing import List, Tuple
-from Config import CONFIG, STATEMENT, STATEMENT_FILE
+from Config import CONFIG, STATEMENT_1, STATEMENT_2, STATEMENT_3, STATEMENT_4, STATEMENT_FILE
 from collections import defaultdict
 import random
 import Format
@@ -46,41 +46,54 @@ def main():
             if database['ignore']:
                 continue
             for type in database['types']:
-                for agg in database['aggregations']:
-                    print_setting(scenario['dimension_1'], scenario['dimension_2'], scenario['dimension_3'], database['name'], type, agg)
-                    generate_statement(agg)
-                    prepare_benchmark(database, type, maxtrix_a_file, maxtrix_b_file, vector_v_file)
+                for statement in scenario['statements']:
+                    statement_number = 0
+                    if (statement == STATEMENT_1):
+                        statement_number = 1
+                    elif (statement == STATEMENT_2):
+                        statement_number = 2
+                    elif (statement == STATEMENT_3):
+                        statement_number = 3
+                    elif (statement == STATEMENT_4):
+                        statement_number = 4
+                    for agg in database['aggregations']:
+                        print_setting(scenario['dimension_1'], scenario['dimension_2'], scenario['dimension_3'], database['name'], type, statement_number, agg)
+                        generate_statement(statement, agg)
+                        prepare_benchmark(database, type, maxtrix_a_file, maxtrix_b_file, vector_v_file)
 
-                    time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
-                    heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}')
-                    output = np.array([entry[0] for entry in output])
+                        time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
+                        heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}')
+                        output = np.array([entry[0] for entry in output])
 
-                    tf_output = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type)
-                    l2_db, l2_tf, mse_db, mse_tf = evaluate_accuray(output, tf_output)
+                        tf_output = None
+                        l2_db, l2_tf, mse_db, mse_tf = None, None, None, None
+                        if statement_number != 2:
+                            tf_output = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type, True if statement_number == 3 else False)
+                            l2_db, l2_tf, mse_db, mse_tf = evaluate_accuray(output, tf_output)
 
-                    Create_CSV.append_row(database['csv_file'], 
-                                          [
-                                              type, 
-                                              scenario['dimension_1']*scenario['dimension_2'], 
-                                              scenario['dimension_2']*scenario['dimension_3'], 
-                                              scenario['dimension_3'],
-                                              time, 
-                                              heap, 
-                                              rss, 
-                                              l2_db,
-                                              l2_tf,
-                                              mse_db,
-                                              mse_tf, 
-                                              np.sum(output), 
-                                              np.sum(tf_output)
-                                           ])
-                    Helper.remove_files(database['files'])
-                    if database['name'] == 'postgres':
-                        Postgres.stop_database(database['prep'][3])
-                        Helper.remove_dir(Settings.POSTGRESQL_DIR)
+                        Create_CSV.append_row(database['csv_file'], 
+                                              [
+                                                  type, 
+                                                  scenario['dimension_1']*scenario['dimension_2'], 
+                                                  scenario['dimension_2']*scenario['dimension_3'], 
+                                                  scenario['dimension_3'],
+                                                  time, 
+                                                  heap, 
+                                                  rss, 
+                                                  l2_db,
+                                                  l2_tf,
+                                                  mse_db,
+                                                  mse_tf, 
+                                                  np.sum(output), 
+                                                  np.sum(tf_output)
+                                               ])
+                        Helper.remove_files(database['files'])
+                        if database['name'] == 'postgres':
+                            Postgres.stop_database(database['prep'][3])
+                            Helper.remove_dir(Settings.POSTGRESQL_DIR)
     Helper.remove_files([maxtrix_a_file, maxtrix_b_file, vector_v_file, STATEMENT_FILE])
 
-def print_setting(dimension1: int, dimension2: int, dimension3: int, database: str, type: str, agg_func: str) -> None:
+def print_setting(dimension1: int, dimension2: int, dimension3: int, database: str, type: str, statement: int, agg_func: str) -> None:
     '''
     This function prints the settings for the current benchmark.
 
@@ -88,14 +101,18 @@ def print_setting(dimension1: int, dimension2: int, dimension3: int, database: s
     :param dimension2: The number of columns in the first matrix and rows in the second matrix.
     :param dimension3: The number of columns in the second matrix and rows in the vector.
     :param database: The database name.
+    :param type: The datatype for tensor entries.
+    :param statement: The number of the statement that should be used.
     :param agg_func: The aggregation function to be used in the recursive CTE.
     '''
+
     Format.print_title(f'START BENCHMARK - EINSTEIN SUMMATION WITH THE FOLLOWING SETTINGS')
     Format.print_information(f'Matrix A: {dimension1}x{dimension2}', tabs=1)
     Format.print_information(f'Matrix B: {dimension2}x{dimension3}', tabs=1)
     Format.print_information(f'Vector V: {dimension3}x1', tabs=1)
     Format.print_information(f'Database: {database}', tabs=1)
     Format.print_information(f'Type: {type}', tabs=1)
+    Format.print_information(f'Statement: {statement}', tabs=1)
     Format.print_information(f'Aggregation Function: {agg_func}', tabs=1)
 
 def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file: str, vectorv_file: str) -> None:
@@ -122,16 +139,22 @@ def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file
     prep_database.insert_from_csv('vectorv', vectorv_file)
     prep_database.execute_sql()
 
-def generate_statement(aggr_func: str) -> None:
+def generate_statement(statement: str, aggr_func: str) -> None:
     '''
     This function generates the SQL statement for the database.
     
+    :param statement: The type of statement that should be used.
     :param aggr_func: The aggregation function that should be used.
     '''
 
     aggr_func = 'SUM' if aggr_func == 'standard' else 'KAHAN_SUM'
-    with open(f'./{STATEMENT_FILE}', 'w') as file:
-        file.write(STATEMENT.format(aggr_func))
+    with open(statement, 'w') as file:
+        if statement == STATEMENT_1 or statement == STATEMENT_3:
+            file.write(statement.format(aggr_func))
+        elif statement == STATEMENT_4:
+            file.write(STATEMENT_4.format(aggr_func, aggr_func))
+        else:
+            file.write(statement)
 
 def generate_tensor(rows: int, columns: int, file_name: str) -> None:
     '''
@@ -175,7 +198,7 @@ def list_to_array(tensor: List[List[float]], datatype: tf.DType) -> Tuple[tf.Ten
     
     return tf.Variable(result, dtype=datatype), tf.Variable(result, dtype=tf.float64)
 
-def einstein_tensorflow(matrix_a_csv: str, matrix_b_csv: str, vector_v_csv: str, type: str) -> Tuple[np.ndarray, np.ndarray]:
+def einstein_tensorflow(matrix_a_csv: str, matrix_b_csv: str, vector_v_csv: str, type: str, single_mult: bool) -> Tuple[np.ndarray, np.ndarray]:
     '''
     This function executes a matrix multiplication with tensorflow.
 
@@ -189,12 +212,19 @@ def einstein_tensorflow(matrix_a_csv: str, matrix_b_csv: str, vector_v_csv: str,
 
     Format.print_information('Calculating tensorflow result - This can take some time', mark=True)
     datatype = tf.bfloat16 if type == 'bfloat' else tf.float32
-    tf_a, tf_a_double = list_to_array(pd.read_csv(matrix_a_csv).to_numpy(), datatype)
+    tf_a, tf_a_double = None, None
+    if not single_mult:
+        tf_a, tf_a_double = list_to_array(pd.read_csv(matrix_a_csv).to_numpy(), datatype)
     tf_b, tf_b_double = list_to_array(pd.read_csv(matrix_b_csv).to_numpy(), datatype)
     tf_v, tf_v_double = list_to_array(pd.read_csv(vector_v_csv).to_numpy(), datatype)
 
-    result = tf.einsum('ac,bc,b->a', tf_a, tf_b, tf_v)
-    result_double = tf.einsum('ac,bc,b->a', tf_a_double, tf_b_double, tf_v_double)
+    result, result_double = None, None
+    if single_mult:
+        result = tf.einsum('ij,j->i', tf_b, tf_v)
+        result_double = tf.einsum('ij,j->i', tf_b_double, tf_v_double)
+    else:
+        result = tf.einsum('ac,bc,b->a', tf_a, tf_b, tf_v)
+        result_double = tf.einsum('ac,bc,b->a', tf_a_double, tf_b_double, tf_v_double)
 
     return result.numpy(), result_double.numpy()
 
