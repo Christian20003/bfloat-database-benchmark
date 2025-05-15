@@ -26,7 +26,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_3_PARAM = '''
@@ -48,7 +48,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_4_PARAM = '''
@@ -71,7 +71,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_5_PARAM = '''
@@ -95,7 +95,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_6_PARAM = '''
@@ -120,7 +120,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_7_PARAM = '''
@@ -146,7 +146,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_8_PARAM = '''
@@ -173,7 +173,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_9_PARAM = '''
@@ -201,7 +201,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 STATEMENT_10_PARAM = '''
@@ -230,7 +230,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd WHERE idx = {};
+SELECT * FROM gd ORDER BY idx DESC;
 '''
 
 CONFIG = {
@@ -505,7 +505,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_3_PARAM,
-            'p_amount': 100000,
+            'p_amount': 10000000,
             'param_amount': 3,
             'ignore': True,
             'use_max_points': False
@@ -514,7 +514,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_4_PARAM,
-            'p_amount': 100000,
+            'p_amount': 10000000,
             'param_amount': 4,
             'ignore': True,
             'use_max_points': False
@@ -523,7 +523,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_5_PARAM,
-            'p_amount': 100000,
+            'p_amount': 10000000,
             'param_amount': 5,
             'ignore': True,
             'use_max_points': False
@@ -532,7 +532,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_6_PARAM,
-            'p_amount': 100000,
+            'p_amount': 10000000,
             'param_amount': 6,
             'ignore': True,
             'use_max_points': False
@@ -541,7 +541,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_7_PARAM,
-            'p_amount': 100000,
+            'p_amount': 10000000,
             'param_amount': 7,
             'ignore': True,
             'use_max_points': False
@@ -550,7 +550,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_8_PARAM,
-            'p_amount': 100000,
+            'p_amount': 10000000,
             'param_amount': 8,
             'ignore': True,
             'use_max_points': False
@@ -559,7 +559,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_9_PARAM,
-            'p_amount': 1000000,
+            'p_amount': 100000000,
             'param_amount': 9,
             'ignore': True,
             'use_max_points': False
@@ -568,7 +568,7 @@ CONFIG = {
             'iterations': 100,
             'lr': 0.05,
             'statement': STATEMENT_10_PARAM,
-            'p_amount': 1000000,
+            'p_amount': 100000000,
             'param_amount': 10,
             'ignore': True,
             'use_max_points': False

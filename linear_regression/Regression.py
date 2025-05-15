@@ -57,7 +57,7 @@ def main():
                     heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["p_amount"]}_{agg}')
 
                     tf_params = regression_tensorflow(setup_file, scenario['param_amount'], CONFIG['param_start'], scenario['lr'], scenario['iterations'], type)
-                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
+                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0][0], tf_params, type)
 
                     truth = []
                     for _ in range(scenario['param_amount']):
@@ -83,7 +83,7 @@ def main():
                             tf_smape,
                             db_mpe,
                             tf_mpe, 
-                            output[0], 
+                            output[0][0], 
                             tf_params, 
                             truth]
                         )

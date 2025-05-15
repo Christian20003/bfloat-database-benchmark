@@ -68,8 +68,8 @@ def main():
                         tf_output = None
                         l2_db, l2_tf, mse_db, mse_tf = None, None, None, None
                         if statement_number != 2:
-                            tf_output = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type, True if statement_number == 3 else False)
-                            l2_db, l2_tf, mse_db, mse_tf = evaluate_accuray(output, tf_output)
+                            tf_output, tf_truth = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type, True if statement_number == 3 else False)
+                            l2_db, l2_tf, mse_db, mse_tf = evaluate_accuray(output, tf_output, tf_truth)
 
                         Create_CSV.append_row(database['csv_file'], 
                                               [
@@ -148,11 +148,11 @@ def generate_statement(statement: str, aggr_func: str) -> None:
     '''
 
     aggr_func = 'SUM' if aggr_func == 'standard' else 'KAHAN_SUM'
-    with open(statement, 'w') as file:
+    with open(STATEMENT_FILE, 'w') as file:
         if statement == STATEMENT_1 or statement == STATEMENT_3:
             file.write(statement.format(aggr_func))
         elif statement == STATEMENT_4:
-            file.write(STATEMENT_4.format(aggr_func, aggr_func))
+            file.write(statement.format(aggr_func, aggr_func))
         else:
             file.write(statement)
 
