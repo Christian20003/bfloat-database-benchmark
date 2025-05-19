@@ -1,6 +1,6 @@
 DUCK_DB_PATH = '/home/goellner/duckdb/build/release/duckdb'
 UMBRA_DB_PATH = '/home/goellner/umbra/bin/sql'
-POSTGRESQL_DB_PATH = '/home/goellner/postgres/build/bin/'
+POSTGRESQL_DB_PATH = '/home/goellner/postgres/Release/bin/'
 
 UMBRA_DIR = './umbra_database'
 

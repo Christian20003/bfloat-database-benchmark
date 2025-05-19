@@ -62,15 +62,15 @@ def main():
                         prepare_benchmark(database, type, maxtrix_a_file, maxtrix_b_file, vector_v_file)
 
                         time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
-                        server = ''
+                        server = []
                         if database['name'] == 'postgres':
                             Postgres.stop_database(database['prep'][3])
-                            server = database['prep'][4]
+                            server = [database['prep'][4], database['prep'][3]]
                         heap, rss = Memory.benchmark(database['name'], database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}', server)
                         output = np.array([entry[0] for entry in output])
 
-                        tf_output = None
-                        l2_db, l2_tf, mse_db, mse_tf = None, None, None, None
+                        tf_output = -1
+                        l2_db, l2_tf, mse_db, mse_tf = -1, -1, -1, -1
                         if statement_number != 2:
                             tf_output, tf_truth = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type, True if statement_number == 3 else False)
                             l2_db, l2_tf, mse_db, mse_tf = evaluate_accuray(output, tf_output, tf_truth)
