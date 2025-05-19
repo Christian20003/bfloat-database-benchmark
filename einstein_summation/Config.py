@@ -100,12 +100,12 @@ CONFIG = {
             'execution-bench': f'{Settings.UMBRA_DB_PATH} {Settings.UMBRA_DIR}/{UMBRA_DB_DATABASE_FILE} {STATEMENT_FILE}',
             'start-sql': [],
             'end-sql': ['\q;'],
-            'types': ['float']
+            'types': ['double', 'float']
         },
         {
             'name': 'postgres',
             'create_csv': True,
-            'ignore': True,
+            'ignore': False,
             'csv_file': 'Postgres_Einstein_Results.csv',
             'csv_header': [
                 'Type',
@@ -135,7 +135,7 @@ CONFIG = {
             'execution-bench': f'{Settings.POSTGRESQL_DB_PATH}psql -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} -U {Settings.POSTGRESQL_USERNAME} -d {POSTGRES_DB_DATABASE_FILE} -f {STATEMENT_FILE}',
             'start-sql': [],
             'end-sql': [],
-            'types': ['float']
+            'types': ['float8', 'float4']
         }
     ],
     'setups': [
