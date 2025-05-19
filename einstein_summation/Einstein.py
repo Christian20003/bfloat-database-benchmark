@@ -222,7 +222,13 @@ def einstein_tensorflow(matrix_a_csv: str, matrix_b_csv: str, vector_v_csv: str,
     '''
 
     Format.print_information('Calculating tensorflow result - This can take some time', mark=True)
-    datatype = tf.bfloat16 if type == 'bfloat' else tf.float32
+    datatype = None
+    if type == 'bfloat':
+        datatype = tf.bfloat16
+    elif type == 'float' or type == 'float4':
+        datatype = tf.float32
+    elif type == 'double' or type == 'float8':
+        datatype = tf.float64
     tf_a, tf_a_double = None, None
     if not single_mult:
         tf_a, tf_a_double = list_to_array(pd.read_csv(matrix_a_csv).to_numpy(), datatype)
