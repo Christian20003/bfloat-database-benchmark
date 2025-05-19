@@ -9,7 +9,6 @@ import Settings
 import Format
 
 def create_database(init_exe: str, server_start_exe: str, create_db_exe: str) -> None:
-    os.mkdir(Settings.POSTGRESQL_DIR)
     init = subprocess.Popen(init_exe.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, error = init.communicate()
     if (error):

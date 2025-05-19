@@ -17,7 +17,7 @@ UNION ALL
 (WITH current_gd (idx, a, b) AS (
     SELECT * FROM gd
     ), subresult (idx, a, b) AS (
-    SELECT idx, a - {} * {}(2 * x * (a * x + b - y)), b - {} * {}(2 * (a * x + b - y))
+    SELECT idx, a - {} * {}(2 * x1 * (a * x1 + b - y)), b - {} * {}(2 * (a * x1 + b - y))
     FROM current_gd, points 
     GROUP BY idx, a, b
   )

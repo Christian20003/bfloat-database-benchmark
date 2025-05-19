@@ -62,7 +62,11 @@ def main():
                         prepare_benchmark(database, type, maxtrix_a_file, maxtrix_b_file, vector_v_file)
 
                         time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
-                        heap, rss = Memory.benchmark(database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}')
+                        server = ''
+                        if database['name'] == 'postgres':
+                            Postgres.stop_database(database['prep'][3])
+                            server = database['prep'][4]
+                        heap, rss = Memory.benchmark(database['name'], database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}', server)
                         output = np.array([entry[0] for entry in output])
 
                         tf_output = None
@@ -73,7 +77,9 @@ def main():
 
                         Create_CSV.append_row(database['csv_file'], 
                                               [
-                                                  type, 
+                                                  type,
+                                                  agg,
+                                                  statement_number,
                                                   scenario['dimension_1']*scenario['dimension_2'], 
                                                   scenario['dimension_2']*scenario['dimension_3'], 
                                                   scenario['dimension_3'],
@@ -87,10 +93,11 @@ def main():
                                                   np.sum(output), 
                                                   np.sum(tf_output)
                                                ])
-                        Helper.remove_files(database['files'])
-                        if database['name'] == 'postgres':
-                            Postgres.stop_database(database['prep'][3])
-                            Helper.remove_dir(Settings.POSTGRESQL_DIR)
+                        
+                        if database['name'] == 'postgres' or database['name'] == 'umbra':
+                            Helper.remove_dir(database['files'])
+                        else:
+                            Helper.remove_files(database['files'])
     Helper.remove_files([maxtrix_a_file, maxtrix_b_file, vector_v_file, STATEMENT_FILE])
 
 def print_setting(dimension1: int, dimension2: int, dimension3: int, database: str, type: str, statement: int, agg_func: str) -> None:
@@ -127,16 +134,20 @@ def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file
     '''
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
+    extend_file_path = '.' if database['name'] == 'postgres' else ''
     if database['name'] == 'postgres':
+        os.mkdir(Settings.POSTGRESQL_DIR)
         executables = database['prep']
         Postgres.create_database(executables[0], executables[1], executables[2])
+    elif database['name'] == 'umbra':
+        os.mkdir(Settings.UMBRA_DIR)
     prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
     prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
-    prep_database.insert_from_csv('matrixa', matrixa_file)
-    prep_database.insert_from_csv('matrixb', matrixb_file)
-    prep_database.insert_from_csv('vectorv', vectorv_file)
+    prep_database.insert_from_csv('matrixa', extend_file_path + matrixa_file)
+    prep_database.insert_from_csv('matrixb', extend_file_path + matrixb_file)
+    prep_database.insert_from_csv('vectorv', extend_file_path + vectorv_file)
     prep_database.execute_sql()
 
 def generate_statement(statement: str, aggr_func: str) -> None:
