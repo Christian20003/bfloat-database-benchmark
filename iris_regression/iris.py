@@ -54,7 +54,8 @@ def main():
                         Create_CSV.append_row(database['csv_file'], [
                             type, 
                             scenario["network_size"], 
-                            scenario["data_size"], 
+                            scenario["data_size"],
+                            statement_number, 
                             agg,
                             CONFIG['learning_rate'],
                             scenario['iterations'], 

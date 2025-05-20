@@ -10,9 +10,9 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
         label_name:
             x: List[number]
             y: List[number]
-            diff_color: bool
-            diff_style: bool
-            diff_marker: bool
+            color: str
+            style: str
+            marker: str
     
     :param data: The dictionary containing all data described above.
     :param x_label: The label of the x-axis.
@@ -23,23 +23,8 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
     :param y_as_log: If the y-axis should be as logerithmic scale (Default: False)
     '''
 
-    color_idx = 0
-    style_idx = 0
-    marker_idx = 0
     for key, value in data.items():
-        plt.plot(value['x'], value['y'], color=COLORS[color_idx], linestyle=STYLES[style_idx], marker=MARKERS[marker_idx], label=key, linewidth=2)
-        if value['diff_color']:
-            color_idx += 1
-        if value['diff_style']:
-            style_idx += 1
-        if value['diff_marker']:
-            marker_idx += 1
-        if color_idx > len(COLORS):
-            color_idx = 0
-        if style_idx > len(STYLES):
-            style_idx = 0
-        if marker_idx > len(MARKERS):
-            marker_idx = 0
+        plt.plot(value['x'], value['y'], color=value['color'], linestyle=value['style'], marker=value['marker'], label=key, linewidth=2)
     columns = 1 if len(data) < 2 else 4
     mode = 'expand' if len(data) > 4 else 'default'
     ylimit = max(value['y']) / 100
