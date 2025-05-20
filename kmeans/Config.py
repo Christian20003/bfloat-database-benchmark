@@ -46,7 +46,7 @@ CONFIG = {
             'name': 'umbra',
             'create_csv': True,
             'ignore': True,
-            'csv_file': 'Umbra_Regression_Results.csv',
+            'csv_file': 'Umbra_Kmeans_Results.csv',
             'csv_header': [
                 'Type', 
                 'Points', 
