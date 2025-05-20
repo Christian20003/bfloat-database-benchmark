@@ -1,34 +1,88 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
+
+import Settings
+
+DUCK_DB_DATABASE_FILE = 'kmeans.db'
+UMBRA_DB_DATABASE_FILE = 'kmeans'
 STATEMENT_FILE = 'Statement.sql'
 
 CONFIG = {
-    "iterations": 10,
+    'max_points': 100000000,
+    'max': 100,
+    'min': -100,
     "databases": [
         {
             'name': 'duckdb',
             'create_csv': True,
+            'ignore': False,
             'csv_file': 'DuckDB_Kmeans_Results.csv',
-            'csv_header': ['Type', 'Points', 'Cluster', 'Iterations', 'Execution', 'Heap', 'RSS', 'Accuracy', 'DuckDB', 'Tensorflow'],
-            'files': ['./kmeans.db'],
-            'execution': '/home/proglin/duckdb/build/release/duckdb kmeans.db',
-            'execution-bench': '/home/proglin/duckdb/build/release/duckdb -json -f {} kmeans.db',
+            'csv_header': [
+                'Type', 
+                'Points', 
+                'Cluster',
+                'Aggregation', 
+                'Iterations', 
+                'Execution', 
+                'Heap', 
+                'RSS', 
+                'DuckDB-Accuracy',
+                'Tensorflow-Accuracy', 
+                'DuckDB', 
+                'Tensorflow',
+                'Truth'
+            ],
+            'files': [f'./{DUCK_DB_DATABASE_FILE}'],
+            'execution': f'{Settings.DUCK_DB_PATH} {DUCK_DB_DATABASE_FILE}',
+            'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
             'start-sql': [],
             'end-sql': ['.exit'],
-            'types': ['float', 'bfloat']
+            'types': ['double', 'float', 'bfloat'],
+            'aggrations': ['standard', 'kahan'],
+        },
+        {
+            'name': 'umbra',
+            'create_csv': True,
+            'ignore': True,
+            'csv_file': 'Umbra_Regression_Results.csv',
+            'csv_header': [
+                'Type', 
+                'Points', 
+                'Cluster',
+                'Aggregation', 
+                'Iterations', 
+                'Execution', 
+                'Heap', 
+                'RSS', 
+                'Umbra-Accuracy',
+                'Tensorflow-Accuracy', 
+                'Umbra', 
+                'Tensorflow',
+                'Truth'
+                ],
+            'files': [Settings.UMBRA_DIR],
+            'execution': f'{Settings.UMBRA_DB_PATH} -createdb {UMBRA_DB_DATABASE_FILE}',
+            'execution-bench': f'{Settings.UMBRA_DB_PATH} {UMBRA_DB_DATABASE_FILE} {STATEMENT_FILE}',
+            'start-sql': [],
+            'end-sql': ['\q;'],
+            'types': ['float8', 'float'],
+            'aggregations': ['standard']
         }
     ],
     'setups': [
+        # setups with increasing number of points
         {
             'c_amount': 4,
             'p_amount': 10,
-            'min': -10,
-            'max': 10,
+            'iterations': 10,
             'ignore': False
         },
         {
             'c_amount': 4,
             'p_amount': 100,
-            'min': -10,
-            'max': 10,
+            'iterations': 10,
             'ignore': False
         },
         {
@@ -41,43 +95,189 @@ CONFIG = {
         {
             'c_amount': 4,
             'p_amount': 10000,
-            'min': -100,
-            'max': 100,
+            'iterations': 10,
             'ignore': False
         },
         {
             'c_amount': 4,
             'p_amount': 100000,
-            'min': -100,
-            'max': 100,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 250000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 500000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 750000,
+            'iterations': 10,
             'ignore': False
         },
         {
             'c_amount': 4,
             'p_amount': 1000000,
-            'min': -500,
-            'max': 500,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 2500000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 5000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 7500000,
+            'iterations': 10,
             'ignore': False
         },
         {
             'c_amount': 4,
             'p_amount': 10000000,
-            'min': -500,
-            'max': 500,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 25000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 50000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 75000000,
+            'iterations': 10,
             'ignore': False
         },
         {
             'c_amount': 4,
             'p_amount': 100000000,
-            'min': -1000,
-            'max': 1000,
+            'iterations': 10,
+            'ignore': False
+        },
+        # setups with increasing number of clusters
+        {
+            'c_amount': 2,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 3,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 5,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 6,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 7,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 8,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 9,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        {
+            'c_amount': 10,
+            'p_amount': 10000000,
+            'iterations': 10,
+            'ignore': False
+        },
+        # setups with increasing number of iterations
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 1,
             'ignore': False
         },
         {
             'c_amount': 4,
-            'p_amount': 500000000,
-            'min': -1000,
-            'max': 1000,
+            'p_amount': 10000000,
+            'iterations': 2,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 3,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 4,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 5,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 6,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 7,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 8,
+            'ignore': False
+        },
+        {
+            'c_amount': 4,
+            'p_amount': 10000000,
+            'iterations': 9,
             'ignore': False
         }
     ]
@@ -88,7 +288,7 @@ clusters (iter, cid, x, y) AS (
     (SELECT 0, id, x, y FROM clusters_0)
     UNION ALL
     (WITH assignment(iter, cid, x, y) AS (
-        SELECT iter, cid, AVG(px), AVG(py) FROM (
+        SELECT iter, cid, {}(px), {}(py) FROM (
             SELECT iter, pid, p.x AS px, p.y AS py, MIN(cid) AS cid
             FROM points_start p, clusters c
             WHERE NOT EXISTS (
@@ -108,7 +308,7 @@ clusters (iter, cid, x, y) AS (
     WHERE iter < {}
     )
 )
-SELECT * FROM clusters WHERE iter = {} ORDER BY cid;
+SELECT * FROM clusters ORDER BY cid DESC;
 '''
 
 '''
