@@ -62,11 +62,11 @@ def main():
                         prepare_benchmark(database, type, maxtrix_a_file, maxtrix_b_file, vector_v_file)
 
                         time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
-                        server = []
+                        server = ''
                         if database['name'] == 'postgres':
                             Postgres.stop_database(database['prep'][3])
-                            server = [database['prep'][4], database['prep'][3]]
-                        heap, rss = Memory.benchmark(database['name'], database['execution-bench'], f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}', server)
+                            server = database['prep'][4]
+                        heap, rss = Memory.benchmark(database['name'], database['execution-bench'], server, f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}', STATEMENT_FILE)
                         output = np.array([entry[0] for entry in output])
 
                         tf_output = -1

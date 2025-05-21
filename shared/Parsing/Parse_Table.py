@@ -60,13 +60,13 @@ def raw_to_numpy(output: str, relevant_columns: List[int], ignore_lines_start: i
     :returns: The output as numpy array. 
     '''
     
-    result = []
-    for number, line in enumerate(output.splitlines()):
-        if number <= ignore_lines_start or number >= len(output.splitlines()) - ignore_lines_end:
-            continue
-        columns = re.findall(r'-?\d+\.\d+e[+-]?\d+|-?\d+\.\d+|-?\d+', line)
-        rel_cols = [float(columns[i]) for i in relevant_columns]
-        result.append(rel_cols)
+    lines = output.splitlines()
+    result = [
+        [float(columns[i]) for i in relevant_columns]
+        for number, line in enumerate(lines)
+        if ignore_lines_start < number < len(lines) - ignore_lines_end
+        for columns in [re.findall(r'-?\d+\.\d+e[+-]?\d+|-?\d+\.\d+|-?\d+', line)]
+    ]
     return np.array(result)
 
 def parse_table_output(output: str, total_columns: int, start: int, stop: int) -> np.ndarray:

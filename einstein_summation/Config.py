@@ -132,7 +132,7 @@ CONFIG = {
                 f'{Settings.POSTGRESQL_DB_PATH}pg_ctl -D {Settings.POSTGRESQL_DIR} start', 
                 f'{Settings.POSTGRESQL_DB_PATH}createdb -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} {POSTGRES_DB_DATABASE_FILE} -U {Settings.POSTGRESQL_USERNAME}', 
                 f'{Settings.POSTGRESQL_DB_PATH}pg_ctl -D {Settings.POSTGRESQL_DIR} stop',
-                f'{Settings.POSTGRESQL_DB_PATH}postgres -D {Settings.POSTGRESQL_DIR} -p {Settings.POSTGRESQL_PORT} -h {Settings.POSTGRESQL_HOST}'],
+                f'{Settings.POSTGRESQL_DB_PATH}postgres --single {POSTGRES_DB_DATABASE_FILE} -D {Settings.POSTGRESQL_DIR} -p {Settings.POSTGRESQL_PORT} -h {Settings.POSTGRESQL_HOST}'],
             'execution': f'{Settings.POSTGRESQL_DB_PATH}psql -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} -U {Settings.POSTGRESQL_USERNAME} -d {POSTGRES_DB_DATABASE_FILE}',
             'execution-bench': f'{Settings.POSTGRESQL_DB_PATH}psql -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} -U {Settings.POSTGRESQL_USERNAME} -d {POSTGRES_DB_DATABASE_FILE} -f {STATEMENT_FILE}',
             'start-sql': [],

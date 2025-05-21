@@ -3,27 +3,25 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Helper')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../SQL')))
 
-from typing import Tuple, List
+from typing import Tuple
 from pathlib import Path
 import subprocess
-import signal
 import Format
 import re
 import Helper
-import Postgres
 import time
 
-def benchmark(database_name: str, execution_client: str, file_name: str, execution_server: List[str]) -> Tuple[float, float]:
+def benchmark(database_name: str, execution_client: str, execution_server: str, file_name: str, statement_file: str) -> Tuple[float, float]:
     '''
     This function executes the memory benchmark with 'heaptrack'.
 
     :param database_name: The name of the database.
     :param execution_client: The execution string of the database client.
+    :param execution_server: The execution strings of the database server (optional).
     :param file_name: The name of the file where the results should be stored. Must
                       be unique otherwise the current content will be overriden.
-    :param execution_server: The execution strings of the database server.
+    :param statement_file: The name of the file where the SQL statements are stored.
     
     :returns: A tuple including the used peak heap and rss memory of the process.
     '''
@@ -35,26 +33,31 @@ def benchmark(database_name: str, execution_client: str, file_name: str, executi
         benchmark_client(execution_client)
     return parse_output(file_name)
 
-def benchmark_server(execution_client: str, execution_server: List[str]) -> None:
+def benchmark_server(execution_server: str, statement_file: str) -> None:
     '''
     This function executes the memory benchmark with 'heaptrack' by tracking a server executable.
 
-    :param execution_client: The execution string of the database client.
     :param execution_server: The execution strings of the database server.
+    :param statement_file: The name of the file where the SQL statements are stored.
     '''
 
     server = subprocess.Popen(
-        ['heaptrack', '-o', 'mem_data'] + execution_server[0].split())
-    time.sleep(1)
-    bench_execution  = subprocess.Popen(
-        execution_client.split(),
+        ['heaptrack', '-o', 'mem_data'] + execution_server.split(),
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    _, error = bench_execution.communicate()
+    time.sleep(1)
+    with open(statement_file, 'r') as file:
+        content = file.read()
+        server.stdin.write(content)
+        server.stdin.flush()
+    server.stdin.write('\q;')
+    server.stdin.flush()
+    _, error = server.communicate()
     if error:
         Format.print_error('Something went wrong during the memory-benchmark', error)
-    Postgres.stop_database(execution_server[1])
+    
 
 def parse_output(file_name: str) -> Tuple[float, float]:
     '''
