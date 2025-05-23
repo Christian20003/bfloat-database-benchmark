@@ -164,7 +164,7 @@ def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file
         prep_database.insert_from_csv('vectorv', extend_file_path + vectorv_file)
     prep_database.execute_sql()
 
-    if database['name'] == 'lingodb':
+    if database['name'] == 'lingodb' and type == 'bfloat':
         Helper.remove_files([
             f'{Settings.LINGODB_DIR}/data1.arrow', 
             f'{Settings.LINGODB_DIR}/data1.arrow.sample', 

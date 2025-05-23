@@ -165,9 +165,9 @@ CONFIG = {
             'files': [Settings.LINGODB_DIR],
             'execution': f'{Settings.LINGODB_DB_PATH}sql {Settings.LINGODB_DIR}',
             'execution-bench': f'{Settings.LINGODB_DB_PATH}run-sql {STATEMENT_FILE} {Settings.LINGODB_DIR}',
-            'start-sql': ['SET persist=1;'],
+            'start-sql': ['SET persist=1;\n'],
             'end-sql': ['exit'],
-            'types': ['double', 'float', 'bfloat'],
+            'types': ['float8', 'float', 'bfloat'],
             'aggregations': ['standard']
         }
     ],

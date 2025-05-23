@@ -24,7 +24,7 @@ def benchmark(execution: str, database_name: str, total_columns: int, relevant_c
     :returns: A tuple including the execution time and the database output as numpy array.
     '''
 
-    if database_name == 'duckdb' or database_name == 'umbra' or database_name == 'postgres':
+    if database_name == 'duckdb' or database_name == 'umbra' or database_name == 'postgres' or database_name == 'lingodb':
         time, output = python_time(execution)
         array = Parse_Table.output_to_numpy(database_name, output, total_columns, relevant_columns)
         return time, array

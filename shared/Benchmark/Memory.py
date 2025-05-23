@@ -29,7 +29,7 @@ def benchmark(database_name: str, execution_client: str, execution_server: str, 
     Format.print_information('Start the memory benchmark - This will take some time', mark=True)
     if database_name == 'postgres':
         benchmark_server(execution_server, statement_file)
-    elif database_name == 'duckdb' or database_name == 'umbra':
+    elif database_name == 'duckdb' or database_name == 'umbra' or database_name == 'lingodb':
         benchmark_client(execution_client)
     return parse_output(file_name)
 

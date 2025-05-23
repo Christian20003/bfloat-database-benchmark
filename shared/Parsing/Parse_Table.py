@@ -22,6 +22,8 @@ def output_to_numpy(database_name: str, output: str, total_columns: int, relevan
         return raw_to_numpy(output, relevant_columns, 0, 0)
     if database_name == 'postgres':
         return raw_to_numpy(output, relevant_columns, 1, 2)
+    if database_name == 'lingodb':
+        return raw_to_numpy(output, relevant_columns, 2, 4)
 
 def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
     '''
