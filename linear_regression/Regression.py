@@ -55,11 +55,11 @@ def main():
                     number_columns = scenario['param_amount'] + 1
                     relevant_columns = [value + 1 for value in range(number_columns - 1)]
                     time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
-                    server = []
+                    server = ''
                     if database['name'] == 'postgres':
                         Postgres.stop_database(database['prep'][3])
-                        server = [database['prep'][4], database['prep'][3]]
-                    heap, rss = Memory.benchmark(database['name'], database['execution-bench'], f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["p_amount"]}_{agg}', server)
+                        server = database['prep'][4]
+                    heap, rss = Memory.benchmark(database['name'], database['execution-bench'], server, f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["p_amount"]}_{agg}', STATEMENT_FILE)
 
                     tf_params = regression_tensorflow(setup_file, scenario['param_amount'], CONFIG['param_start'], scenario['lr'], scenario['iterations'], type)
                     db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
@@ -93,7 +93,7 @@ def main():
                             tf_params, 
                             truth]
                         )
-                    if database['name'] == 'postgres' or database['name'] == 'umbra':
+                    if database['name'] == 'postgres' or database['name'] == 'umbra' and database['name'] == 'lingodb':
                         Helper.remove_dir(database['files'])
                     else:
                         Helper.remove_files(database['files'])
@@ -130,9 +130,21 @@ def prepare_benchmark(database: dict, type: str, param_start: int, number_parame
     prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
     prep_database.create_table('gd_start', ['idx'] + [letters[value] for value in range(number_parameter)], ['int'] + [type for _ in range(number_parameter)])
     prep_database.create_table('points', ['id'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))] + ['y'], ['int', type] + [type for _ in range(number_parameter - 1)])
+    if database['name'] == 'lingodb' and type == 'bfloat':
+        prep_database.create_table('data', ['id'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))] + ['y'], ['int', type] + [type for _ in range(number_parameter - 1)])
+        prep_database.insert_from_csv('data', extend_file_path + setup_file)
+        prep_database.insert_from_select('points', 'SELECT * FROM data')
+    else:
+        prep_database.insert_from_csv('points', extend_file_path + setup_file)
     prep_database.insert_from_select('gd_start', select_stmt)
-    prep_database.insert_from_csv('points', extend_file_path + setup_file)
     prep_database.execute_sql()
+
+    if database['name'] == 'lingodb' and type == 'bfloat':
+        Helper.remove_files([
+            f'{Settings.LINGODB_DIR}/data.arrow', 
+            f'{Settings.LINGODB_DIR}/data.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data.metadata.json',
+        ])
 
 def print_setting(points: int, parameters: int, database: str, type: str, iterations: int, learning_rate: float, agg_func: str) -> None:
     '''

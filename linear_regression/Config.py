@@ -351,6 +351,42 @@ CONFIG = {
             'end-sql': [],
             'types': ['float8', 'float4'],
             'aggregations': ['standard']
+        },
+        {
+            'name': 'lingodb',
+            'create_csv': True,
+            'ignore': True,
+            'csv_file': 'LingoDB_Regression_Results.csv',
+            'csv_header': [
+                'Type',
+                'Aggregation',
+                'Parameters',
+                'Points', 
+                'Iterations', 
+                'Execution', 
+                'Heap', 
+                'RSS',
+                'LingoDB-MAE',
+                'Tensorflow-MAE',
+                'LingoDB-MSE',
+                'Tensorflow-MSE',
+                'LingoDB-MAPE',
+                'Tensorflow-MAPE',
+                'LingoDB-sMAPE',
+                'Tensorflow-sMAPE',
+                'LingoDB-MPE', 
+                'Tensorflow-MPE', 
+                'LingoDB', 
+                'Tensorflow', 
+                'Truth'
+                ],
+            'files': [Settings.LINGODB_DIR],
+            'execution': f'{Settings.LINGODB_DB_PATH}sql {Settings.LINGODB_DIR}',
+            'execution-bench': f'{Settings.LINGODB_DB_PATH}run-sql {STATEMENT_FILE} {Settings.LINGODB_DIR}',
+            'start-sql': ['SET persist=1;\n'],
+            'end-sql': ['exit'],
+            'types': ['float8', 'float', 'bfloat'],
+            'aggregations': ['standard']
         }
     ],
     'setups': [
