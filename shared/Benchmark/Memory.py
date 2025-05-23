@@ -28,7 +28,7 @@ def benchmark(database_name: str, execution_client: str, execution_server: str, 
 
     Format.print_information('Start the memory benchmark - This will take some time', mark=True)
     if database_name == 'postgres':
-        benchmark_server(execution_client, execution_server)
+        benchmark_server(execution_server, statement_file)
     elif database_name == 'duckdb' or database_name == 'umbra':
         benchmark_client(execution_client)
     return parse_output(file_name)
@@ -50,6 +50,7 @@ def benchmark_server(execution_server: str, statement_file: str) -> None:
     time.sleep(1)
     with open(statement_file, 'r') as file:
         content = file.read()
+        content = content.replace('\n', ' ')
         server.stdin.write(content)
         server.stdin.flush()
     server.stdin.write('\q;')
