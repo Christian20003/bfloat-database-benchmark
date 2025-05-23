@@ -94,7 +94,7 @@ def main():
                                                   np.sum(tf_output)
                                                ])
                         
-                        if database['name'] == 'postgres' or database['name'] == 'umbra':
+                        if database['name'] == 'postgres' or database['name'] == 'umbra' or database['name'] == 'lingodb':
                             Helper.remove_dir(database['files'])
                         else:
                             Helper.remove_files(database['files'])
@@ -141,14 +141,41 @@ def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file
         Postgres.create_database(executables[0], executables[1], executables[2])
     elif database['name'] == 'umbra':
         os.mkdir(Settings.UMBRA_DIR)
+    elif database['name'] == 'lingodb':
+        os.mkdir(Settings.LINGODB_DIR)
     prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
     prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
-    prep_database.insert_from_csv('matrixa', extend_file_path + matrixa_file)
-    prep_database.insert_from_csv('matrixb', extend_file_path + matrixb_file)
-    prep_database.insert_from_csv('vectorv', extend_file_path + vectorv_file)
+    # Copy with bfloat does not work (apache arrow does not support it)
+    if database['name'] == 'lingodb' and type == 'bfloat':
+        prep_database.create_table('data1', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
+        prep_database.create_table('data2', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
+        prep_database.create_table('data3', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
+        prep_database.insert_from_csv('data1', extend_file_path + matrixa_file)
+        prep_database.insert_from_csv('data2', extend_file_path + matrixb_file)
+        prep_database.insert_from_csv('data3', extend_file_path + vectorv_file)
+        prep_database.insert_from_select('matrixa', 'SELECT * FROM data1')
+        prep_database.insert_from_select('matrixb', 'SELECT * FROM data2')
+        prep_database.insert_from_select('vectorv', 'SELECT * FROM data3')
+    else:
+        prep_database.insert_from_csv('matrixa', extend_file_path + matrixa_file)
+        prep_database.insert_from_csv('matrixb', extend_file_path + matrixb_file)
+        prep_database.insert_from_csv('vectorv', extend_file_path + vectorv_file)
     prep_database.execute_sql()
+
+    if database['name'] == 'lingodb':
+        Helper.remove_files([
+            f'{Settings.LINGODB_DIR}/data1.arrow', 
+            f'{Settings.LINGODB_DIR}/data1.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data1.metadata.json',
+            f'{Settings.LINGODB_DIR}/data2.arrow', 
+            f'{Settings.LINGODB_DIR}/data2.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data2.metadata.json',
+            f'{Settings.LINGODB_DIR}/data3.arrow', 
+            f'{Settings.LINGODB_DIR}/data3.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data3.metadata.json',
+        ])
 
 def generate_statement(statement: str, aggr_func: str) -> None:
     '''

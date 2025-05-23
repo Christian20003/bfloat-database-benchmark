@@ -77,7 +77,7 @@ CONFIG = {
         {
             'name': 'umbra',
             'create_csv': True,
-            'ignore': False,
+            'ignore': True,
             'csv_file': 'Umbra_Einstein_Results.csv',
             'csv_header': [
                 'Type',
@@ -138,6 +138,36 @@ CONFIG = {
             'start-sql': [],
             'end-sql': [],
             'types': ['float8', 'float4'],
+            'aggregations': ['standard']
+        },
+        {
+            'name': 'lingodb',
+            'create_csv': True,
+            'ignore': False,
+            'csv_file': 'LingoDB_Einstein_Results.csv',
+            'csv_header': [
+                'Type',
+                'Aggregation',
+                'Statement', 
+                'Matrix_A', 
+                'Matrix_B', 
+                'Vector_V', 
+                'Execution', 
+                'Heap', 
+                'RSS', 
+                'LingoDB-L2-Norm',
+                'Tensorflow-L2-Norm', 
+                'LingoDB-MSE',
+                'Tensorflow-MSE',
+                'LingoDB-Sum', 
+                'Tensorflow-Sum'
+                ],
+            'files': [Settings.LINGODB_DIR],
+            'execution': f'{Settings.LINGODB_DB_PATH}sql {Settings.LINGODB_DIR}',
+            'execution-bench': f'{Settings.LINGODB_DB_PATH}run-sql {STATEMENT_FILE} {Settings.LINGODB_DIR}',
+            'start-sql': ['SET persist=1;'],
+            'end-sql': ['exit'],
+            'types': ['double', 'float', 'bfloat'],
             'aggregations': ['standard']
         }
     ],
