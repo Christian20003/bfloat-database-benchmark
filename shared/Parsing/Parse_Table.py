@@ -37,7 +37,7 @@ def json_to_numpy(output: str, relevant_columns: List[int]) -> np.ndarray:
     '''
 
     json_obj = json.loads(output)
-    json_obj = json.dumps(sorted(json_obj, key=custom_sort))
+    json_obj = json.loads(json.dumps(sorted(json_obj, key=custom_sort)))
     result = []
     for item in json_obj:
         index = 0
@@ -64,13 +64,15 @@ def raw_to_numpy(output: str, relevant_columns: List[int], ignore_lines_start: i
     '''
     
     lines = output.splitlines()
+    lines = [entry for idx, entry in enumerate(lines) if ignore_lines_start < idx < len(lines) - ignore_lines_end]
     table = [re.findall(r'-?\d+\.\d+e[+-]?\d+|-?\d+\.\d+|-?\d+', line) for line in lines]
-    table = sorted(table, key=lambda x: x[0])
+    table = [entry for entry in table if len(entry) != 0]
+    table = sorted(table, key=lambda x: int(x[0]))
     result = []
     for idx, column in enumerate(table):
-        if ignore_lines_start < idx < len(table) - ignore_lines_end:
-            result.append([float(column[i]) for i in relevant_columns])
+        result.append([float(column[i]) for i in relevant_columns])
     return np.array(result)
 
 def custom_sort(item: dict) -> int:
-    return item[0]
+    first_key = list(item.keys())[0]
+    return item[first_key]

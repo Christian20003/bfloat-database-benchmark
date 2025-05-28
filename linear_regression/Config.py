@@ -15,7 +15,7 @@ UMBRA_DB_DATABASE_FILE = 'regression'
 POSTGRES_DB_DATABASE_FILE = 'regression'
 STATEMENT_FILE = 'Statement.sql'
 
-csv_header = {
+csv_header = [
     'Type',
     'Aggregation',
     'Parameters',
@@ -37,7 +37,7 @@ csv_header = {
     'Database', 
     'Tensorflow', 
     'Truth'
-}
+]
 
 duckdb = DuckDB.DUCKDB
 duckdb['csv_header'] = csv_header
