@@ -4,16 +4,10 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
 from Statements import *
-import Settings
 import DuckDB
 import Umbra
 import Postgresql
 import LingoDB
-
-DUCK_DB_DATABASE_FILE = 'regression.db'
-UMBRA_DB_DATABASE_FILE = 'regression'
-POSTGRES_DB_DATABASE_FILE = 'regression'
-STATEMENT_FILE = 'Statement.sql'
 
 csv_header = [
     'Type',

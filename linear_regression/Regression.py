@@ -71,6 +71,12 @@ def main():
                     number_columns = params + 1
                     relevant_columns = [value + 1 for value in range(number_columns - 1)]
                     time, output = Time.benchmark(time_exe, name, number_columns, relevant_columns, False)
+                    if time == -1:
+                        if name == 'postgres' or name == 'umbra' or name == 'lingodb':
+                            Helper.remove_dir(database['files'])
+                        else:
+                            Helper.remove_files(database['files'])
+                        continue
                     output = output[len(output) - 1]
                     if database['name'] == 'postgres':
                         Postgres.stop_database(database['server-preparation'][3])

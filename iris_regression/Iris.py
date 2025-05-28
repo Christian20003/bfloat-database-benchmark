@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
-from Config import CONFIG, STATEMENT_1, STATEMENT_2, STATEMENT_FILE
+from Config import CONFIG
 import Format
 import Database
 import Create_CSV
@@ -21,6 +21,7 @@ import Settings
 def main():
     databases = CONFIG['databases']
     scenarios = CONFIG['setups']
+    lr = CONFIG['learning_rate']
 
     for database in databases:
         if database['create_csv'] and not database['ignore']:
@@ -29,36 +30,43 @@ def main():
     for scenario in scenarios:
         if scenario['ignore']:
             continue
+        network = scenario['network_size']
+        data = scenario['data_size']
+        iter = scenario['iterations']
         for database in databases:
             if database['ignore']:
                 continue
+            name = database['name']
+            time_exe = database['time-executable']
+            memory_exe = database['memory-executable']
             for type in database['types']:
                 for statement in scenario['statements']:
-                    statement_number = 0
-                    if (statement == STATEMENT_1):
-                        statement_number = 1
-                    elif (statement == STATEMENT_2):
-                        statement_number = 2
+                    content = statement['statement']
+                    number = statement['number']
                     for agg in database['aggrations']:
-                        Format.print_title(f'START BENCHMARK - IRIS-REGRESSION WITH HIDDEN_LAYER_WIDTH: {scenario["network_size"]} AND {scenario["data_size"]} SAMPLES, TYPE: {type}, DATABASE: {database["name"]}')
-                        generate_statement(statement, scenario['iterations'], agg)
-                        prepare_benchmark(database, type, scenario['data_size'], scenario['network_size'])
+                        print_setting(network, data, name, type, iter,number, agg)
+                        generate_statement(content, number, iter, lr, agg)
+                        prepare_benchmark(database, type, data, network)
 
-                        time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [0, 1])
-                        server = []
+                        time, output = Time.benchmark(time_exe, name, 2, [0, 1], False)
+                        if time == -1:
+                            if name == 'postgres' or name == 'umbra' or name == 'lingodb':
+                                Helper.remove_dir(database['files'])
+                            else:
+                                Helper.remove_files(database['files'])
+                            continue
                         if database['name'] == 'postgres':
-                            Postgres.stop_database(database['prep'][3])
-                            server = [database['prep'][4], database['prep'][3]]
-                        heap, rss = Memory.benchmark(database['name'], database['execution-bench'], f'{database["name"]}_{type}_{scenario["data_size"]}_{scenario["network_size"]}_{agg}_{statement_number}', server)
+                            Postgres.stop_database(database['server-preparation'][3])
+                        heap, rss = Memory.benchmark(name, memory_exe, '', f'{name}_{type}_{data}_{network}_{agg}_{number}', Settings.STATEMENT_FILE)
 
                         Create_CSV.append_row(database['csv_file'], [
                             type, 
-                            scenario["network_size"], 
-                            scenario["data_size"],
-                            statement_number, 
+                            network, 
+                            data,
+                            number, 
                             agg,
-                            CONFIG['learning_rate'],
-                            scenario['iterations'], 
+                            lr,
+                            iter, 
                             time, 
                             heap, 
                             rss, 
@@ -68,7 +76,28 @@ def main():
                             Helper.remove_dir(database['files'])
                         else:
                             Helper.remove_files(database['files'])
-    Helper.remove_files([STATEMENT_FILE])
+    Helper.remove_files([Settings.STATEMENT_FILE])
+
+def print_setting(network_size: int, data_size: int, database: str, type: str, iterations: int, statement: int, agg: str) -> None:
+    '''
+    This function prints the settings for the current benchmark.
+
+    :param network_size: The size of the hidden layer.
+    :param data_size: The number of samples.
+    :param database: The database name.
+    :param type: The datatype for x and y values.
+    :param iterations: The number of update iterations.
+    :param statement: The statement number that will be executed.
+    :param agg: The aggregation function to be used in the recursive CTE.
+    '''
+    Format.print_title(f'START BENCHMARK - IRIS-ML-Model WITH THE FOLLOWING SETTINGS')
+    Format.print_information(f'Network Size: {network_size}', tabs=1)
+    Format.print_information(f'Sample Size: {data_size}', tabs=1)
+    Format.print_information(f'Database: {database}', tabs=1)
+    Format.print_information(f'Type: {type}', tabs=1)
+    Format.print_information(f'Iterations: {iterations}', tabs=1)
+    Format.print_information(f'Statement: {statement}', tabs=1)
+    Format.print_information(f'Aggregation Function: {agg}', tabs=1)
 
 def prepare_benchmark(database: dict, type: str, data_size: int, network_size: int) -> None:
     '''
@@ -83,13 +112,13 @@ def prepare_benchmark(database: dict, type: str, data_size: int, network_size: i
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
     extend_file_path = '.' if database['name'] == 'postgres' else ''
     if database['name'] == 'postgres':
-        os.mkdir(Settings.POSTGRESQL_DIR)
-        executables = database['prep']
+        Helper.create_dir(Settings.POSTGRESQL_DIR)
+        executables = database['server-preparation']
         Postgres.create_database(executables[0], executables[1], executables[2])
     elif database['name'] == 'umbra':
-        os.mkdir(Settings.UMBRA_DIR)
+        Helper.create_dir(Settings.UMBRA_DIR)
 
-    prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
+    prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('iris', ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], [type, type, type, type, 'int'])
     prep_database.create_table('iris2', ['id', 'sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], ['int', type, type, type, type, 'int'])
     prep_database.create_table('img', ['i', 'j', 'v'], ['int', 'int', type])
@@ -108,35 +137,39 @@ def prepare_benchmark(database: dict, type: str, data_size: int, network_size: i
     prep_database.insert_from_select('w_ho', f'select i.*,j.*,random()*2-1 from generate_series(1,{network_size}) i, generate_series(1,3) j')
     prep_database.execute_sql()
 
-def generate_statement(statement: str, iterations: int, aggr_func: str) -> None:
+def generate_statement(statement: str, number: int, iterations: int, lr: float,  agg: str) -> None:
     '''
     This function generates the SQL file.
 
     :param statement: The SQL statement to be executed.
+    :param number: The statement number.
     :param iterations: The number of iterations in the recursive CTE.
-    :param aggr_func: The aggregation function to be used.
+    :param lr: The learning rate.
+    :param agg: The aggregation function to be used.
     '''
 
-    agg_func = 'SUM' if agg_func == 'standard' else 'KAHAN_SUM'
-    with open(STATEMENT_FILE, 'w') as file:
-        if statement == STATEMENT_1:
+    function = 'SUM' if agg == 'standard' else 'KAHAN_SUM'
+    with open(Settings.STATEMENT_FILE, 'w') as file:
+        if number == 1:
             file.write(statement.format(
-                agg_func,
-                agg_func,
-                agg_func,
-                agg_func,
-                agg_func,
+                function,
+                function,
+                function,
+                function,
+                function,
+                lr,
                 iterations,
-                agg_func,
-                agg_func
+                function,
+                function
             ))
         else:
             file.write(statement.format(
-                agg_func,
-                agg_func,
-                agg_func,
-                agg_func,
-                agg_func,
+                function,
+                function,
+                function,
+                function,
+                function,
+                lr,
                 iterations
             ))
 
