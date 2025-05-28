@@ -42,7 +42,7 @@ def print_information(message: str = 'Dummy Information', mark: bool = False, ta
    '''
    start = '\t' * tabs
    highlight = color.ORANGE if mark else ''
-   print(f'{start} {highlight} {message} {color.END} \n')
+   print(f'{start} {highlight} {message} {color.END}')
 
 def print_warning(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    '''
@@ -52,7 +52,7 @@ def print_warning(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   print(f'{start} {color.YELLOW} {message} {color.END} \n')
+   print(f'{start} {color.YELLOW} {message} {color.END}')
 
 def print_success(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    '''
@@ -62,4 +62,4 @@ def print_success(message: str = 'Dummy Warning', tabs: int = 0) -> None:
    :param tabs: Number of tab characters at the beginning of the message.
    '''
    start = '\t' * tabs
-   print(f'{start} {color.GREEN} {message} {color.END} \n')
+   print(f'{start} {color.GREEN} {message} {color.END}')

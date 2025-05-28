@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
 from typing import Tuple
-from Config import CONFIG, STATEMENT_FILE
+from Config import CONFIG
 import random
 import Format
 import Helper
@@ -28,6 +28,9 @@ import tensorflow as tf
 def main():
     databases = CONFIG['databases']
     scenarios = CONFIG['setups']
+    correct_param_value = CONFIG['param_value']
+    init_param_value = CONFIG['param_start']
+    overall_points = CONFIG['max_points']
     data_file = './data.csv'
     setup_file = './points.csv'
 
@@ -39,112 +42,60 @@ def main():
     for scenario in scenarios:
         if scenario['ignore']:
             continue
-        if scenario['param_amount'] != parameter_count:
-            number_points = CONFIG['max_points'] if scenario['use_max_points'] else scenario['p_amount']
-            generate_points(number_points, scenario['param_amount'], CONFIG['param_value'], data_file)
-            parameter_count = scenario['param_amount']
+        params = scenario['params_amount']
+        points = scenario['points_amount']
+        iter = scenario['iterations']
+        lr = scenario['lr']
+        statement = scenario['statement']
+        fromPool = scenario['use_max_points']
+        calc_tensorflow = scenario['tensorflow']
+
+        # Generate the maximum number of points ones instead of generating points for each setup
+        # If the number of parameters is the same
+        if params != parameter_count:
+            number_points = overall_points if fromPool else points
+            generate_points(number_points, params, correct_param_value, data_file)
+            parameter_count = params
         for database in databases:
             if database['ignore']:
                 continue
+            name = database['name']
+            time_exe = database['time-executable']
+            memory_exe = database['memory-executable']
             for type in database['types']:
                 for agg in database['aggregations']:
-                    print_setting(scenario['p_amount'], scenario['param_amount'], database['name'], type, scenario['iterations'], scenario['lr'], agg)
-                    generate_statement(scenario['statement'], agg, scenario['lr'], scenario['iterations'], scenario['param_amount'])
-                    prepare_benchmark(database, type, CONFIG['param_start'], scenario['param_amount'], scenario['p_amount'], data_file, setup_file)
+                    print_setting(points, params, name, type, iter, lr, agg)
+                    generate_statement(statement, params, name, type, iter, lr, agg)
+                    prepare_benchmark(database, type, init_param_value, params, points, data_file, setup_file)
 
-                    number_columns = scenario['param_amount'] + 1
+                    number_columns = params + 1
                     relevant_columns = [value + 1 for value in range(number_columns - 1)]
-                    time, output = Time.benchmark(database['execution-bench'], database['name'], number_columns, relevant_columns)
-                    server = ''
+                    time, output = Time.benchmark(time_exe, name, number_columns, relevant_columns, False)
+                    output = output[len(output) - 1]
                     if database['name'] == 'postgres':
-                        Postgres.stop_database(database['prep'][3])
-                        server = database['prep'][4]
-                    heap, rss = Memory.benchmark(database['name'], database['execution-bench'], server, f'{database["name"]}_{type}_{scenario["p_amount"]}_{scenario["p_amount"]}_{agg}', STATEMENT_FILE)
+                        Postgres.stop_database(database['server-preparation'][3])
+                    heap, rss = Memory.benchmark(name, memory_exe, '', f'{name}_{type}_{params}_{points}_{agg}', Settings.STATEMENT_FILE)
 
-                    tf_params = regression_tensorflow(setup_file, scenario['param_amount'], CONFIG['param_start'], scenario['lr'], scenario['iterations'], type)
-                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output[0], tf_params, type)
+                    tf_params = np.array([-1])
+                    db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+                    
+                    if calc_tensorflow:
+                        tf_params = regression_tensorflow(setup_file, params, init_param_value, lr, iter, type)
+                        db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe = evaluate_accuracy(setup_file, output, tf_params, type)
 
-                    truth = []
-                    for _ in range(scenario['param_amount'] - 1):
-                        truth.append(CONFIG['param_value'])
-                    truth.append(-2.156)
+                    truth = [correct_param_value for _ in range(params)]
                     Create_CSV.append_row(
                         database['csv_file'], 
                         [
-                            type,
-                            agg,
-                            scenario['param_amount'], 
-                            scenario['p_amount'], 
-                            scenario['iterations'], 
-                            time, 
-                            heap, 
-                            rss,
-                            db_mae,
-                            tf_mae,
-                            db_mse,
-                            tf_mse, 
-                            db_mape,
-                            tf_mape,
-                            db_smape,
-                            tf_smape,
-                            db_mpe,
-                            tf_mpe, 
-                            output[0], 
-                            tf_params, 
-                            truth]
-                        )
-                    if database['name'] == 'postgres' or database['name'] == 'umbra' and database['name'] == 'lingodb':
+                            type, agg, params, points, iter, time, heap, rss,
+                            db_mae, tf_mae, db_mse, tf_mse, db_mape, tf_mape, db_smape, tf_smape, db_mpe, tf_mpe, 
+                            output, tf_params, truth
+                        ])
+                    if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                         Helper.remove_dir(database['files'])
                     else:
                         Helper.remove_files(database['files'])
-    Helper.remove_files([data_file, setup_file, STATEMENT_FILE])
-
-def prepare_benchmark(database: dict, type: str, param_start: int, number_parameter: int, number_points: int, data_file: str, setup_file: str) -> None:
-    '''
-    This function prepares the benchmark by creating the database and inserting the data.
-
-    :param database: The database name.
-    :param type: The datatype for x and y values.
-    :param param_start: The starting point for the parameters.
-    :param number_parameter: The number of parameters.
-    :param number_points: The number of points.
-    :param data_file: The name of the csv file where the points are stored.
-    :param setup_file: The name of the setup file.
-    '''
-
-    Format.print_information('Preparing benchmark - This can take some time', mark=True)
-    Helper.copy_csv_file(data_file, setup_file, number_points + 1)  
-    extend_file_path = '.' if database['name'] == 'postgres' else ''
-    if database['name'] == 'postgres':
-        os.mkdir(Settings.POSTGRESQL_DIR)
-        executables = database['prep']
-        Postgres.create_database(executables[0], executables[1], executables[2])
-    elif database['name'] == 'umbra':
-        os.mkdir(Settings.UMBRA_DIR)
-    
-    letters = 'abcdefghijklmnopqrstuvwxyz'
-    select_stmt = 'SELECT 0, '
-    for _ in range(number_parameter):
-        select_stmt += str(param_start) + ', '
-    select_stmt = select_stmt[:-2]
-    prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
-    prep_database.create_table('gd_start', ['idx'] + [letters[value] for value in range(number_parameter)], ['int'] + [type for _ in range(number_parameter)])
-    prep_database.create_table('points', ['id'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))] + ['y'], ['int', type] + [type for _ in range(number_parameter - 1)])
-    if database['name'] == 'lingodb' and type == 'bfloat':
-        prep_database.create_table('data', ['id'] + [f'x{i + 1}' for i in reversed(range(number_parameter - 1))] + ['y'], ['int', type] + [type for _ in range(number_parameter - 1)])
-        prep_database.insert_from_csv('data', extend_file_path + setup_file)
-        prep_database.insert_from_select('points', 'SELECT * FROM data')
-    else:
-        prep_database.insert_from_csv('points', extend_file_path + setup_file)
-    prep_database.insert_from_select('gd_start', select_stmt)
-    prep_database.execute_sql()
-
-    if database['name'] == 'lingodb' and type == 'bfloat':
-        Helper.remove_files([
-            f'{Settings.LINGODB_DIR}/data.arrow', 
-            f'{Settings.LINGODB_DIR}/data.arrow.sample', 
-            f'{Settings.LINGODB_DIR}/data.metadata.json',
-        ])
+    Helper.remove_files([data_file, setup_file, Settings.STATEMENT_FILE])
 
 def print_setting(points: int, parameters: int, database: str, type: str, iterations: int, learning_rate: float, agg_func: str) -> None:
     '''
@@ -167,26 +118,86 @@ def print_setting(points: int, parameters: int, database: str, type: str, iterat
     Format.print_information(f'Learning Rate: {learning_rate}', tabs=1)
     Format.print_information(f'Aggregation Function: {agg_func}', tabs=1)
 
-def generate_statement(statement: str, agg_func: str, learning_rate: float, iterations: int, number_parameters: int) -> None:
+def generate_statement(statement: str, params: int, database: str, type: str, iter: int, lr: float, agg: str) -> None:
     '''
     This function generates the SQL file.
 
     :param statement: The SQL statement to be executed.
-    :param agg_func: The aggregation function to be used in the recursive CTE.
-    :param iterations: The number of iterations in the recursive CTE.
-    :param learning_rate: The learning rate for the grandient descent algorithm.
-    :param number_parameters: The number of parameters.
+    :param params: The number of parameters.
+    :param database: The database which should execute the benchmark.
+    :param type: The datatype of the output.
+    :param iter: The number of iterations in the recursive CTE.
+    :param lr: The learning rate for the grandient descent algorithm.
+    :param agg: The aggregation function to be used in the recursive CTE.
     '''
 
-    agg_func = 'avg' if agg_func == 'standard' else 'favg'
-    with open(STATEMENT_FILE, 'w') as file:
+    function = 'AVG' if agg == 'standard' else 'FAVG'
+    with open(Settings.STATEMENT_FILE, 'w') as file:
         content = []
-        for _ in range(number_parameters):
-            content.append(learning_rate)
-            content.append(agg_func)
-        content.append(iterations)
+        # Add aggregation function and lr to the statement
+        for _ in range(params):
+            content.append(lr)
+            content.append(function)
+        # Add type casts if necessary
+        for _ in range(params):
+            if database == 'postgres' and type == 'float4':
+                content.append(f'::{type}')
+            else:
+                content.append('')
+        content.append(iter)
         statement = statement.format(*content)
         file.write(statement)
+
+def prepare_benchmark(database: dict, type: str, param_start: int, params: int, points: int, data_file: str, setup_file: str) -> None:
+    '''
+    This function prepares the benchmark by creating the database and inserting the data.
+
+    :param database: The database name.
+    :param type: The datatype for x and y values.
+    :param param_start: The starting point for the parameters.
+    :param params: The number of parameters.
+    :param points: The number of points.
+    :param data_file: The name of the csv file where the points are stored.
+    :param setup_file: The name of the setup file.
+    '''
+
+    Format.print_information('Preparing benchmark - This can take some time', mark=True)
+    Helper.copy_csv_file(data_file, setup_file, points + 1)  
+    extend_file_path = '.' if database['name'] == 'postgres' else ''
+    if database['name'] == 'postgres':
+        Helper.create_dir(Settings.POSTGRESQL_DIR)
+        executables = database['server-preparation']
+        Postgres.create_database(executables[0], executables[1], executables[2])
+    elif database['name'] == 'umbra':
+        Helper.create_dir(Settings.UMBRA_DIR)
+    
+    # Create statement for gd_start table
+    select_stmt = 'SELECT 0, '
+    for _ in range(params):
+        select_stmt += str(param_start) + ', '
+    select_stmt = select_stmt[:-2]
+
+    letters = 'abcdefghijklmnopqrstuvwxyz'
+    prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
+    prep_database.create_table('gd_start', ['idx'] + [letters[value] for value in range(params)], ['int'] + [type for _ in range(params)])
+    prep_database.create_table('points', ['id'] + [f'x{i + 1}' for i in reversed(range(params - 1))] + ['y'], ['int', type] + [type for _ in range(params - 1)])
+    # LingoDB needs special treatment because copy with bfloat not supported
+    if database['name'] == 'lingodb' and type == 'bfloat':
+        prep_database.create_table('data', ['id'] + [f'x{i + 1}' for i in reversed(range(params - 1))] + ['y'], ['int', 'float'] + ['float' for _ in range(params - 1)])
+        prep_database.insert_from_csv('data', extend_file_path + setup_file)
+        prep_database.insert_from_select('points', 'SELECT * FROM data')
+    else:
+        prep_database.insert_from_csv('points', extend_file_path + setup_file)
+    prep_database.insert_from_select('gd_start', select_stmt)
+    prep_database.execute_sql()
+
+    # Remove float tables, because that should not be there for bfloat benchmark
+    if database['name'] == 'lingodb' and type == 'bfloat':
+        Helper.remove_files([
+            f'{Settings.LINGODB_DIR}/data.arrow', 
+            f'{Settings.LINGODB_DIR}/data.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data.metadata.json',
+        ])
 
 
 def generate_points(number_points: int, number_parameter: int, parameter_value: float, file_name: str) -> None:
@@ -208,7 +219,7 @@ def generate_points(number_points: int, number_parameter: int, parameter_value: 
     result = []
     for value in range(number_points):
         x_s = [float("{:.4f}".format(random.random())) for _ in range(number_parameter)]
-        y = sum([parameter_value * x for x in x_s]) + (-2.156)
+        y = sum([parameter_value * x for x in x_s]) + parameter_value
         result.append([value]+ x_s + [float(y)])
         # Write chunks of 100.000.000 to the csv file to avoid memory issues
         if len(result) >= 100000000:

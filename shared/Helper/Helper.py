@@ -36,6 +36,18 @@ def remove_dir(dirs: List[str]) -> None:
         except Exception as e:
             print_error(f'Failed to remove {dir_name}', e)
 
+def create_dir(dir: str) -> None:
+    '''
+    This function generates a new directory. If the directory already
+    exists, it will be deleted.
+
+    :param dir: The name of the directory.
+    '''
+    
+    if os.path.exists(dir):
+        remove_dir([dir])
+    os.mkdir(dir)
+
 def copy_csv_file(src: str, dst: str, number_lines: int) -> None:
     '''
     This function copies a CSV file from src to dst and limits the number of lines to number_lines.
