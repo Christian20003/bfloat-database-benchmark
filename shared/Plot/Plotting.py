@@ -7,6 +7,7 @@ from typing import List
 from Read_CSV import read_csv_file
 from Create_Plot import plot_data, COLORS, STYLES, MARKERS
 import itertools
+import copy
 
 def remove_entries(data: dict, ignore: dict) -> dict:
     '''
@@ -21,13 +22,20 @@ def remove_entries(data: dict, ignore: dict) -> dict:
     :returns: The data dictionary without the ignored entries.
     '''
 
+    copy_dict = copy.deepcopy(data)
     if not ignore:
         return data
-    for key, value in data.items():
-        for ignore_key, ignore_values in ignore.items():
-            if key == ignore_key and value[ignore_key] in ignore_values:
-                del data[key]
-    return data
+    for number, entry in data.items():
+        deleted = False
+        for key, value in entry.items():
+            for ignore_key, ignore_values in ignore.items():
+                if key == ignore_key and value in ignore_values:
+                    del copy_dict[number]
+                    deleted = True
+                    break
+            if deleted:
+                break
+    return copy_dict
 
 def manipulate_entries(data: dict, manipulate: dict) -> dict:
     '''
@@ -50,21 +58,22 @@ def manipulate_entries(data: dict, manipulate: dict) -> dict:
 
     if not manipulate:
         return data
-    for key, value in data.items():
-        for manipulate_key, manipulate_values in manipulate.items():
-            if key == manipulate_key:
-                function = manipulate_values['function']
-                types = manipulate_values['types']
-                args = manipulate_values['args']
-                arg_values = []
-                for idx, arg in enumerate(args):
-                    if types[idx] == 'int':
-                        arg_values.append(int(value[arg]))
-                    elif types[idx] == 'float':
-                        arg_values.append(float(value[arg]))
-                    else:
-                        raise ValueError(f"Unsupported type: {types[idx]}")
-                value[manipulate_key] = function(*arg_values)
+    for number, entry in data.items():
+        for key, value in entry.items():
+            for manipulate_key, manipulate_values in manipulate.items():
+                if key == manipulate_key:
+                    function = manipulate_values['function']
+                    types = manipulate_values['types']
+                    args = manipulate_values['args']
+                    arg_values = []
+                    for idx, arg in enumerate(args):
+                        if types[idx] == 'int':
+                            arg_values.append(int(entry[arg]))
+                        elif types[idx] == 'float':
+                            arg_values.append(float(entry[arg]))
+                        else:
+                            raise ValueError(f"Unsupported type: {types[idx]}")
+                    entry[manipulate_key] = function(*arg_values)
     return data
 
 def rename_entries(data: dict, renaming: dict) -> dict:
@@ -79,15 +88,16 @@ def rename_entries(data: dict, renaming: dict) -> dict:
 
     :returns: The data dictionary with the renamed entries.
     '''
-    
+
     if not renaming:
         return data
-    for key, value in data.items():
-        for rename_key, rename_values in renaming.items():
-            if key == rename_key:
-                for idx, old_value in enumerate(rename_values['old']):
-                    if value[rename_key] == old_value:
-                        value[rename_key] = rename_values['new'][idx]
+    for _, entry in data.items():
+        for key, value in entry.items():
+            for rename_key, rename_values in renaming.items():
+                if key == rename_key:
+                    for idx, old_value in enumerate(rename_values['old']):
+                        if value == old_value:
+                            entry[key] = rename_values['new'][idx]
     return data
 
 def get_unique_values(key: str, data: dict) -> List[str]:
@@ -191,9 +201,11 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
                 except ValueError:
                     continue
                 style_idx += 1
+            style_idx = 0
             marker_idx += 1
+        marker_idx = 0
         color_idx += 1
-    plot_data(final_data, plot_config['x_label'], plot_config['y_label'], plot_config['file_name'])
+    plot_data(final_data, plot_config['x_label'], plot_config['y_label'], plot_config['file_name'], y_as_log=plot_config['log_y'], x_as_log=plot_config['log_x'])
 
 if __name__ == "__main__":
     file_name = './shared/Plot/DuckDB_Regression_Results.csv'

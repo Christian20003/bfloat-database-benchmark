@@ -23,13 +23,17 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
     :param y_as_log: If the y-axis should be as logerithmic scale (Default: False)
     '''
 
+    f = plt.figure()
+    f.set_figwidth(12)
+    f.set_figheight(8)
     for key, value in data.items():
         plt.plot(value['x'], value['y'], color=value['color'], linestyle=value['style'], marker=value['marker'], label=key, linewidth=2)
-    columns = 1 if len(data) < 2 else 4
+    columns = 4
     mode = 'expand' if len(data) > 4 else 'default'
-    ylimit = max(value['y']) / 100
+    ylimit = max(value['y']) / 10
     plt.tick_params(which='minor', bottom=False, top=False, left=False, right=False)
     plt.legend(loc=legend_loc, bbox_to_anchor=(0, 1, 1, 0.2), mode=mode, ncol=columns)
+    plt.subplots_adjust(left=0.15, right=0.85, top=0.75, bottom=0.15)
     plt.ylim(bottom=-ylimit)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
