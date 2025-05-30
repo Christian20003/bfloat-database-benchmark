@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
 from typing import List, Tuple
-from Config import CONFIG, STATEMENT_1, STATEMENT_2, STATEMENT_3, STATEMENT_4, STATEMENT_FILE
+from Config import CONFIG
 from collections import defaultdict
 import random
 import Format
@@ -39,50 +39,56 @@ def main():
     for scenario in scenarios:
         if scenario['ignore']:
             continue
-        generate_tensor(scenario['dimension_1'], scenario['dimension_2'], maxtrix_a_file)
-        generate_tensor(scenario['dimension_2'], scenario['dimension_3'], maxtrix_b_file)
-        generate_tensor(scenario['dimension_3'], 1, vector_v_file)
+        rowsA = scenario['dimension_1']
+        rowsB = scenario['dimension_2']
+        rowsC = scenario['dimension_3']
+        generate_tensor(rowsA, rowsB, maxtrix_a_file)
+        generate_tensor(rowsB, rowsC, maxtrix_b_file)
+        generate_tensor(rowsC, 1, vector_v_file)
         for database in databases:
             if database['ignore']:
                 continue
+            name = database['name']
+            time_exe = database['time-executable']
+            memory_exe = database['memory-executable']
             for type in database['types']:
                 for statement in scenario['statements']:
-                    statement_number = 0
-                    if (statement == STATEMENT_1):
-                        statement_number = 1
-                    elif (statement == STATEMENT_2):
-                        statement_number = 2
-                    elif (statement == STATEMENT_3):
-                        statement_number = 3
-                    elif (statement == STATEMENT_4):
-                        statement_number = 4
+                    number = statement['number']
+                    content = statement['statement']
                     for agg in database['aggregations']:
-                        print_setting(scenario['dimension_1'], scenario['dimension_2'], scenario['dimension_3'], database['name'], type, statement_number, agg)
-                        generate_statement(statement, agg)
+                        if not check_execution(name, rowsA, number):
+                            continue
+
+                        print_setting(rowsA, rowsB, rowsC, name, type, number, agg)
+                        generate_statement(content, number, agg)
                         prepare_benchmark(database, type, maxtrix_a_file, maxtrix_b_file, vector_v_file)
 
-                        time, output = Time.benchmark(database['execution-bench'], database['name'], 2, [1])
-                        server = ''
+                        time, output = Time.benchmark(time_exe, name, 2, [1], False)
+                        if time == -1:
+                            if name == 'postgres' or name == 'umbra' or name == 'lingodb':
+                                Helper.remove_dir(database['files'])
+                            else:
+                                Helper.remove_files(database['files'])
+                            continue
                         if database['name'] == 'postgres':
-                            Postgres.stop_database(database['prep'][3])
-                            server = database['prep'][4]
-                        heap, rss = Memory.benchmark(database['name'], database['execution-bench'], server, f'{database["name"]}_{type}_{scenario["dimension_1"]}_{agg}_{statement_number}', STATEMENT_FILE)
+                            Postgres.stop_database(database['server-preparation'][3])
+                        heap, rss = Memory.benchmark(name, memory_exe, '', f'{name}_{type}_{rowsA}_{agg}_{number}', Settings.STATEMENT_FILE)
                         output = np.array([entry[0] for entry in output])
 
                         tf_output = -1
                         l2_db, l2_tf, mse_db, mse_tf = -1, -1, -1, -1
-                        if statement_number != 2:
-                            tf_output, tf_truth = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type, True if statement_number == 3 else False)
+                        if number != 2:
+                            tf_output, tf_truth = einstein_tensorflow(maxtrix_a_file, maxtrix_b_file, vector_v_file, type, True if number == 3 else False)
                             l2_db, l2_tf, mse_db, mse_tf = evaluate_accuray(output, tf_output, tf_truth)
 
                         Create_CSV.append_row(database['csv_file'], 
                                               [
                                                   type,
                                                   agg,
-                                                  statement_number,
-                                                  scenario['dimension_1']*scenario['dimension_2'], 
-                                                  scenario['dimension_2']*scenario['dimension_3'], 
-                                                  scenario['dimension_3'],
+                                                  number,
+                                                  rowsA*rowsB, 
+                                                  rowsB*rowsC, 
+                                                  rowsC,
                                                   time, 
                                                   heap, 
                                                   rss, 
@@ -94,11 +100,22 @@ def main():
                                                   np.sum(tf_output)
                                                ])
                         
-                        if database['name'] == 'postgres' or database['name'] == 'umbra' or database['name'] == 'lingodb':
+                        if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                             Helper.remove_dir(database['files'])
                         else:
                             Helper.remove_files(database['files'])
-    Helper.remove_files([maxtrix_a_file, maxtrix_b_file, vector_v_file, STATEMENT_FILE])
+    Helper.remove_files([maxtrix_a_file, maxtrix_b_file, vector_v_file, Settings.STATEMENT_FILE])
+
+def check_execution(database: str, setup_id: int, number: int) -> bool:
+    if database == 'duckdb':
+        pass
+    elif database == 'umbra':
+        pass
+    elif database == 'postgres':
+        pass
+    elif database == 'lingodb':
+        pass
+    return True
 
 def print_setting(dimension1: int, dimension2: int, dimension3: int, database: str, type: str, statement: int, agg_func: str) -> None:
     '''
@@ -136,14 +153,14 @@ def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
     extend_file_path = '.' if database['name'] == 'postgres' else ''
     if database['name'] == 'postgres':
-        os.mkdir(Settings.POSTGRESQL_DIR)
-        executables = database['prep']
+        Helper.create_dir(Settings.POSTGRESQL_DIR)
+        executables = database['server-preparation']
         Postgres.create_database(executables[0], executables[1], executables[2])
     elif database['name'] == 'umbra':
-        os.mkdir(Settings.UMBRA_DIR)
+        Helper.create_dir(Settings.UMBRA_DIR)
     elif database['name'] == 'lingodb':
-        os.mkdir(Settings.LINGODB_DIR)
-    prep_database = Database.Database(database['execution'], database['start-sql'], database['end-sql'])
+        Helper.create_dir(Settings.LINGODB_DIR)
+    prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
@@ -177,20 +194,21 @@ def prepare_benchmark(database: dict, type: str, matrixa_file: str, matrixb_file
             f'{Settings.LINGODB_DIR}/data3.metadata.json',
         ])
 
-def generate_statement(statement: str, aggr_func: str) -> None:
+def generate_statement(statement: str, number: int, aggr_func: str) -> None:
     '''
     This function generates the SQL statement for the database.
     
     :param statement: The type of statement that should be used.
+    :param number: The number of the statement.
     :param aggr_func: The aggregation function that should be used.
     '''
 
-    aggr_func = 'SUM' if aggr_func == 'standard' else 'KAHAN_SUM'
-    with open(STATEMENT_FILE, 'w') as file:
-        if statement == STATEMENT_1 or statement == STATEMENT_3:
-            file.write(statement.format(aggr_func))
-        elif statement == STATEMENT_4:
-            file.write(statement.format(aggr_func, aggr_func))
+    function = 'SUM' if aggr_func == 'standard' else 'KAHAN_SUM'
+    with open(Settings.STATEMENT_FILE, 'w') as file:
+        if number == 1 or number == 3:
+            file.write(statement.format(function))
+        elif number == 4:
+            file.write(statement.format(function, function))
         else:
             file.write(statement)
 

@@ -3,173 +3,45 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
-import Settings
+from Statements import *
+import DuckDB
+import Umbra
+import Postgresql
+import LingoDB
 
-DUCK_DB_DATABASE_FILE = 'einstein.db'
-UMBRA_DB_DATABASE_FILE = 'einstein'
-POSTGRES_DB_DATABASE_FILE = 'einstein'
-STATEMENT_FILE = 'Statement.sql'
+csv_header = [
+    'Type',
+    'Aggregation',
+    'Statement', 
+    'Matrix_A', 
+    'Matrix_B', 
+    'Vector_V', 
+    'Execution', 
+    'Heap', 
+    'RSS', 
+    'Database-L2-Norm',
+    'Tensorflow-L2-Norm', 
+    'Database-MSE',
+    'Tensorflow-MSE',
+    'Database-Sum', 
+    'Tensorflow-Sum'
+]
 
-STATEMENT_1 = '''
-SELECT matrixa.rowIndex AS rowIndex, {}(matrixa.val * matrixb.val * vectorv.val) AS val
-FROM matrixa, matrixb, vectorv
-WHERE matrixa.columnIndex = matrixb.columnIndex AND matrixb.rowIndex = vectorv.rowIndex
-GROUP BY matrixa.rowIndex
-ORDER BY matrixa.rowIndex;'''
-
-STATEMENT_2 = '''
-SELECT matrixa.rowIndex AS rowIndex, (matrixa.val * matrixb.val * vectorv.val) AS val
-FROM matrixa, matrixb, vectorv
-WHERE matrixa.columnIndex = matrixb.columnIndex AND matrixb.rowIndex = vectorv.rowIndex
-ORDER BY matrixa.rowIndex;'''
-
-STATEMENT_3 = '''
-WITH result(rowIndex, val) AS (
-    SELECT matrixb.columnIndex, {}(vectorv.val * matrixb.val) AS val
-    FROM vectorv, matrixb
-    WHERE vectorv.rowIndex = matrixb.rowIndex
-    GROUP BY matrixb.columnIndex
-) SELECT * FROM result ORDER BY rowIndex;'''
-
-STATEMENT_4 = '''
-WITH result(rowIndex, val) AS (
-    SELECT matrixb.columnIndex, {}(vectorv.val * matrixb.val) AS val
-    FROM vectorv, matrixb
-    WHERE vectorv.rowIndex = matrixb.rowIndex
-    GROUP BY matrixb.columnIndex
-) SELECT matrixa.rowIndex AS rowIndex, {}(result.val * matrixA.val) AS val
-  FROM result, matrixa WHERE result.rowIndex = matrixa.columnIndex 
-  GROUP BY matrixa.rowIndex
-  ORDER BY matrixa.rowIndex;'''
+duckdb = DuckDB.DUCKDB
+duckdb['csv_header'] = csv_header
+umbra = Umbra.UMBRA
+umbra['csv_header'] = csv_header
+postgresql = Postgresql.POSTGRESQL
+postgresql['csv_header'] = csv_header
+lingodb = LingoDB.LINGODB
+lingodb['csv_header'] = csv_header
 
 CONFIG = {
     'databases': [
-        {
-            'name': 'duckdb',
-            'create_csv': True,
-            'ignore': True,
-            'csv_file': 'DuckDB_Einstein_Results.csv',
-            'csv_header': [
-                'Type',
-                'Aggregation',
-                'Statement', 
-                'Matrix_A', 
-                'Matrix_B', 
-                'Vector_V', 
-                'Execution', 
-                'Heap', 
-                'RSS', 
-                'DuckDB-L2-Norm',
-                'Tensorflow-L2-Norm', 
-                'DuckDB-MSE',
-                'Tensorflow-MSE',
-                'DuckDB-Sum', 
-                'Tensorflow-Sum'
-                ],
-            'files': [f'./{DUCK_DB_DATABASE_FILE}'],
-            'execution': f'{Settings.DUCK_DB_PATH} {DUCK_DB_DATABASE_FILE}',
-            'execution-bench': f'{Settings.DUCK_DB_PATH} -json -f {STATEMENT_FILE} {DUCK_DB_DATABASE_FILE}',
-            'start-sql': [],
-            'end-sql': ['.exit'],
-            'types': ['double', 'float', 'bfloat'],
-            'aggregations': ['standard', 'kahan']
-        },
-        {
-            'name': 'umbra',
-            'create_csv': True,
-            'ignore': True,
-            'csv_file': 'Umbra_Einstein_Results.csv',
-            'csv_header': [
-                'Type',
-                'Aggregation',
-                'Statement', 
-                'Matrix_A', 
-                'Matrix_B', 
-                'Vector_V', 
-                'Execution', 
-                'Heap', 
-                'RSS', 
-                'Umbra-L2-Norm',
-                'Tensorflow-L2-Norm', 
-                'Umbra-MSE',
-                'Tensorflow-MSE',
-                'Umbra-Sum', 
-                'Tensorflow-Sum'
-                ],
-            'files': [Settings.UMBRA_DIR],
-            'execution': f'{Settings.UMBRA_DB_PATH} -createdb {Settings.UMBRA_DIR}/{UMBRA_DB_DATABASE_FILE}',
-            'execution-bench': f'{Settings.UMBRA_DB_PATH} {Settings.UMBRA_DIR}/{UMBRA_DB_DATABASE_FILE} {STATEMENT_FILE}',
-            'start-sql': [],
-            'end-sql': ['\q;'],
-            'types': ['float8', 'float'],
-            'aggregations': ['standard']
-        },
-        {
-            'name': 'postgres',
-            'create_csv': True,
-            'ignore': True,
-            'csv_file': 'Postgres_Einstein_Results.csv',
-            'csv_header': [
-                'Type',
-                'Aggregation',
-                'Statement', 
-                'Matrix_A', 
-                'Matrix_B', 
-                'Vector_V', 
-                'Execution', 
-                'Heap', 
-                'RSS', 
-                'Postgres-L2-Norm',
-                'Tensorflow-L2-Norm', 
-                'Postgres-MSE',
-                'Tensorflow-MSE',
-                'Postgres-Sum', 
-                'Tensorflow-Sum'
-                ],
-            'files': [Settings.POSTGRESQL_DIR],
-            'prep': [
-                f'{Settings.POSTGRESQL_DB_PATH}initdb -D {Settings.POSTGRESQL_DIR} -U {Settings.POSTGRESQL_USERNAME}', 
-                f'{Settings.POSTGRESQL_DB_PATH}pg_ctl -D {Settings.POSTGRESQL_DIR} start', 
-                f'{Settings.POSTGRESQL_DB_PATH}createdb -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} {POSTGRES_DB_DATABASE_FILE} -U {Settings.POSTGRESQL_USERNAME}', 
-                f'{Settings.POSTGRESQL_DB_PATH}pg_ctl -D {Settings.POSTGRESQL_DIR} stop',
-                f'{Settings.POSTGRESQL_DB_PATH}postgres --single {POSTGRES_DB_DATABASE_FILE} -D {Settings.POSTGRESQL_DIR} -p {Settings.POSTGRESQL_PORT} -h {Settings.POSTGRESQL_HOST}'],
-            'execution': f'{Settings.POSTGRESQL_DB_PATH}psql -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} -U {Settings.POSTGRESQL_USERNAME} -d {POSTGRES_DB_DATABASE_FILE}',
-            'execution-bench': f'{Settings.POSTGRESQL_DB_PATH}psql -h {Settings.POSTGRESQL_HOST} -p {Settings.POSTGRESQL_PORT} -U {Settings.POSTGRESQL_USERNAME} -d {POSTGRES_DB_DATABASE_FILE} -f {STATEMENT_FILE}',
-            'start-sql': [],
-            'end-sql': [],
-            'types': ['float8', 'float4'],
-            'aggregations': ['standard']
-        },
-        {
-            'name': 'lingodb',
-            'create_csv': True,
-            'ignore': False,
-            'csv_file': 'LingoDB_Einstein_Results.csv',
-            'csv_header': [
-                'Type',
-                'Aggregation',
-                'Statement', 
-                'Matrix_A', 
-                'Matrix_B', 
-                'Vector_V', 
-                'Execution', 
-                'Heap', 
-                'RSS', 
-                'LingoDB-L2-Norm',
-                'Tensorflow-L2-Norm', 
-                'LingoDB-MSE',
-                'Tensorflow-MSE',
-                'LingoDB-Sum', 
-                'Tensorflow-Sum'
-                ],
-            'files': [Settings.LINGODB_DIR],
-            'execution': f'{Settings.LINGODB_DB_PATH}sql {Settings.LINGODB_DIR}',
-            'execution-bench': f'{Settings.LINGODB_DB_PATH}run-sql {STATEMENT_FILE} {Settings.LINGODB_DIR}',
-            'start-sql': ['SET persist=1;\n'],
-            'end-sql': ['exit'],
-            'types': ['float8', 'float', 'bfloat'],
-            'aggregations': ['standard']
-        }
+        duckdb,
+        umbra,
+        postgresql,
+        lingodb
     ],
     'setups': [
         {
@@ -177,10 +49,22 @@ CONFIG = {
             'dimension_2': 10,
             'dimension_3': 10,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -189,10 +73,22 @@ CONFIG = {
             'dimension_2': 20,
             'dimension_3': 20,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -201,10 +97,22 @@ CONFIG = {
             'dimension_2': 30,
             'dimension_3': 30,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -213,10 +121,22 @@ CONFIG = {
             'dimension_2': 40,
             'dimension_3': 40,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -225,10 +145,22 @@ CONFIG = {
             'dimension_2': 60,
             'dimension_3': 60,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -237,10 +169,22 @@ CONFIG = {
             'dimension_2': 70,
             'dimension_3': 70,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -249,10 +193,22 @@ CONFIG = {
             'dimension_2': 80,
             'dimension_3': 80,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -261,10 +217,22 @@ CONFIG = {
             'dimension_2': 90,
             'dimension_3': 90,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -273,10 +241,22 @@ CONFIG = {
             'dimension_2': 100,
             'dimension_3': 100,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -285,10 +265,22 @@ CONFIG = {
             'dimension_2': 200,
             'dimension_3': 200,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -297,10 +289,22 @@ CONFIG = {
             'dimension_2': 300,
             'dimension_3': 300,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -309,10 +313,22 @@ CONFIG = {
             'dimension_2': 400,
             'dimension_3': 400,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -321,10 +337,22 @@ CONFIG = {
             'dimension_2': 500,
             'dimension_3': 500,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -333,10 +361,22 @@ CONFIG = {
             'dimension_2': 600,
             'dimension_3': 600,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -345,10 +385,22 @@ CONFIG = {
             'dimension_2': 700,
             'dimension_3': 700,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -357,10 +409,22 @@ CONFIG = {
             'dimension_2': 800,
             'dimension_3': 800,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -369,10 +433,22 @@ CONFIG = {
             'dimension_2': 900,
             'dimension_3': 900,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -381,10 +457,22 @@ CONFIG = {
             'dimension_2': 1000,
             'dimension_3': 1000,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_2,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -393,9 +481,22 @@ CONFIG = {
             'dimension_2': 2500,
             'dimension_3': 2500,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -404,9 +505,22 @@ CONFIG = {
             'dimension_2': 5000,
             'dimension_3': 5000,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -415,9 +529,22 @@ CONFIG = {
             'dimension_2': 7500,
             'dimension_3': 7500,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
@@ -426,9 +553,22 @@ CONFIG = {
             'dimension_2': 10000,
             'dimension_3': 10000,
             'statements': [
-                STATEMENT_1,
-                STATEMENT_3,
-                STATEMENT_4
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
             ],
             'ignore': False
         },
