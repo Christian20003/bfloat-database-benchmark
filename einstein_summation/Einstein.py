@@ -110,11 +110,14 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
     if database == 'duckdb':
         pass
     elif database == 'umbra':
-        pass
+        if (number == 2 and setup_id >= 600) or (number == 1 and setup_id >= 2500):
+            return False
     elif database == 'postgres':
-        pass
+        if number == 2 and setup_id >= 500:
+            return False
     elif database == 'lingodb':
-        pass
+        if number == 2 and setup_id >= 500:
+            return False
     return True
 
 def print_setting(dimension1: int, dimension2: int, dimension3: int, database: str, type: str, statement: int, agg_func: str) -> None:

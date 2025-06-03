@@ -64,6 +64,9 @@ def main():
             memory_exe = database['memory-executable']
             for type in database['types']:
                 for agg in database['aggregations']:
+                    if not check_execution(name, number_points, parameter_count):
+                        continue
+
                     print_setting(points, params, name, type, iter, lr, agg)
                     generate_statement(statement, params, name, type, iter, lr, agg)
                     prepare_benchmark(database, type, init_param_value, params, points, data_file, setup_file)
@@ -102,6 +105,17 @@ def main():
                     else:
                         Helper.remove_files(database['files'])
     Helper.remove_files([data_file, setup_file, Settings.STATEMENT_FILE])
+
+def check_execution(database: str, number_points: int, number_parameters: int) -> bool:
+    if database == 'duckdb':
+        pass
+    elif database == 'umbra':
+        pass
+    elif database == 'postgres':
+        pass
+    elif database == 'lingodb':
+        pass
+    return True
 
 def print_setting(points: int, parameters: int, database: str, type: str, iterations: int, learning_rate: float, agg_func: str) -> None:
     '''

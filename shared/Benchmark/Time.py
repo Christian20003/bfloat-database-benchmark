@@ -65,4 +65,5 @@ def python_time(execution: str) -> Tuple[float, str]:
             Format.print_error('An error has been printed during time benchmark', error)
         return time, output
     except subprocess.TimeoutExpired:
+        database.kill()
         return -1, ''

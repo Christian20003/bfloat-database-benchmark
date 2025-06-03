@@ -2,7 +2,7 @@ import Settings
 
 LINGODB = {
     'name': 'lingodb',
-    'create_csv': True,
+    'create_csv': False,
     'ignore': True,
     'csv_file': 'LingoDB_Results.csv',
     'csv_header': [],
