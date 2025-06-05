@@ -167,13 +167,15 @@ def extract_coordinate_values(keys: List[str], data_keys: dict, data: dict) -> L
 
 def plot_results(data_config: dict, plot_config: dict) -> None:
     final_data = {}
-    color_idx = 0
-    style_idx = 0
-    marker_idx = 0
     for _, value in data_config.items():
         x_keys = value['x_keys']
         y_keys = value['y_keys']
         line_keys = value['line_keys']
+        style_idx = 0
+        marker_idx = 0
+        color = value['color']
+        shapes = value['line_shapes']
+        marker = value['line_markers']
         data = read_csv_file(value['file'])
         data = remove_entries(data, value['ignore'])
         data = rename_entries(data, value['renaming'])
@@ -188,97 +190,18 @@ def plot_results(data_config: dict, plot_config: dict) -> None:
                     x_values, y_values = zip(*sorted_values)
                     label = ' '.join(f'{key}: {combination[key]},' for key in line_keys)
                     label = label[:-1]
-                    label = label + f' in {y_name}'
+                    label = label + f' ({y_name})'
                     final_data.update({
                         label: {
                             'x': list(x_values),
                             'y': list(y_values),
-                            'color': COLORS[color_idx],
-                            'style': STYLES[style_idx],
-                            'marker': MARKERS[marker_idx]
+                            'color': color,
+                            'style': shapes[style_idx],
+                            'marker': marker[marker_idx]
                         }
                     })
-                except ValueError:
+                except ValueError as error:
                     continue
                 style_idx += 1
-            style_idx = 0
-            marker_idx += 1
-        marker_idx = 0
-        color_idx += 1
+                marker_idx += 1
     plot_data(final_data, plot_config['x_label'], plot_config['y_label'], plot_config['file_name'], y_as_log=plot_config['log_y'], x_as_log=plot_config['log_x'])
-
-if __name__ == "__main__":
-    file_name = './shared/Plot/DuckDB_Regression_Results.csv'
-    scenario_name = 'Regression'
-    line_keys = ['Type'] if 'Iris' not in file_name else ['Type', 'Network_Size']
-    x_keys = []
-    if 'Iris' in file_name:
-        x_keys = ['Data_Size']
-    elif 'Einstein' in file_name:
-        x_keys = ['Matrix_A', 'Matrix_B', 'Vector_V']
-    else:
-        x_keys = ['Points']
-    time = {
-        'file_1': {
-            'file': file_name,
-            'line_keys': line_keys,
-            'x_keys': x_keys,
-            'y_keys': {
-                'DuckDB': ['Execution'],
-            },
-            'renaming': {
-                'Type': {
-                    'old': ['float4'],
-                    'new': ['float']
-                }
-            },
-            'manipulate': {
-                'Execution': {
-                    'function': lambda x,y: x / y,
-                    'args': ['Execution', 'Iterations'],
-                    'types': ['float', 'int']
-                }
-            },
-            'ignore': {
-                'Aggregations': ['standard']
-            }
-        }
-    }
-    rss = {
-        'file_1': {
-            'file': file_name,
-            'line_keys': line_keys,
-            'x_keys': x_keys,
-            'y_keys': {
-                'DuckDB': ['RSS'],
-            }
-        }
-    }
-    heap = {
-        'file_1': {
-            'file': file_name,
-            'line_keys': line_keys,
-            'x_keys': x_keys,
-            'y_keys': {
-                'DuckDB': ['Heap'],
-            }
-        }
-    }
-    config_time = {
-        'x_label': 'Number of samples',
-        'y_label': 'Execution time in seconds',
-        'file_name': f'Execution_{scenario_name}.pdf'
-    }
-    config_rss = {
-        'x_label': 'Number of samples',
-        'y_label': 'RSS memors in GB',
-        'file_name': f'RSS_{scenario_name}.pdf'
-    }
-    config_heap = {
-        'x_label': 'Number of samples',
-        'y_label': 'Heap in GB',
-        'file_name': f'Heap_{scenario_name}.pdf'
-    }
-    plot_results(time, config_time)
-    plot_results(rss, config_rss)
-    plot_results(heap, config_heap)

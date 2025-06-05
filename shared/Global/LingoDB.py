@@ -13,6 +13,6 @@ LINGODB = {
     'memory-executable': f'{Settings.LINGODB_DB_PATH}run-sql {Settings.STATEMENT_FILE} {Settings.LINGODB_DIR}',
     'start-sql': ['SET persist=1;\n'],
     'end-sql': ['exit'],
-    'types': ['float8', 'float', 'bfloat'],
+    'types': ['float8', 'float4', 'bfloat'],
     'aggregations': ['standard']
 }
