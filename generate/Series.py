@@ -5,10 +5,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Benchmark')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/SQL')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
 
-from typing import Tuple
-from threading import Thread
+from typing import Tuple, List
+from threading import Thread, Event
 import Config
 import Statements
 import Settings
@@ -16,13 +17,10 @@ import Helper
 import Memory
 import Format
 import Create_CSV
+import Database
 import subprocess
 import psutil
 import time
-
-PSUTIL_DATA = []
-PSUITL_PROCESS: psutil.Process = None
-PSUTIL_RUN = True
 
 def main():
     databases = Config.CONFIG['databases']
@@ -35,18 +33,23 @@ def main():
     for scenario in scenarios:
         for database in databases:
             for type in database['types']:
+                Format.print_title(f'START BENCHMARK WITH {database["name"]} AND {type}')
                 generate_statement(Statements.STATEMENT, scenario['rows'], type)
-
+                if database['name'] == 'umbra':
+                    Helper.create_dir(Settings.UMBRA_DIR)
+                    prep = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
+                    prep.execute_sql()
+                    
                 file_name = f'{database["name"]}_{type}_{scenario["rows"]}'
                 rss_heaptrack = measure_heaptrack(database['memory-executable'], file_name)
-                rss_psuitl, vms_psutil = measure_psutil(database['memory-executable'])
+                rss_psuitl, vms_psutil = measure_psutil(database['memory-executable'], scenario['rows'])
 
                 Create_CSV.append_row(database['csv_file'], [type, scenario['rows'], rss_heaptrack, rss_psuitl, vms_psutil])
 
                 if database['name'] == 'umbra':
-                    Helper.remove_dir(Settings.UMBRA_DIR)
+                    Helper.remove_dir(database['files'])
                 elif database['name'] == 'duckdb':
-                    Helper.remove_files([Settings.DUCK_DB_DATABASE_FILE])
+                    Helper.remove_files(database['files'])
     Helper.remove_files([Settings.STATEMENT_FILE])
 
 
@@ -69,17 +72,22 @@ def measure_heaptrack(executable: str, file_name: str) -> float:
     _, rss = Memory.parse_output('dummy', file_name)
     return rss
 
-def measure_psutil(executable: str) -> Tuple[float, float]:
-    thread = Thread(target=psutil_thread)
-    thread.start()
+def measure_psutil(executable: str, rows: int) -> Tuple[float, float]:
+    Format.print_information('Start psutil measurement', mark=True)
+    event = Event()
+    event.set()
+    data = []
+    sleep = 0.0000001 * rows
     process = subprocess.Popen(
         executable.split(),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE
     )
-    PSUITL_PROCESS = psutil.Process(process.pid)
+    process_psutil = psutil.Process(process.pid)
+    thread = Thread(target=psutil_thread, args=(event, process_psutil, data, sleep if sleep < 1 else 1))
+    thread.start()
     _, error = process.communicate()
-    PSUTIL_RUN = False
+    event.clear()
     if error:
         Format.print_error('Catched error during psutil measurement', error)
     thread.join()
@@ -87,22 +95,26 @@ def measure_psutil(executable: str) -> Tuple[float, float]:
     rss_peak = 0
     vms_peak = 0
 
-    for entry in PSUTIL_DATA:
+    for entry in data:
         if entry['rss'] > rss_peak:
             rss_peak = entry['rss']
         if entry['vms'] > vms_peak:
             vms_peak = entry['vms']
 
-    return rss_peak / (1024*1024), vms_peak / (1024*1024)
+    return rss_peak / (1024*1024*1024), vms_peak / (1024*1024*1024)
 
-def psutil_thread() -> None:
-    while PSUTIL_RUN:
-        if not PSUITL_PROCESS:
+def psutil_thread(event: Event, process: psutil.Process, data: List, sleep: float) -> None:
+    while event.is_set():
+        if not process:
             continue
         else:
-            memory = PSUITL_PROCESS.memory_info()
-            PSUTIL_DATA.append({'rss': memory.rss, 'vms': memory.vms})
-            time.sleep(1)
+            try:
+                memory = process.memory_info()
+                data.append({'rss': memory.rss, 'vms': memory.vms})
+                time.sleep(sleep)
+            except psutil.NoSuchProcess:
+                time.sleep(sleep)
+                continue
 
 if __name__ == '__main__':
     main()
