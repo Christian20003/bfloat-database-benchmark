@@ -31,25 +31,30 @@ def main():
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
 
     for scenario in scenarios:
+        entries = scenario['entries']
         for database in databases:
+            name = database['name']
+            exe = database['memory_executable']
             for type in database['types']:
-                Format.print_title(f'START BENCHMARK WITH {database["name"]} AND {type}')
-                generate_statement(Statements.STATEMENT, scenario['rows'], type)
-                if database['name'] == 'umbra':
-                    Helper.create_dir(Settings.UMBRA_DIR)
-                    prep = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
-                    prep.execute_sql()
-                    
-                file_name = f'{database["name"]}_{type}_{scenario["rows"]}'
-                rss_heaptrack = measure_heaptrack(database['memory-executable'], file_name)
-                rss_psuitl, vms_psutil = measure_psutil(database['memory-executable'], scenario['rows'])
+                for statement in scenario['statements']:
+                    Format.print_title(f'START BENCHMARK WITH {name}, {type} AND {entries}')
+                    content = statement['statement_duckdb'] if name == 'duckdb' else statement['statement_umbra']
+                    generate_statement(content, entries, type)
+                    if name == 'umbra':
+                        Helper.create_dir(Settings.UMBRA_DIR)
+                        prep = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
+                        prep.execute_sql()
 
-                Create_CSV.append_row(database['csv_file'], [type, scenario['rows'], rss_heaptrack, rss_psuitl, vms_psutil])
+                    file_name = f'{name}_{type}_{entries}_{statement['array']}'
+                    rss_heaptrack = measure_heaptrack(exe, file_name)
+                    rss_psuitl, vms_psutil = measure_psutil(exe, entries)
 
-                if database['name'] == 'umbra':
-                    Helper.remove_dir(database['files'])
-                elif database['name'] == 'duckdb':
-                    Helper.remove_files(database['files'])
+                    Create_CSV.append_row(database['csv_file'], [type, entries, statement['array'], rss_heaptrack, rss_psuitl, vms_psutil])
+
+                    if name == 'umbra':
+                        Helper.remove_dir(database['files'])
+                    elif name == 'duckdb':
+                        Helper.remove_files(database['files'])
     Helper.remove_files([Settings.STATEMENT_FILE])
 
 
