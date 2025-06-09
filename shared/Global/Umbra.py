@@ -13,6 +13,6 @@ UMBRA = {
     'memory-executable': f'{Settings.UMBRA_DB_PATH} {Settings.UMBRA_DIR}/{Settings.UMBRA_DATABASE_FILE} {Settings.STATEMENT_FILE}',
     'start-sql': [],
     'end-sql': ['\q;'],
-    'types': ['float8', 'float'],
+    'types': ['float8'],
     'aggregations': ['standard']
 }

@@ -59,7 +59,7 @@ def benchmark_server(execution_server: str, statement_file: str) -> None:
         Format.print_error('Something went wrong during the memory-benchmark', error)
     
 
-def parse_output(file_name: str) -> Tuple[float, float]:
+def parse_output(file_name: str, source_file: str = 'mem_data') -> Tuple[float, float]:
     '''
     This function parses the output of the heaptrack analysis.
 
@@ -68,9 +68,9 @@ def parse_output(file_name: str) -> Tuple[float, float]:
     :returns: A tuple including the used peak heap and rss memory of the process.
     '''
 
-    data_file = './mem_data.zst'
-    if not Path('mem_data.zst').exists():
-        data_file = './mem_data.gz'
+    data_file = f'./{source_file}.zst'
+    if not Path(f'{source_file}.zst').exists():
+        data_file = f'./{source_file}.gz'
     heap = 0
     rss = 0
     with open(file_name, 'w+') as file:
@@ -96,7 +96,7 @@ def parse_output(file_name: str) -> Tuple[float, float]:
                     heap = number
                 else:
                     rss = number
-    Helper.remove_files([data_file])
+    #Helper.remove_files([data_file])
     return heap, rss
 
 def benchmark_client(execution: str) -> None:
