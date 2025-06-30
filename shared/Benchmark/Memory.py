@@ -110,7 +110,7 @@ def memory_thread(life_signal: Event, process_signal: Event, file_name: str, use
                 continue
             try:
                 memory = psutil.virtual_memory()
-                file.write(used_memory - memory.used)
+                file.write(str(used_memory - memory.used) + '\n')
                 time.sleep(sleep)
             except psutil.NoSuchProcess:
                 Format.print_error('Psutil-Thread did not find process', None)

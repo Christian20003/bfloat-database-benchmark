@@ -50,7 +50,7 @@ class Database:
         self.statements.append(statement)
 
     def drop_table(self, table_name: str) -> None:
-        statement = f'DROP TABLE {table_name}'
+        statement = f'DROP TABLE {table_name};\n'
         self.statements.append(statement)
 
     def insert_from_csv(self, table_name: str, csv_file: str) -> None:
@@ -66,14 +66,10 @@ class Database:
         self.statements.append(statement)
 
     def insert_einstein_data(self, table_name: str, csv_file: str, count: int) -> None:
-        statement = '''
-            INSERT INTO {} (
-                WITH tmp(rowIndex, columnIndex, val) AS (COPY tmp FROM '{}' delimiter ',' HEADER)
-                SELECT {}, columnIndex, val FROM tmp
-            );
-        '''
-        for value in range(count):
-            self.statements.append(statement.format(table_name, csv_file, value))
+        times = int(count / 10)
+        statement = "INSERT INTO {} (WITH tmp(rowIndex, columnIndex, val) AS (COPY tmp FROM '{}' delimiter ',' HEADER) SELECT {}, columnIndex, val FROM tmp WHERE columnIndex < {});\n"
+        for value in range(times):
+            self.statements.append(statement.format(table_name, csv_file, value, count))
 
     def insert_from_select(self, table_name: str, select_stmt: str) -> None:
         '''

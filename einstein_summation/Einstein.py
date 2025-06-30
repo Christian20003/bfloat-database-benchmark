@@ -28,10 +28,9 @@ def main():
     scenarios = CONFIG['setups']
     data_file = './data.csv'
 
-    key = list(scenarios.keys())[-1]
-    max_setup = scenarios[key]
+    max_setup = scenarios[-1]
 
-    produce_data(max_setup['dimension1'], data_file)
+    produce_data(max_setup['dimension_1'], data_file)
 
     for database in databases:
         if database['create_csv'] and not database['ignore']:
@@ -152,7 +151,6 @@ def prepare_benchmark(database: dict, type: str, data_file: str, rowIndex: int) 
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
     extend_file_path = '.' if database['name'] == 'postgres' else ''
-    counter = rowIndex / 10
     if database['name'] == 'postgres':
         Helper.create_dir(Settings.POSTGRESQL_DIR)
         executables = database['server-preparation']
@@ -170,15 +168,15 @@ def prepare_benchmark(database: dict, type: str, data_file: str, rowIndex: int) 
         prep_database.create_table('data1', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data2', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data3', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
-        prep_database.insert_einstein_data('data1', extend_file_path + data_file, counter)
-        prep_database.insert_einstein_data('data2', extend_file_path + data_file, counter)
+        prep_database.insert_einstein_data('data1', extend_file_path + data_file, rowIndex)
+        prep_database.insert_einstein_data('data2', extend_file_path + data_file, rowIndex)
         prep_database.insert_einstein_data('data3', extend_file_path + data_file, 1)
         prep_database.insert_from_select('matrixa', 'SELECT * FROM data1')
         prep_database.insert_from_select('matrixb', 'SELECT * FROM data2')
         prep_database.insert_from_select('vectorv', 'SELECT * FROM data3')
     else:
-        prep_database.insert_einstein_data('matrixa', extend_file_path + data_file, counter)
-        prep_database.insert_einstein_data('matrixb', extend_file_path + data_file, counter)
+        prep_database.insert_einstein_data('matrixa', extend_file_path + data_file, rowIndex)
+        prep_database.insert_einstein_data('matrixb', extend_file_path + data_file, rowIndex)
         prep_database.insert_einstein_data('vectorv', extend_file_path + data_file, 1)
     prep_database.execute_sql()
 
@@ -208,6 +206,7 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
     '''
     if database['name'] != 'lingodb' and database['name'] != 'duckdb':
         return -1
+    statement = statement[:-1]
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('result', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.insert_from_select('result', statement)
@@ -263,8 +262,8 @@ def produce_data(columns: int, file_name: str) -> None:
         Create_CSV.create_csv_file(file_name, ['rowIndex', 'columnIndex', 'val'])
         chunck = columns / 10
         threads = []
-        for number in range(1, 11):
-            thread = threading.Thread(target=single_thread, args=(number * chunck, (number+1) * chunck, file_name))
+        for number in range(0, 10):
+            thread = threading.Thread(target=single_thread, args=(int(number * chunck), int((number+1) * chunck), file_name))
             threads.append(thread)
             thread.start()
 
