@@ -65,6 +65,16 @@ class Database:
         statement = f"COPY {table_name} FROM '{csv_file}' delimiter ',' HEADER;\n"
         self.statements.append(statement)
 
+    def insert_einstein_data(self, table_name: str, csv_file: str, count: int) -> None:
+        statement = '''
+            INSERT INTO {} (
+                WITH tmp(rowIndex, columnIndex, val) AS (COPY tmp FROM '{}' delimiter ',' HEADER)
+                SELECT {}, columnIndex, val FROM tmp
+            );
+        '''
+        for value in range(count):
+            self.statements.append(statement.format(table_name, csv_file, value))
+
     def insert_from_select(self, table_name: str, select_stmt: str) -> None:
         '''
         This method adds the specified select statement into an insert statement
