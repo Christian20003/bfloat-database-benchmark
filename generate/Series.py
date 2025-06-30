@@ -34,7 +34,7 @@ def main():
         entries = scenario['entries']
         for database in databases:
             name = database['name']
-            exe = database['memory_executable']
+            exe = database['memory-executable']
             for type in database['types']:
                 for statement in scenario['statements']:
                     Format.print_title(f'START BENCHMARK WITH {name}, {type} AND {entries}')
