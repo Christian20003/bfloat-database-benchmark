@@ -4,66 +4,23 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Helper')))
 
-from typing import Tuple
+from typing import Tuple, List
 from pathlib import Path
+from datetime import datetime
+from threading import Thread, Event
 import subprocess
 import Format
 import re
 import Helper
 import time
+import psutil
 
-def benchmark(database_name: str, execution_client: str, execution_server: str, file_name: str, statement_file: str) -> Tuple[float, float]:
-    '''
-    This function executes the memory benchmark with 'heaptrack'.
-
-    :param database_name: The name of the database.
-    :param execution_client: The execution string of the database client.
-    :param execution_server: The execution strings of the database server (optional).
-    :param file_name: The name of the file where the results should be stored. Must
-                      be unique otherwise the current content will be overriden.
-    :param statement_file: The name of the file where the SQL statements are stored.
-    
-    :returns: A tuple including the used peak heap and rss memory of the process.
-    '''
-
-    Format.print_information('Start the memory benchmark - This will take some time', mark=True)
-    if database_name == 'postgres':
-        benchmark_server(execution_client, statement_file)
-    elif database_name == 'duckdb' or database_name == 'umbra' or database_name == 'lingodb':
-        benchmark_client(execution_client)
-    return parse_output(file_name)
-
-def benchmark_server(execution_server: str, statement_file: str) -> None:
-    '''
-    This function executes the memory benchmark with 'heaptrack' by tracking a server executable.
-
-    :param execution_server: The execution strings of the database server.
-    :param statement_file: The name of the file where the SQL statements are stored.
-    '''
-
-    server = subprocess.Popen(
-        ['heaptrack', '-o', 'mem_data'] + execution_server.split(),
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    time.sleep(1)
-    with open(statement_file, 'r') as file:
-        content = file.read()
-        content = content.replace('\n', ' ')
-        server.stdin.write(content)
-        server.stdin.flush()
-    _, error = server.communicate()
-    if error:
-        Format.print_error('Something went wrong during the memory-benchmark', error)
-    
-
-def parse_output(file_name: str, source_file: str = 'mem_data') -> Tuple[float, float]:
+def _parse_output(file_name: str, source_file: str) -> Tuple[float, float]:
     '''
     This function parses the output of the heaptrack analysis.
 
     :param file_name: The name of the file where the results are stored.
+    :param source_file: The name of the file where the raw data are stored.
     
     :returns: A tuple including the used peak heap and rss memory of the process.
     '''
@@ -96,21 +53,122 @@ def parse_output(file_name: str, source_file: str = 'mem_data') -> Tuple[float, 
                     heap = number
                 else:
                     rss = number
-    #Helper.remove_files([data_file])
     return heap, rss
 
-def benchmark_client(execution: str) -> None:
+def heaptrack_memory(execution: str, file_name: str, statement: str = None, keep_raw_file: bool = False) -> Tuple[float, float]:
     '''
-    This function executes the memory benchmark with 'heaptrack' by tracking only a client executable.
+    This function executes the memory benchmark with the tool 'heaptrack'.
 
     :param execution: The execution string of the database.
+    :param file_name: Parts of the file name of the analysed data from heaptrack.
+    :param statement: The SQL-Query if it is not possible to push it through the database executable.
+    :param keep_raw_file: If the generated file from heaptrack should not be deleted.
+
+    :returns: A tuple including the used peak heap and rss memory of the process (everything in GB).
     '''
 
-    bench_execution  = subprocess.Popen(
-        ['heaptrack', '-o', 'mem_data'] + execution.split(),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+    Format.print_information('Start the memory benchmark - This will take some time', mark=True)
+    date = datetime.now()
+    formatted_date = date.strftime('%d-%m-%Y-%H-%M')
+    file_name_raw = f'{formatted_date}-{file_name}-raw'
+    file_name_analysed = f'{formatted_date}-{file_name}-analysed'
+    database  = subprocess.Popen(
+        ['heaptrack', '-o', file_name_raw] + execution.split(),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True
     )
-    _, error = bench_execution.communicate()
+    if statement:
+        statement = statement.replace('\n', ' ')
+        time.sleep(1)
+        database.stdin.write(statement)
+        database.stdin.flush()
+    _, error = database.communicate()
     if error:
-        Format.print_error('Something went wrong during the memory-benchmark', error)
+        Format.print_error('An error has been printed during memory benchmark', error)
+    heap, rss = _parse_output(file_name_analysed, file_name_raw)
+    if not keep_raw_file:
+        Helper.remove_files([file_name_raw])
+    return heap, rss
+
+def memory_thread(life_signal: Event, process_signal: Event, file_name: str, used_memory: float, sleep: float) -> None:
+    '''
+    This function will be executed by another thread. Reads the current memory consumption of a process
+    and writes it into a file.
+
+    :param life_signal: If the thread should be alive.
+    :param process_signal: If the measured process is active.
+    :param file_name: The name of the file in which to write the memory values.
+    :param used_memory: The memory usage before the activation of the process.
+    :param sleep: How many seconds should be ignored after reading the next memory value.
+    '''
+
+    with open(file_name, 'w') as file:
+        while life_signal.is_set():
+            if not process_signal.is_set():
+                continue
+            try:
+                memory = psutil.virtual_memory()
+                file.write(used_memory - memory.used)
+                time.sleep(sleep)
+            except psutil.NoSuchProcess:
+                Format.print_error('Psutil-Thread did not find process', None)
+                break
+
+def python_memory(execution: str, time: float, statement: str = None, memory_over_time: bool = False) -> List[float]:
+    '''
+    This function executes the memory benchmark with the python tool 'psutil'.
+
+    :param execution: The execution string of the database.
+    :param time: The execution time of the process (to add sleep times if too long)
+    :param statement: The SQL-Query if it is not possible to push it through the database executable.
+    :param memory_over_time: If a list of memory values should be returned (development of the memory
+                             over running time). If false it will only return the peak.
+
+    :returns: The peak memory consumption of the process if memory_over_time is false, otherwise a list
+              of multiple memory values (everything in bytes).
+    
+    '''
+
+    Format.print_information('Start the memory benchmark - This will take some time', mark=True)
+    life_signal = Event()
+    process_signal = Event()
+    life_signal.set()
+    file_name = 'memory_data'
+    result = []
+    sleep = 0.001 if time > 60 or memory_over_time else 0
+    current_memory = psutil.virtual_memory().used
+    thread = Thread(target=memory_thread, args=(life_signal, process_signal, file_name, current_memory, sleep))
+    thread.start()
+
+    database = subprocess.Popen(
+        execution.split(),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    process_signal.set()
+    if statement:
+        statement = statement.replace('\n', ' ')
+        time.sleep(1)
+        database.stdin.write(statement)
+        database.stdin.flush()
+    _, error = database.communicate()
+    life_signal.clear()
+    if error:
+        Format.print_error('An error has been printed during memory benchmark', error)
+    thread.join()
+
+    with open(file_name, 'r') as file:
+        if memory_over_time:
+            result = [float(value) for value in file.readlines()]
+        else:
+            peak = 0
+            for entry in file.readlines():
+                if float(entry) > peak:
+                    peak = float(entry)
+            result.append(peak)
+    Helper.remove_files([file_name])
+    return result
