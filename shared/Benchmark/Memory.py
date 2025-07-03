@@ -110,18 +110,18 @@ def memory_thread(life_signal: Event, process_signal: Event, file_name: str, use
                 continue
             try:
                 memory = psutil.virtual_memory()
-                file.write(str(used_memory - memory.used) + '\n')
+                file.write(str(memory.used - used_memory) + '\n')
                 time.sleep(sleep)
             except psutil.NoSuchProcess:
                 Format.print_error('Psutil-Thread did not find process', None)
                 break
 
-def python_memory(execution: str, time: float, statement: str = None, memory_over_time: bool = False) -> List[float]:
+def python_memory(execution: str, exe_time: float, statement: str = None, memory_over_time: bool = False) -> List[float]:
     '''
     This function executes the memory benchmark with the python tool 'psutil'.
 
     :param execution: The execution string of the database.
-    :param time: The execution time of the process (to add sleep times if too long)
+    :param exe_time: The execution time of the process (to add sleep times if too long)
     :param statement: The SQL-Query if it is not possible to push it through the database executable.
     :param memory_over_time: If a list of memory values should be returned (development of the memory
                              over running time). If false it will only return the peak.
@@ -137,7 +137,7 @@ def python_memory(execution: str, time: float, statement: str = None, memory_ove
     life_signal.set()
     file_name = 'memory_data'
     result = []
-    sleep = 0.001 if time > 60 or memory_over_time else 0
+    sleep = 0.001 if exe_time > 60 or memory_over_time else 0
     current_memory = psutil.virtual_memory().used
     thread = Thread(target=memory_thread, args=(life_signal, process_signal, file_name, current_memory, sleep))
     thread.start()
@@ -152,7 +152,7 @@ def python_memory(execution: str, time: float, statement: str = None, memory_ove
     process_signal.set()
     if statement:
         statement = statement.replace('\n', ' ')
-        time.sleep(1)
+        time.sleep(0.5)
         database.stdin.write(statement)
         database.stdin.flush()
     _, error = database.communicate()

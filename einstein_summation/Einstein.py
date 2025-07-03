@@ -42,6 +42,8 @@ def main():
         rowsA = scenario['dimension_1']
         rowsB = scenario['dimension_2']
         rowsC = scenario['dimension_3']
+        setup_file = './values.csv'
+        Helper.copy_csv_file(data_file, setup_file, rowsA + 1)
         for database in databases:
             if database['ignore']:
                 continue
@@ -58,7 +60,7 @@ def main():
 
                         print_setting(rowsA, rowsB, rowsC, name, type, number, agg)
                         data = generate_statement(content, number, agg)
-                        prepare_benchmark(database, type, data_file, rowsA)
+                        prepare_benchmark(database, type, setup_file, rowsA)
 
                         time = Time.python_time(time_exe)
                         if time == -1:
@@ -70,9 +72,7 @@ def main():
                         memory = 0
                         if database['name'] == 'postgres':
                             Postgres.stop_database(database['server-preparation'][3])
-                            memory = Memory.python_memory(memory_exe, time, data)
-                        else:
-                            memory = Memory.python_memory(memory_exe, time)
+                        memory = Memory.python_memory(memory_exe, time, data)
 
                         relation_size = get_relation_size(database, type, data)
 
@@ -178,6 +178,7 @@ def prepare_benchmark(database: dict, type: str, data_file: str, rowIndex: int) 
         prep_database.insert_from_csv('matrixa', extend_file_path + data_file)
         prep_database.insert_from_csv('matrixb', extend_file_path + data_file)
         prep_database.insert_from_csv('vectorv', extend_file_path + data_file)
+    print(rowIndex)
     for index in range(1, rowIndex):
         prep_database.insert_from_select('matrixa', f'SELECT {index}, columnIndex, val FROM matrixa WHERE rowIndex = 0')
         prep_database.insert_from_select('matrixb', f'SELECT {index}, columnIndex, val FROM matrixb WHERE rowIndex = 0')
@@ -211,7 +212,7 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
         return -1
     statement = statement[:-1]
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
-    prep_database.create_table('result', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
+    prep_database.create_table('result', ['rowIndex', 'val'], ['int', type])
     prep_database.insert_from_select('result', statement)
     prep_database.execute_sql()
     if database['name'] == 'lingodb':
