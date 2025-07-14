@@ -6,36 +6,44 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 import Plotting
 
 if __name__ == "__main__":
-    duckdb_file = './data/duckdb/einstein/attempt_3/DuckDB_Results.csv'
-    umbra_file = './data/duckdb/einstein/attempt_3/Umbra_Results.csv'
-    postgres_file = './data/duckdb/einstein/attempt_3/Postgresql_Results.csv'
-    lingodb_file = './data/duckdb/einstein/attempt_3/LingoDB_Results.csv'
+    duckdb_file = './data/duckdb/einstein/test_psutil/DuckDB_Results.csv'
+    umbra_file = './data/duckdb/einstein/test_psutil/Umbra_Results.csv'
+    postgres_file = './data/duckdb/einstein/test_psutil/Postgresql_Results.csv'
+    lingodb_file = './data/duckdb/einstein/test_psutil/LingoDB_Results.csv'
     scenario_name = 'Einstein'
     line_keys = ['Type']
-    x_keys = ['Matrix_A', 'Matrix_B', 'Vector_V']
+    x_keys = ['MatrixA', 'MatrixB', 'VectorV']
 
     manipulate = {
         'Execution': {
             'function': lambda a, b, c, d: (a + b + c) / d,
-            'args': ['Matrix_A', 'Matrix_B', 'Vector_V', 'Execution'],
+            'args': ['MatrixA', 'MatrixB', 'VectorV', 'Execution'],
             'types': ['int', 'int', 'int', 'float']
         }
     }
 
-    manipulate_rss = {
-        'Execution': {
-            'function': lambda a, b, c, d: (a + b + c) / d,
-            'args': ['Matrix_A', 'Matrix_B', 'Vector_V', 'RSS'],
-            'types': ['int', 'int', 'int', 'float']
+    manipulate_memory = {
+        'Memory': {
+            'function': lambda a: a / (1024*1024*1024),
+            'args': ['Memory'],
+            'types': ['float']
+        }
+    }
+
+    manipulate_file_size = {
+        'Relation-Size': {
+            'function': lambda a: a / (1024*1024*1024),
+            'args': ['Relation-Size'],
+            'types': ['float']
         }
     }
 
     duckdb_ignore = {
         #'Vector_V': ['400', '500', '600', '700', '800', '900', '1000', '2500', '5000', '7500', '10000'],
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '1000', '2500', '5000', '7500', '10000'],
-        'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
+        #'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
         'Aggregation': ['kahan'],
-        'Statement': ['2','3','4']
+        'Statement': ['1','3','4']
     }
 
     duckdb_ignore_2 = {
@@ -49,8 +57,8 @@ if __name__ == "__main__":
     ignore = {
         #'Vector_V': ['400', '500', '600', '700', '800', '900', '1000', '2500', '5000', '7500', '10000'],
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '500', '1000', '2500', '5000', '7500', '10000'],
-        'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
-        'Statement': ['4','2','3'],
+        #'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
+        'Statement': ['1','3','4'],
         #'Type': ['bfloat']
     }
 
@@ -122,7 +130,7 @@ if __name__ == "__main__":
                 'LingoDB': ['Execution'],
             },
             'renaming': postgres_rename,
-            'manipulate': {},
+            'manipulate': manipulate,
             'ignore': ignore
         },
         'file_4': {
@@ -142,20 +150,20 @@ if __name__ == "__main__":
     }
 
     rss = {
-        'file_1': {
-            'file': duckdb_file,
-            'line_keys': line_keys,
-            'color': 'maroon',
-            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-            'line_markers': ['o', '^', 's', '*','v', 'D'],
-            'x_keys': x_keys,
-            'y_keys': {
-                'DuckDB': ['RSS'],
-            },
-            'renaming': {},
-            'manipulate': manipulate_rss,
-            'ignore': duckdb_ignore
-        },
+        #'file_1': {
+        #    'file': duckdb_file,
+        #    'line_keys': line_keys,
+        #    'color': 'maroon',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'DuckDB': ['Memory'],
+        #    },
+        #    'renaming': {},
+        #    'manipulate': manipulate_memory,
+        #    'ignore': duckdb_ignore
+        #},
         #'file_2': {
         #    'file': duckdb_file,
         #    'line_keys': line_keys,
@@ -170,20 +178,20 @@ if __name__ == "__main__":
         #    'manipulate': {},
         #    'ignore': duckdb_ignore_2
         #},
-        'file_2': {
-            'file': postgres_file,
-            'line_keys': line_keys,
-            'color': 'forestgreen',
-            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-            'line_markers': ['o', '^', 's', '*','v', 'D'],
-            'x_keys': x_keys,
-            'y_keys': {
-                'PSQL': ['RSS'],
-            },
-            'renaming': postgres_rename,
-            'manipulate': manipulate_rss,
-            'ignore': ignore
-        },
+        #'file_2': {
+        #    'file': postgres_file,
+        #    'line_keys': line_keys,
+        #    'color': 'forestgreen',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'PSQL': ['Memory'],
+        #    },
+        #    'renaming': postgres_rename,
+        #    'manipulate': manipulate_memory,
+        #    'ignore': ignore
+        #},
         'file_3': {
             'file': lingodb_file,
             'line_keys': line_keys,
@@ -192,29 +200,29 @@ if __name__ == "__main__":
             'line_markers': ['o', '^', 's', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
-                'LingoDB': ['RSS'],
+                'LingoDB': ['Memory'],
             },
             'renaming': postgres_rename,
-            'manipulate': manipulate_rss,
+            'manipulate': manipulate_memory,
             'ignore': ignore
         },
-        'file_4': {
-            'file': umbra_file,
-            'line_keys': line_keys,
-            'color': 'cornflowerblue',
-            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-            'line_markers': ['o', '^', 's', '*','v', 'D'],
-            'x_keys': x_keys,
-            'y_keys': {
-                'Umbra': ['RSS'],
-            },
-            'renaming': umbra_rename,
-            'manipulate': manipulate_rss,
-            'ignore': ignore
-        }
+        #'file_4': {
+        #    'file': umbra_file,
+        #    'line_keys': line_keys,
+        #    'color': 'cornflowerblue',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'Umbra': ['Memory'],
+        #    },
+        #    'renaming': umbra_rename,
+        #    'manipulate': manipulate_memory,
+        #    'ignore': ignore
+        #}
     }
 
-    heap = {
+    file = {
         'file_1': {
             'file': duckdb_file,
             'line_keys': line_keys,
@@ -223,26 +231,26 @@ if __name__ == "__main__":
             'line_markers': ['o', '^', 's', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
-                'B*v': ['Heap'],
+                'DuckDB': ['Relation-Size'],
             },
             'renaming': {},
-            'manipulate': {},
+            'manipulate': manipulate_file_size,
             'ignore': duckdb_ignore
         },
-        'file_2': {
-            'file': duckdb_file,
-            'line_keys': line_keys,
-            'color': 'forestgreen',
-            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-            'line_markers': ['o', '^', 's', '*','v', 'D'],
-            'x_keys': x_keys,
-            'y_keys': {
-                'A*(B*v)': ['Heap'],
-            },
-            'renaming': {},
-            'manipulate': {},
-            'ignore': duckdb_ignore_2
-        },
+        #'file_2': {
+        #    'file': duckdb_file,
+        #    'line_keys': line_keys,
+        #    'color': 'forestgreen',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'A*(B*v)': ['Heap'],
+        #    },
+        #    'renaming': {},
+        #    'manipulate': {},
+        #    'ignore': duckdb_ignore_2
+        #},
         #'file_2': {
         #    'file': postgres_file,
         #    'line_keys': line_keys,
@@ -257,20 +265,20 @@ if __name__ == "__main__":
         #    'manipulate': {},
         #    'ignore': ignore
         #},
-        #'file_3': {
-        #    'file': lingodb_file,
-        #    'line_keys': line_keys,
-        #    'color': 'orange',
-        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
-        #    'x_keys': x_keys,
-        #    'y_keys': {
-        #        'LingoDB': ['Heap'],
-        #    },
-        #    'renaming': postgres_rename,
-        #    'manipulate': {},
-        #    'ignore': ignore
-        #},
+        'file_3': {
+            'file': lingodb_file,
+            'line_keys': line_keys,
+            'color': 'orange',
+            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+            'line_markers': ['o', '^', 's', '*','v', 'D'],
+            'x_keys': x_keys,
+            'y_keys': {
+                'LingoDB': ['Relation-Size'],
+            },
+            'renaming': postgres_rename,
+            'manipulate': manipulate_file_size,
+            'ignore': ignore
+        },
         #'file_4': {
         #    'file': umbra_file,
         #    'line_keys': line_keys,
@@ -290,23 +298,23 @@ if __name__ == "__main__":
         'x_label': 'Number of tuples',
         'y_label': 'Execution in tuples / seconds',
         'log_y': False,
-        'log_x': True,
+        'log_x': False,
         'file_name': f'Execution_{scenario_name}.pdf'
     }
     config_rss = {
         'x_label': 'Number of tuples',
-        'y_label': 'RSS memory in tuples / memory',
+        'y_label': 'Used memory in GB',
         'log_y': False,
-        'log_x': True,
-        'file_name': f'RSS_{scenario_name}.pdf'
+        'log_x': False,
+        'file_name': f'Memory_{scenario_name}.pdf'
     }
     config_heap = {
         'x_label': 'Number of tuples',
-        'y_label': 'Heap in GB',
+        'y_label': 'Relation Size in GB',
         'log_y': False,
-        'log_x': True,
-        'file_name': f'Heap_{scenario_name}.pdf'
+        'log_x': False,
+        'file_name': f'Relation_{scenario_name}.pdf'
     }
-    Plotting.plot_results(time, config_time)
+    #Plotting.plot_results(time, config_time)
     Plotting.plot_results(rss, config_rss)
-    Plotting.plot_results(heap, config_heap)
+    #Plotting.plot_results(file, config_heap)
