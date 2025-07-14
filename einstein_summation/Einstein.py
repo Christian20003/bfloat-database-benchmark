@@ -41,8 +41,8 @@ def main():
         if scenario['ignore']:
             continue
         dimension = scenario['dimension']
-        matrix_file = f'./data{dimension}_ma.csv'
-        vector_file = f'./data{dimension}_vec.csv'
+        matrix_file = f'./data{scenario["id"]}_ma.csv'
+        vector_file = f'./data{scenario["id"]}_vec.csv'
         for database in databases:
             if database['ignore']:
                 continue
@@ -73,7 +73,7 @@ def main():
                             Postgres.stop_database(database['server-preparation'][3])
                         memory = Memory.python_memory(memory_exe, time, data)
 
-                        precision = get_precision(database, type, data, number, matrix_file, vector_file)
+                        error = get_error(database, type, data, number, matrix_file, vector_file)
                         relation_size = get_relation_size(database, type, data)
 
                         Create_CSV.append_row(database['csv_file'], 
@@ -87,7 +87,7 @@ def main():
                                                   time, 
                                                   memory[0], 
                                                   relation_size,
-                                                  precision
+                                                  error
                                                ])
                         
                         if name == 'postgres' or name == 'umbra' or name == 'lingodb':
@@ -183,17 +183,11 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
     if database['name'] == 'lingodb' and type == 'bfloat':
         Helper.remove_files([
             f'{Settings.LINGODB_DIR}/data1.arrow', 
-            f'{Settings.LINGODB_DIR}/data1.arrow.sample', 
-            f'{Settings.LINGODB_DIR}/data1.metadata.json',
             f'{Settings.LINGODB_DIR}/data2.arrow', 
-            f'{Settings.LINGODB_DIR}/data2.arrow.sample', 
-            f'{Settings.LINGODB_DIR}/data2.metadata.json',
-            f'{Settings.LINGODB_DIR}/data3.arrow', 
-            f'{Settings.LINGODB_DIR}/data3.arrow.sample', 
-            f'{Settings.LINGODB_DIR}/data3.metadata.json',
+            f'{Settings.LINGODB_DIR}/data3.arrow',
         ])
 
-def get_precision(database: dict, type: str, statement: str, number: int, matrix_file: str, vector_file: str) -> float:
+def get_error(database: dict, type: str, statement: str, number: int, matrix_file: str, vector_file: str) -> float:
     if database['name'] != 'duckdb' or number == 2:
         return -1
     if type == 'double':
@@ -212,10 +206,10 @@ def get_precision(database: dict, type: str, statement: str, number: int, matrix
     statementRef = statementRef.replace('matrixb', 'refB')
     statementRef = statement.replace('vectorv', 'refV')
 
-    final_stat = f'SELECT AVG(result) FROM (SELECT pow(res2.val - res1.val, 2) AS result FROM (SELECT row_number() OVER () AS id, val FROM ({statement} res1 JOIN SELECT row_number() OVER () AS id, val FROM ({statementRef}) res2));'
+    final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
 
     process = subprocess.Popen(
-        database['client-preparation'].split(), 
+        database['client-preparation'].split() + ['-json'], 
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
@@ -229,6 +223,13 @@ def get_precision(database: dict, type: str, statement: str, number: int, matrix
     if error:
         Format.print_error('An error has been printed during precision calculation', error)
     result = Parse_Table.output_to_numpy(database['name'], output, 1, [0])
+
+    prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
+    prep_database.drop_table('refA')
+    prep_database.drop_table('refB')
+    prep_database.drop_table('refV')
+    prep_database.execute_sql()
+
     return result[0]
 
 def get_relation_size(database: dict, type: str, statement: str) -> float:
@@ -246,11 +247,11 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
         return -1
     statement = statement[:-1]
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
-    prep_database.create_table('result', ['rowIndex', 'val'], ['int', type])
-    prep_database.insert_from_select('result', statement)
+    prep_database.create_table('relation', ['rowIndex', 'val'], ['int', type])
+    prep_database.insert_from_select('relation', statement)
     prep_database.execute_sql()
     if database['name'] == 'lingodb':
-        return Relation.measure_relation_size(f'{Settings.LINGODB_DIR}/result.arrow')
+        return Relation.measure_relation_size(f'{Settings.LINGODB_DIR}/relation.arrow')
     elif database['name'] == 'duckdb':
         prep_database.clear()
         prep_database.drop_table('matrixa')
@@ -320,7 +321,7 @@ def produce_data(scenarios: dict) -> None:
             for thread in threads:
                 thread.join()
         if not os.path.exists(file_name_vector):
-            Create_CSV.create_csv_file(file_name_matrix, ['rowIndex', 'columnIndex', 'val'])
+            Create_CSV.create_csv_file(file_name_vector, ['rowIndex', 'columnIndex', 'val'])
             data = [[0, column, random.random()] for column in range(0, scenario['dimension'])]
             Create_CSV.append_rows(file_name_vector, data)
 

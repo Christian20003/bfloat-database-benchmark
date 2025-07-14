@@ -19,7 +19,7 @@ csv_header = [
     'Execution', 
     'Memory', 
     'Relation-Size',
-    'Precision'
+    'MSE'
 ]
 
 duckdb = DuckDB.DUCKDB
@@ -162,25 +162,6 @@ CONFIG = {
         {
             'id': 'ninth',
             'dimension': 10000,
-            'ignore': False,
-            'statements': [
-                {
-                    'number': 1,
-                    'statement': STATEMENT_1
-                },
-                {
-                    'number': 3,
-                    'statement': STATEMENT_3
-                },
-                {
-                    'number': 4,
-                    'statement': STATEMENT_4
-                }
-            ]
-        },
-        {
-            'id': 'tenth',
-            'dimension': 100000,
             'ignore': False,
             'statements': [
                 {
