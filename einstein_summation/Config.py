@@ -18,7 +18,8 @@ csv_header = [
     'VectorV', 
     'Execution', 
     'Memory', 
-    'Relation-Size'
+    'Relation-Size',
+    'Precision'
 ]
 
 duckdb = DuckDB.DUCKDB
@@ -39,9 +40,9 @@ CONFIG = {
     ],
     'setups': [
         {
-            'dimension_1': 10,
-            'dimension_2': 10,
-            'dimension_3': 10,
+            'id': 'first',
+            'dimension': 10,
+            'ignore': False,
             'statements': [
                 {
                     'number': 1,
@@ -59,13 +60,12 @@ CONFIG = {
                     'number': 4,
                     'statement': STATEMENT_4
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 100,
-            'dimension_2': 100,
-            'dimension_3': 100,
+            'id': 'second',
+            'dimension': 100,
+            'ignore': False,
             'statements': [
                 {
                     'number': 1,
@@ -83,49 +83,67 @@ CONFIG = {
                     'number': 4,
                     'statement': STATEMENT_4
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 200,
-            'dimension_2': 200,
-            'dimension_3': 200,
+            'id': 'third',
+            'dimension': 200,
+            'ignore': False,
             'statements': [
                 {
                     'number': 2,
                     'statement': STATEMENT_2
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 300,
-            'dimension_2': 300,
-            'dimension_3': 300,
+            'id': 'fourth',
+            'dimension': 300,
+            'ignore': False,
             'statements': [
                 {
                     'number': 2,
                     'statement': STATEMENT_2
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 400,
-            'dimension_2': 400,
-            'dimension_3': 400,
+            'id': 'fifth',
+            'dimension': 400,
+            'ignore': False,
             'statements': [
                 {
                     'number': 2,
                     'statement': STATEMENT_2
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 1000,
-            'dimension_2': 1000,
-            'dimension_3': 1000,
+            'id': 'sixth',
+            'dimension': 500,
+            'ignore': False,
+            'statements': [
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                }
+            ]
+        },
+        {
+            'id': 'seventh',
+            'dimension': 600,
+            'ignore': False,
+            'statements': [
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                }
+            ]
+        },
+        {
+            'id': 'eighth',
+            'dimension': 1000,
+            'ignore': False,
             'statements': [
                 {
                     'number': 1,
@@ -139,13 +157,12 @@ CONFIG = {
                     'number': 4,
                     'statement': STATEMENT_4
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 10000,
-            'dimension_2': 10000,
-            'dimension_3': 10000,
+            'id': 'ninth',
+            'dimension': 10000,
+            'ignore': False,
             'statements': [
                 {
                     'number': 1,
@@ -159,13 +176,12 @@ CONFIG = {
                     'number': 4,
                     'statement': STATEMENT_4
                 }
-            ],
-            'ignore': False
+            ]
         },
         {
-            'dimension_1': 100000,
-            'dimension_2': 100000,
-            'dimension_3': 100000,
+            'id': 'tenth',
+            'dimension': 100000,
+            'ignore': False,
             'statements': [
                 {
                     'number': 1,
@@ -179,8 +195,7 @@ CONFIG = {
                     'number': 4,
                     'statement': STATEMENT_4
                 }
-            ],
-            'ignore': False
+            ]
         }
     ]
 }

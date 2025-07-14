@@ -7,7 +7,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Print')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Helper')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Global')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared/Parsing')))
 
+from typing import List
 from Config import CONFIG
 import random
 import threading
@@ -20,17 +22,16 @@ import Memory
 import Relation
 import Settings
 import Helper
+import Parse_Table
+import subprocess
 
 SEMAPHORE = threading.Semaphore()
 
 def main():
     databases = CONFIG['databases']
     scenarios = CONFIG['setups']
-    data_file = './data.csv'
 
-    max_setup = scenarios[-1]
-
-    produce_data(max_setup['dimension_1'], data_file)
+    produce_data(scenarios)
 
     for database in databases:
         if database['create_csv'] and not database['ignore']:
@@ -39,11 +40,9 @@ def main():
     for scenario in scenarios:
         if scenario['ignore']:
             continue
-        rowsA = scenario['dimension_1']
-        rowsB = scenario['dimension_2']
-        rowsC = scenario['dimension_3']
-        setup_file = './values.csv'
-        Helper.copy_csv_file(data_file, setup_file, rowsA + 1)
+        dimension = scenario['dimension']
+        matrix_file = f'./data{dimension}_ma.csv'
+        vector_file = f'./data{dimension}_vec.csv'
         for database in databases:
             if database['ignore']:
                 continue
@@ -55,12 +54,12 @@ def main():
                     number = statement['number']
                     content = statement['statement']
                     for agg in database['aggregations']:
-                        if not check_execution(name, rowsA, number):
+                        if not check_execution(name, dimension, number):
                             continue
 
-                        print_setting(rowsA, rowsB, rowsC, name, type, number, agg)
+                        print_setting(dimension, name, type, number, agg)
                         data = generate_statement(content, number, agg)
-                        prepare_benchmark(database, type, setup_file, rowsA)
+                        prepare_benchmark(database, type, matrix_file, vector_file)
 
                         time = Time.python_time(time_exe)
                         if time == -1:
@@ -74,6 +73,7 @@ def main():
                             Postgres.stop_database(database['server-preparation'][3])
                         memory = Memory.python_memory(memory_exe, time, data)
 
+                        precision = get_precision(database, type, data, number, matrix_file, vector_file)
                         relation_size = get_relation_size(database, type, data)
 
                         Create_CSV.append_row(database['csv_file'], 
@@ -81,19 +81,20 @@ def main():
                                                   type,
                                                   agg,
                                                   number,
-                                                  rowsA*rowsB, 
-                                                  rowsB*rowsC, 
-                                                  rowsC,
+                                                  dimension*dimension, 
+                                                  dimension*dimension, 
+                                                  dimension,
                                                   time, 
                                                   memory[0], 
-                                                  relation_size
+                                                  relation_size,
+                                                  precision
                                                ])
                         
                         if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                             Helper.remove_dir(database['files'])
                         else:
                             Helper.remove_files(database['files'])
-    Helper.remove_files([data_file, Settings.STATEMENT_FILE])
+    Helper.remove_files([Settings.STATEMENT_FILE])
 
 def check_execution(database: str, setup_id: int, number: int) -> bool:
     '''
@@ -118,13 +119,11 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
         pass
     return True
 
-def print_setting(dimension1: int, dimension2: int, dimension3: int, database: str, type: str, statement: int, agg_func: str) -> None:
+def print_setting(dimension: int, database: str, type: str, statement: int, agg_func: str) -> None:
     '''
     This function prints the settings for the current benchmark.
 
-    :param dimension1: The number of rows in the first matrix.
-    :param dimension2: The number of columns in the first matrix and rows in the second matrix.
-    :param dimension3: The number of columns in the second matrix and rows in the vector.
+    :param dimension: The number of elements.
     :param database: The database name.
     :param type: The datatype for tensor entries.
     :param statement: The number of the statement that should be used.
@@ -132,21 +131,22 @@ def print_setting(dimension1: int, dimension2: int, dimension3: int, database: s
     '''
 
     Format.print_title(f'START BENCHMARK - EINSTEIN SUMMATION WITH THE FOLLOWING SETTINGS')
-    Format.print_information(f'Matrix A: {dimension1}x{dimension2}', tabs=1)
-    Format.print_information(f'Matrix B: {dimension2}x{dimension3}', tabs=1)
-    Format.print_information(f'Vector V: {dimension3}x1', tabs=1)
+    Format.print_information(f'Matrix A: {dimension}x{dimension}', tabs=1)
+    Format.print_information(f'Matrix B: {dimension}x{dimension}', tabs=1)
+    Format.print_information(f'Vector V: {dimension}x1', tabs=1)
     Format.print_information(f'Database: {database}', tabs=1)
     Format.print_information(f'Type: {type}', tabs=1)
     Format.print_information(f'Statement: {statement}', tabs=1)
     Format.print_information(f'Aggregation Function: {agg_func}', tabs=1)
 
-def prepare_benchmark(database: dict, type: str, data_file: str, rowIndex: int) -> None:
+def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: str) -> None:
     '''
     This function prepares the benchmark by creating the database and inserting the data.
 
     :param database: The database name.
-    :param type: The datatype for x and y values.
-    :param data_file: The name of the csv file where the values of are stored.
+    :param type: The datatype matrix / vector values.
+    :param matrix_file: The name of the csv file where the values of matrices are stored.
+    :param vector_file: The name of the csv file where the values of vectors are stored.
     '''
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
@@ -168,20 +168,16 @@ def prepare_benchmark(database: dict, type: str, data_file: str, rowIndex: int) 
         prep_database.create_table('data1', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data2', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data3', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
-        prep_database.insert_from_csv('data1', extend_file_path + data_file)
-        prep_database.insert_from_csv('data2', extend_file_path + data_file)
-        prep_database.insert_from_csv('data3', extend_file_path + data_file)
+        prep_database.insert_from_csv('data1', extend_file_path + matrix_file)
+        prep_database.insert_from_csv('data2', extend_file_path + matrix_file)
+        prep_database.insert_from_csv('data3', extend_file_path + vector_file)
         prep_database.insert_from_select('matrixa', 'SELECT * FROM data1')
         prep_database.insert_from_select('matrixb', 'SELECT * FROM data2')
         prep_database.insert_from_select('vectorv', 'SELECT * FROM data3')
     else:
-        prep_database.insert_from_csv('matrixa', extend_file_path + data_file)
-        prep_database.insert_from_csv('matrixb', extend_file_path + data_file)
-        prep_database.insert_from_csv('vectorv', extend_file_path + data_file)
-    print(rowIndex)
-    for index in range(1, rowIndex):
-        prep_database.insert_from_select('matrixa', f'SELECT {index}, columnIndex, val FROM matrixa WHERE rowIndex = 0')
-        prep_database.insert_from_select('matrixb', f'SELECT {index}, columnIndex, val FROM matrixb WHERE rowIndex = 0')
+        prep_database.insert_from_csv('matrixa', extend_file_path + matrix_file)
+        prep_database.insert_from_csv('matrixb', extend_file_path + matrix_file)
+        prep_database.insert_from_csv('vectorv', extend_file_path + vector_file)
     prep_database.execute_sql()
 
     if database['name'] == 'lingodb' and type == 'bfloat':
@@ -196,6 +192,44 @@ def prepare_benchmark(database: dict, type: str, data_file: str, rowIndex: int) 
             f'{Settings.LINGODB_DIR}/data3.arrow.sample', 
             f'{Settings.LINGODB_DIR}/data3.metadata.json',
         ])
+
+def get_precision(database: dict, type: str, statement: str, number: int, matrix_file: str, vector_file: str) -> float:
+    if database['name'] != 'duckdb' or number == 2:
+        return -1
+    if type == 'double':
+        return 1
+    prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
+    prep_database.create_table('refA', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])
+    prep_database.create_table('refB', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])
+    prep_database.create_table('refV', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])
+    prep_database.insert_from_csv('refA', matrix_file)
+    prep_database.insert_from_csv('refB', matrix_file)
+    prep_database.insert_from_csv('refV', vector_file)
+    prep_database.execute_sql()
+
+    statement = statement[:-1]
+    statementRef = statement.replace('matrixa', 'refA')
+    statementRef = statementRef.replace('matrixb', 'refB')
+    statementRef = statement.replace('vectorv', 'refV')
+
+    final_stat = f'SELECT AVG(result) FROM (SELECT pow(res2.val - res1.val, 2) AS result FROM (SELECT row_number() OVER () AS id, val FROM ({statement} res1 JOIN SELECT row_number() OVER () AS id, val FROM ({statementRef}) res2));'
+
+    process = subprocess.Popen(
+        database['client-preparation'].split(), 
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+        text=True
+    )
+
+    process.stdin.write(final_stat)
+    process.stdin.flush()
+
+    output, error = process.communicate()
+    if error:
+        Format.print_error('An error has been printed during precision calculation', error)
+    result = Parse_Table.output_to_numpy(database['name'], output, 1, [0])
+    return result[0]
 
 def get_relation_size(database: dict, type: str, statement: str) -> float:
     '''
@@ -248,31 +282,47 @@ def generate_statement(statement: str, number: int, aggr_func: str) -> str:
             file.write(statement)
             return statement
 
-def single_thread(start: int, stop: int, file_name: str) -> None:
-    data = [[0, column, random.random()] for column in range(start, stop)]
-    with SEMAPHORE:
-        Create_CSV.append_rows(file_name, data)
+def single_thread(rows: List[int], columns: int, file_name: str) -> None:
+    for row in rows:
+        data = [[row, column, random.random()] for column in range(0, columns)]
+        with SEMAPHORE:
+            Create_CSV.append_rows(file_name, data)
 
-def produce_data(columns: int, file_name: str) -> None:
+def produce_data(scenarios: dict) -> None:
     '''
-    This function generates the necessary data for the benchmarks.
+    This function generates the necessary data for the benchmarks. This function
+    will generate for each scenarion a single file with the naming scheme: 
+    data<scenario_id><ma||vec>.csv
 
-    :param columns: The number of columns in the tensor.
-    :param file_name: The name of the csv file where the data should be stored.
+    :param scenarios: A dictionary containing each benchmark setup.
     '''
 
-    if not os.path.exists(file_name):
-        Format.print_information(f'Generating data for benchmark', mark=True)
-        Create_CSV.create_csv_file(file_name, ['rowIndex', 'columnIndex', 'val'])
-        chunck = columns / 10
-        threads = []
-        for number in range(0, 10):
-            thread = threading.Thread(target=single_thread, args=(int(number * chunck), int((number+1) * chunck), file_name))
-            threads.append(thread)
-            thread.start()
+    Format.print_information(f'Generating data for benchmarks', mark=True)
+    for scenario in scenarios:
+        file_name_matrix = f'./data{scenario["id"]}_ma.csv'
+        file_name_vector = f'./data{scenario["id"]}_vec.csv'
+        if not os.path.exists(file_name_matrix):
+            Create_CSV.create_csv_file(file_name_matrix, ['rowIndex', 'columnIndex', 'val'])
+            chunck_size = scenario['dimension'] // 10
+            generated = 0
+            threads = []
+            for _ in range(0, 10):
+                rows = []
+                if generated + chunck_size > scenario['dimension']:
+                    rows = [row for row in range(generated, scenario['dimension'])]
+                else:
+                    rows = [row for row in range(generated, generated+chunck_size)]
+                generated += chunck_size
+                thread = threading.Thread(target=single_thread, args=(rows, scenario['dimension'], file_name_matrix))
+                threads.append(thread)
+                thread.start()
 
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.join()
+        if not os.path.exists(file_name_vector):
+            Create_CSV.create_csv_file(file_name_matrix, ['rowIndex', 'columnIndex', 'val'])
+            data = [[0, column, random.random()] for column in range(0, scenario['dimension'])]
+            Create_CSV.append_rows(file_name_vector, data)
 
 if __name__ == "__main__":
     main()
