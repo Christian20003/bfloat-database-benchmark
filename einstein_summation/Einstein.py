@@ -73,7 +73,7 @@ def main():
                             Postgres.stop_database(database['server-preparation'][3])
                         memory = Memory.python_memory(memory_exe, time, data)
 
-                        error = get_error(database, type, data, number, matrix_file, vector_file)
+                        error = get_error(database, type, data, matrix_file, vector_file)
                         relation_size = get_relation_size(database, type, data)
 
                         Create_CSV.append_row(database['csv_file'], 
@@ -111,7 +111,7 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
     if database == 'duckdb':
         pass
     elif database == 'umbra':
-        if number == 1 and setup_id >= 2500:
+        if number == 1 and setup_id > 1000:
             return False
     elif database == 'postgres':
         pass
@@ -143,14 +143,16 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
     '''
     This function prepares the benchmark by creating the database and inserting the data.
 
-    :param database: The database name.
-    :param type: The datatype matrix / vector values.
+    :param database: The database object from CONFIG.
+    :param type: The type of the matrix / vector entries.
     :param matrix_file: The name of the csv file where the values of matrices are stored.
     :param vector_file: The name of the csv file where the values of vectors are stored.
     '''
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
+    # Postgres is inside another directory
     extend_file_path = '.' if database['name'] == 'postgres' else ''
+    # Create directories for these database that generate multiple files
     if database['name'] == 'postgres':
         Helper.create_dir(Settings.POSTGRESQL_DIR)
         executables = database['server-preparation']
@@ -159,12 +161,14 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
         Helper.create_dir(Settings.UMBRA_DIR)
     elif database['name'] == 'lingodb':
         Helper.create_dir(Settings.LINGODB_DIR)
+    # Create necessary tables
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
     prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
-    # Copy with bfloat does not work (apache arrow does not support it)
+    # Copy with bfloat does not work in LingoDB (apache arrow does not support it)
     if database['name'] == 'lingodb' and type == 'bfloat':
+        # Workaround by creating float tables and insert the content from them
         prep_database.create_table('data1', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data2', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data3', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
@@ -180,6 +184,7 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
         prep_database.insert_from_csv('vectorv', extend_file_path + vector_file)
     prep_database.execute_sql()
 
+    # Delete temporary float tables from LingoDB
     if database['name'] == 'lingodb' and type == 'bfloat':
         Helper.remove_files([
             f'{Settings.LINGODB_DIR}/data1.arrow', 
@@ -187,11 +192,24 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
             f'{Settings.LINGODB_DIR}/data3.arrow',
         ])
 
-def get_error(database: dict, type: str, statement: str, number: int, matrix_file: str, vector_file: str) -> float:
-    if database['name'] != 'duckdb' or number == 2:
+def get_error(database: dict, type: str, statement: str, matrix_file: str, vector_file: str) -> float:
+    '''
+    This function calculates the Mean-Squared-Error of the matrix multiplication with type DOUBLE as reference.
+    This function only works with DuckDB.
+
+    :param database: The database object from CONFIG.
+    :param type: The type of the matrix / vector entries.
+    :param statement: The statement that should be benchmarked.
+    :param matrix_file: The CSV file of the matrix data.
+    :param vector_file: The CSV file of the vector data.
+
+    :returns: The MSE of the matrix multiplication if the database is DuckDB, otherwise -1.
+    '''
+    if database['name'] != 'duckdb' or 'sum' not in statement:
         return -1
     if type == 'double':
         return 1
+    # Generate tables for reference result
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('refA', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])
     prep_database.create_table('refB', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])
@@ -201,13 +219,16 @@ def get_error(database: dict, type: str, statement: str, number: int, matrix_fil
     prep_database.insert_from_csv('refV', vector_file)
     prep_database.execute_sql()
 
+    # Modify statement with new table names
     statement = statement[:-1]
     statementRef = statement.replace('matrixa', 'refA')
     statementRef = statementRef.replace('matrixb', 'refB')
     statementRef = statement.replace('vectorv', 'refV')
 
+    # Define MSE in SQL
     final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
 
+    # Start database and get the result
     process = subprocess.Popen(
         database['client-preparation'].split() + ['-json'], 
         stdout=subprocess.PIPE,
@@ -222,8 +243,11 @@ def get_error(database: dict, type: str, statement: str, number: int, matrix_fil
     output, error = process.communicate()
     if error:
         Format.print_error('An error has been printed during precision calculation', error)
+
+    # Parse the result
     result = Parse_Table.output_to_numpy(database['name'], output, 1, [0])
 
+    # Delete created reference tables for other tests
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.drop_table('refA')
     prep_database.drop_table('refB')
@@ -246,12 +270,15 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
     if database['name'] != 'lingodb' and database['name'] != 'duckdb':
         return -1
     statement = statement[:-1]
+    # Create table for result and fill it with result content
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('relation', ['rowIndex', 'val'], ['int', type])
     prep_database.insert_from_select('relation', statement)
     prep_database.execute_sql()
+    # LingoDB case
     if database['name'] == 'lingodb':
         return Relation.measure_relation_size(f'{Settings.LINGODB_DIR}/relation.arrow')
+    # DuckDB case (produces only a single file, therefore delete everything else)
     elif database['name'] == 'duckdb':
         prep_database.clear()
         prep_database.drop_table('matrixa')
@@ -284,6 +311,14 @@ def generate_statement(statement: str, number: int, aggr_func: str) -> str:
             return statement
 
 def single_thread(rows: List[int], columns: int, file_name: str) -> None:
+    '''
+    This function representst the task for a single thread to produce benchmark data.
+    Relies on the global semaphore.
+
+    :param rows: A list of rows that should be produced by this thread.
+    :param columns: The number of columns for each row.
+    :param file_name: The name of the file where the data should be stored.
+    '''
     for row in rows:
         data = [[row, column, random.random()] for column in range(0, columns)]
         with SEMAPHORE:
@@ -299,16 +334,22 @@ def produce_data(scenarios: dict) -> None:
     '''
 
     Format.print_information(f'Generating data for benchmarks', mark=True)
+    # Iterate over each scenario
     for scenario in scenarios:
+        # Matrix and vector content will be stored seperatly
         file_name_matrix = f'./data{scenario["id"]}_ma.csv'
         file_name_vector = f'./data{scenario["id"]}_vec.csv'
+        # Generate matrix data only if the file does not exist yet
         if not os.path.exists(file_name_matrix):
             Create_CSV.create_csv_file(file_name_matrix, ['rowIndex', 'columnIndex', 'val'])
             chunck_size = scenario['dimension'] // 10
             generated = 0
             threads = []
+            # Iterate over each thread
             for _ in range(0, 10):
                 rows = []
+                # Define how many rows it should generate
+                # Last one only produces the remaining rows
                 if generated + chunck_size > scenario['dimension']:
                     rows = [row for row in range(generated, scenario['dimension'])]
                 else:
@@ -320,6 +361,8 @@ def produce_data(scenarios: dict) -> None:
 
             for thread in threads:
                 thread.join()
+        Format.print_information(f'Data for scenario "{scenario["id"]}" generated')
+        # Generate vector data only if the file does not exist yet
         if not os.path.exists(file_name_vector):
             Create_CSV.create_csv_file(file_name_vector, ['rowIndex', 'columnIndex', 'val'])
             data = [[0, column, random.random()] for column in range(0, scenario['dimension'])]
