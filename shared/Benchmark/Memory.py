@@ -162,13 +162,10 @@ def python_memory(execution: str, exe_time: float, statement: str = None, memory
     thread.join()
 
     with open(file_name, 'r') as file:
+        data = [float(value) for value in file.readlines()]
         if memory_over_time:
-            result = [float(value) for value in file.readlines()]
+            result = data
         else:
-            peak = 0
-            for entry in file.readlines():
-                if float(entry) > peak:
-                    peak = float(entry)
-            result.append(peak)
+            result.append(max(data))
     Helper.remove_files([file_name])
     return result

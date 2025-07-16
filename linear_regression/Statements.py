@@ -14,8 +14,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_3_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c) AS (
@@ -36,8 +35,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_4_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d) AS (
@@ -48,7 +46,7 @@ UNION ALL
     ), subresult (idx, a, b, c, d) AS (
     SELECT idx, 
             a - {} * {}(2 * x3 * (a * x3 + b * x2 + c * x1 + d - y)), 
-            b - {} * {} (2 * x2 * (a * x3 + b * x2 + c * x1 + d - y)), 
+            b - {} * {}(2 * x2 * (a * x3 + b * x2 + c * x1 + d - y)), 
             c - {} * {}(2 * x1 * (a * x3 + b * x2 + c * x1 + d - y)), 
             d - {} * {}(2 * (a * x3 + b * x2 + c * x1 + d - y))
     FROM current_gd, points 
@@ -59,8 +57,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_5_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d, e) AS (
@@ -83,8 +80,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_6_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d, e, f) AS (
@@ -108,8 +104,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_7_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d, e, f, g) AS (
@@ -134,8 +129,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_8_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d, e, f, g, h) AS (
@@ -161,8 +155,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_9_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d, e, f, g, h, i) AS (
@@ -189,8 +182,7 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''
 
 STATEMENT_10_PARAM = '''
 WITH RECURSIVE gd (idx, a, b, c, d, e, f, g, h, i, j) AS (
@@ -218,5 +210,4 @@ UNION ALL
   WHERE idx < {}
   )
 )
-SELECT * FROM gd;
-'''
+SELECT * FROM gd;'''

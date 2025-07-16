@@ -32,6 +32,7 @@ lingodb = LingoDB.LINGODB
 lingodb['csv_header'] = csv_header
 
 CONFIG = {
+    'memory_trials': 100,
     'databases': [
         duckdb,
         umbra,

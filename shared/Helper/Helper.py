@@ -48,16 +48,19 @@ def create_dir(dir: str) -> None:
         remove_dir([dir])
     os.mkdir(dir)
 
-def copy_csv_file(src: str, dst: str, number_lines: int) -> None:
+def copy_csv_file(src: str, dst: str, lines: int, columns: int) -> None:
     '''
-    This function copies a CSV file from src to dst and limits the number of lines to number_lines.
+    This function copies a CSV file from src to dst with n lines and m columns.
 
     :param src: The source file name.
     :param dst: The destination file name.
-    :param number_lines: The number of lines to copy.
+    :param lines: The number of lines to copy.
+    :param columns: The number of columns to copy
     '''
 
+    column = [value for value in range(1, column+1)]
+    column_str = ', '.join(column)
     try:
-        os.system(f'head -n {number_lines} {src} > {dst}')
+        os.system(f'head -n {lines} {src} | cut -d "," -f {column_str} > {dst}')
     except Exception as e:
         print_error(f'Failed to copy {src} to {dst}', e)

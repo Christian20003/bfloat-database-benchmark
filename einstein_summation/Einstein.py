@@ -62,6 +62,8 @@ def main():
                         prepare_benchmark(database, type, matrix_file, vector_file)
 
                         time = Time.python_time(time_exe)
+                        if database['name'] == 'postgres':
+                            Postgres.stop_database(database['server-preparation'][3])
                         if time == -1:
                             if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                                 Helper.remove_dir(database['files'])
@@ -69,9 +71,11 @@ def main():
                                 Helper.remove_files(database['files'])
                             continue
                         memory = 0
-                        if database['name'] == 'postgres':
-                            Postgres.stop_database(database['server-preparation'][3])
-                        memory = Memory.python_memory(memory_exe, time, data)
+                        for _ in range(CONFIG['memory_trials']):
+                            memory = Memory.python_memory(memory_exe, time, data)
+                            if memory != 0:
+                                break
+                            Format.print_information('Restart memory benchmark. Did not measure a value')
 
                         error = get_error(database, type, data, matrix_file, vector_file)
                         relation_size = get_relation_size(database, type, data)
@@ -187,9 +191,15 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
     # Delete temporary float tables from LingoDB
     if database['name'] == 'lingodb' and type == 'bfloat':
         Helper.remove_files([
-            f'{Settings.LINGODB_DIR}/data1.arrow', 
+            f'{Settings.LINGODB_DIR}/data1.arrow',
+            f'{Settings.LINGODB_DIR}/data1.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data1.metadata.json',
             f'{Settings.LINGODB_DIR}/data2.arrow', 
+            f'{Settings.LINGODB_DIR}/data2.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data2.metadata.json',
             f'{Settings.LINGODB_DIR}/data3.arrow',
+            f'{Settings.LINGODB_DIR}/data3.arrow.sample', 
+            f'{Settings.LINGODB_DIR}/data3.metadata.json',
         ])
 
 def get_error(database: dict, type: str, statement: str, matrix_file: str, vector_file: str) -> float:
@@ -312,7 +322,7 @@ def generate_statement(statement: str, number: int, aggr_func: str) -> str:
 
 def single_thread(rows: List[int], columns: int, file_name: str) -> None:
     '''
-    This function representst the task for a single thread to produce benchmark data.
+    This function represents the task for a single thread to produce benchmark data.
     Relies on the global semaphore.
 
     :param rows: A list of rows that should be produced by this thread.
