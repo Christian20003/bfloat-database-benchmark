@@ -68,7 +68,7 @@ def main():
                     setup_file = 'gd_bench.csv'
                     print_setting(name, points, parameters, aggregation, datatype, iterations, learning_rate)
                     query = generate_statement(statement, name, parameters, aggregation, datatype, iterations, learning_rate)
-                    prepare_benchmark(database, datatype, CONFIG['param_start'], parameters-1, points, data_file, setup_file)
+                    prepare_benchmark(database, points, CONFIG['param_start'], parameters-1, datatype, data_file, setup_file)
 
                     # Execute time benchmark
                     time = Time.python_time(time_exe)
@@ -83,19 +83,20 @@ def main():
                             Helper.remove_files(database['files'])
                         continue
 
+                    memory = []
                     # Execute memory benchmark (if psutil does not catch memory correctly, try again)
                     for _ in range(CONFIG['memory_trials']):
-                            memory = Memory.python_memory(memory_exe, time, query)
-                            if memory != 0:
-                                break
-                            Format.print_information('Restart memory benchmark. Did not measure a value')
+                        memory = Memory.python_memory(memory_exe, time, query)
+                        if memory[0] != 0:
+                            break
+                        Format.print_information('Restart memory benchmark. Did not measure a value')
 
                     # Get MSE and relation size
                     error = get_error(database, datatype, parameters-1, query, iterations)
                     relation_size = get_relation_size(database, datatype, query)
 
                     # Write results to CSV file and clean setup
-                    Create_CSV.append_row(database['csv_file'], [datatype, aggregation, parameters, points, iterations, time, memory, relation_size, error])
+                    Create_CSV.append_row(database['csv_file'], [datatype, aggregation, parameters, points, iterations, time, memory[0], relation_size, error])
                     if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                         Helper.remove_dir(database['files'])
                     else:
@@ -195,7 +196,7 @@ def prepare_benchmark(database: dict, points: int, parameter: float, variables: 
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
     # Generate the csv file with the points only needed
-    Helper.copy_csv_file(src, dst, points + 1, variables)  
+    Helper.copy_csv_file(src, dst, points + 1, variables)
     # Postgres reads csv file from a subdirectory
     file = '../' + dst if database['name'] == 'postgres' else './' + dst
     # For some databases create directories
@@ -227,7 +228,7 @@ def prepare_benchmark(database: dict, points: int, parameter: float, variables: 
         prep_database.insert_from_select('points', 'SELECT * FROM data')
     else:
         prep_database.insert_from_csv('points', file)
-    prep_database.insert_from_select('gd_start', f'SELECT 0, {",".join(parameters)}')
+    prep_database.insert_from_select('gd_start', f'SELECT 0, {",".join(str(parameters))}')
     prep_database.execute_sql()
 
     # Remove float tables, because that should not be there for bfloat benchmark
@@ -333,7 +334,7 @@ def single_thread(points: int, variables: int, parameter: float, file_name: str)
         for point in range(chunk):
             x = [random.random() for _ in range(variables)]
             y = sum([var * parameter for var in x]) + parameter
-            data.append(y + x)
+            data.append([y] + x)
         with SEMAPHORE:
             Create_CSV.append_rows(file_name, data)
         counter += chunk        

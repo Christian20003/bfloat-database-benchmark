@@ -70,10 +70,10 @@ def main():
                             else:
                                 Helper.remove_files(database['files'])
                             continue
-                        memory = 0
+                        memory = []
                         for _ in range(CONFIG['memory_trials']):
                             memory = Memory.python_memory(memory_exe, time, data)
-                            if memory != 0:
+                            if memory[0] != 0:
                                 break
                             Format.print_information('Restart memory benchmark. Did not measure a value')
 

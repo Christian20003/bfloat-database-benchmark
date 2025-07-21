@@ -58,8 +58,8 @@ def copy_csv_file(src: str, dst: str, lines: int, columns: int) -> None:
     :param columns: The number of columns to copy
     '''
 
-    column = [value for value in range(1, column+1)]
-    column_str = ', '.join(column)
+    column = [value for value in range(1, columns+1)]
+    column_str = ', '.join(str(column))
     try:
         os.system(f'head -n {lines} {src} | cut -d "," -f {column_str} > {dst}')
     except Exception as e:
