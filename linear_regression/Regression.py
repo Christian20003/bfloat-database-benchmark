@@ -64,7 +64,7 @@ def main():
                         continue
 
                     # Prepare benchmark
-                    data_file = 'gd.csv'
+                    data_file = f'gd_{parameters}.csv'
                     setup_file = 'gd_bench.csv'
                     print_setting(name, points, parameters, aggregation, datatype, iterations, learning_rate)
                     query = generate_statement(statement, name, parameters, aggregation, datatype, iterations, learning_rate)
@@ -87,7 +87,7 @@ def main():
                     # Execute memory benchmark (if psutil does not catch memory correctly, try again)
                     for _ in range(CONFIG['memory_trials']):
                         memory = Memory.python_memory(memory_exe, time, query)
-                        if memory[0] != 0:
+                        if memory[0] < 0:
                             break
                         Format.print_information('Restart memory benchmark. Did not measure a value')
 
@@ -342,47 +342,55 @@ def single_thread(points: int, variables: int, parameter: float, file_name: str)
 def produce_data(scenarios: dict) -> None:
     '''
     This function generates the necessary data for the benchmarks. This function
-    will generate a single file with the name gd.csv
+    will generate multiple files. Each file consists points data with a specific amount
+    of variables for a single point (multiple xs). The name of the files will be 
+    './gd_<parameter_amount>.csv'
 
     :param scenarios: A dictionary containing each benchmark setup.
     '''
 
-    file_name = './gd.csv'
-    if os.path.exists(file_name):
-        return
-    Format.print_information(f'Generating data for benchmarks', mark=True)
-
-    parameter = CONFIG['param_value']
-    points = 0
-    variables = 0
-
-    # Identify largest number for points and variables
+    # Identify every setup with different amounts of parameters and 
+    # get the setup with the highest number of points
+    data_files = {}
     for scenario in scenarios:
-        if scenario['points_amount'] > points:
-            points = scenario['points_amount']
-        if scenario['params_amount'] > variables:
-            variables = scenario['params_amount'] - 1
-
-    header = ['y'] + [f'x{i+1}' for i in range(variables)]
-    Create_CSV.create_csv_file(file_name, header)
-
-    chunk = points // 10
-    assigned = 0
-    threads = []
-    # Iterate over each thread
-    for _ in range(0, 10):
-        if assigned + chunk > points:
-            thread = threading.Thread(target=single_thread, args=(points-chunk, variables, parameter, file_name))
-            threads.append(thread)
-            thread.start()
+        key = scenario['params_amount']
+        if key in data_files:
+            if data_files[key] < scenario['points_amount']:
+                data_files[key] = scenario['points_amount']
         else:
-            thread = threading.Thread(target=single_thread, args=(chunk, variables, parameter, file_name))
-            threads.append(thread)
-            thread.start()
-        assigned += chunk
-        
-    for thread in threads:
-        thread.join()
+            data_files[key] = scenario['points_amount']
+
+    Format.print_information(f'Generating data for benchmarks', mark=True)
+    for key, value in data_files.items():
+        file_name = f'./gd_{key}.csv'
+        if os.path.exists(file_name):
+            continue
+
+        parameter = CONFIG['param_value']
+        points = value
+        variables = key-1
+
+        header = ['y'] + [f'x{i+1}' for i in range(variables)]
+        Create_CSV.create_csv_file(file_name, header)
+
+        chunk = points // 10
+        assigned = 0
+        threads = []
+        # Iterate over each thread
+        for _ in range(0, 10):
+            if assigned + chunk > points:
+                thread = threading.Thread(target=single_thread, args=(points-chunk, variables, parameter, file_name))
+                threads.append(thread)
+                thread.start()
+            else:
+                thread = threading.Thread(target=single_thread, args=(chunk, variables, parameter, file_name))
+                threads.append(thread)
+                thread.start()
+            assigned += chunk
+
+        for thread in threads:
+            thread.join()
+        Format.print_information(f'Generating data for {key} parameters')
 
 if __name__ == "__main__":
     main()
