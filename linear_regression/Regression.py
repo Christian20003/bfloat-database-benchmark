@@ -87,13 +87,13 @@ def main():
                     # Execute memory benchmark (if psutil does not catch memory correctly, try again)
                     for _ in range(CONFIG['memory_trials']):
                         memory = Memory.python_memory(memory_exe, time, query)
-                        if memory[0] < 0:
+                        if memory[0] > 0:
                             break
                         Format.print_information('Restart memory benchmark. Did not measure a value')
 
                     # Get MSE and relation size
-                    error = get_error(database, datatype, parameters-1, query, iterations)
-                    relation_size = get_relation_size(database, datatype, query)
+                    error = get_error(database, query, parameters-1, iterations)
+                    relation_size = get_relation_size(database, query, parameters, datatype)
 
                     # Write results to CSV file and clean setup
                     Create_CSV.append_row(database['csv_file'], [datatype, aggregation, parameters, points, iterations, time, memory[0], relation_size, error])
@@ -171,7 +171,7 @@ def generate_statement(statement: str, db_name: str, parameters: int, aggregatio
             content.append(function)
         # Add type casts if necessary
         for _ in range(parameters):
-            if db_name == 'postgres' and type == 'float4':
+            if db_name == 'postgres' and datatype == 'float4':
                 content.append(f'::{datatype}')
             else:
                 content.append('')
@@ -196,7 +196,7 @@ def prepare_benchmark(database: dict, points: int, parameter: float, variables: 
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
     # Generate the csv file with the points only needed
-    Helper.copy_csv_file(src, dst, points + 1, variables)
+    Helper.copy_csv_file(src, dst, points + 1, variables + 1)
     # Postgres reads csv file from a subdirectory
     file = '../' + dst if database['name'] == 'postgres' else './' + dst
     # For some databases create directories
@@ -213,39 +213,40 @@ def prepare_benchmark(database: dict, points: int, parameter: float, variables: 
     # List of inital values for each parameter
     parameters = [parameter for _ in range(variables+1)]
     gd_columns = ['idx'] + [letters[value] for value in range(variables+1)]
-    gd_columns_types = ['int'] + [type for _ in range(variables+1)]
+    gd_columns_types = ['int'] + [datatype for _ in range(variables+1)]
     points_columns = ['y'] + [f'x{i+1}' for i in range(variables)]
-    points_columns_types = [type] + [type for _ in range(variables)]
+    points_columns_types = [datatype] + [datatype for _ in range(variables)]
 
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('gd_start', gd_columns, gd_columns_types)
     prep_database.create_table('points', points_columns, points_columns_types)
     # Copy with bfloat does not work in LingoDB (apache arrow does not support it)
-    if database['name'] == 'lingodb' and type == 'bfloat':
+    if database['name'] == 'lingodb' and datatype == 'bfloat':
         points_columns_types = ['float'] + ['float' for _ in range(variables)]
         prep_database.create_table('data', points_columns, points_columns_types)
         prep_database.insert_from_csv('data', file)
         prep_database.insert_from_select('points', 'SELECT * FROM data')
     else:
         prep_database.insert_from_csv('points', file)
-    prep_database.insert_from_select('gd_start', f'SELECT 0, {",".join(str(parameters))}')
+    prep_database.insert_from_select('gd_start', f'SELECT 0, {",".join(str(parameter) for parameter in parameters)}')
     prep_database.execute_sql()
 
     # Remove float tables, because that should not be there for bfloat benchmark
-    if database['name'] == 'lingodb' and type == 'bfloat':
+    if database['name'] == 'lingodb' and datatype == 'bfloat':
         Helper.remove_files([
             f'{Settings.LINGODB_DIR}/data.arrow', 
             f'{Settings.LINGODB_DIR}/data.arrow.sample', 
             f'{Settings.LINGODB_DIR}/data.metadata.json',
         ])
 
-def get_relation_size(database: dict, statement: str, datatype: str) -> float:
+def get_relation_size(database: dict, statement: str, parameters: int, datatype: str) -> float:
     '''
     This function reads the size of the output file of a database (only lingodb and
     duckdb. Other databases will get the value -1).
 
     :param database: The database object from the CONFIG file.
     :param statement: The SQL statement to be executed.
+    :param parameters: The number of parameters that should be learned.
     :param datatype: The datatype of all variables and parameters.
 
     :returns: The output file size in bytes.
@@ -254,9 +255,10 @@ def get_relation_size(database: dict, statement: str, datatype: str) -> float:
         return -1
     # Eliminate the last semicolon
     statement = statement[:-1]
+    letters = 'abcdefghijklmnopqrstuvwxyz'
     # Create table for result and fill it with result content
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
-    prep_database.create_table('relation', ['rowIndex', 'val'], ['int', datatype])
+    prep_database.create_table('relation', ['idx'] + [letters[i] for i in range(parameters)], ['int'] + [datatype for i in range(parameters)])
     prep_database.insert_from_select('relation', statement)
     prep_database.execute_sql()
     # LingoDB case
@@ -288,13 +290,13 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
     statement = statement[:-1]
     letters = 'abcdefghijklmnopqrstuvwxyz'
     # Create a list of parameter names
-    parameter_column = [letters[i] for i in range(variables+1)]
+    parameter_column = ['idx'] + [letters[i] for i in range(variables+1)]
     # Create the statement to calculate a prediction
-    pred = [f'x{i+1} * {letters[i]}' for i in range(variables)]
-    pred_stmt = f'SELECT {'+'.join(pred)} +' + letters[variables]
+    preds = [f'x{i+1} * {letters[i]}' for i in range(variables)]
+    pred_stmt = f'SELECT {'+'.join(pred for pred in preds)} +' + letters[variables]
 
     # Create the final statement to calculate the MSE
-    final_stmt = f'WITH paramter({','.join(parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT pow(y - pred, 2) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
+    final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT pow(y - pred, 2) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
 
     # Start database and get the result
     process = subprocess.Popen(
@@ -315,7 +317,7 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
     # Parse the result
     result = Parse_Table.output_to_numpy(database['name'], output, 1, [0])
 
-    return result[0]
+    return result[0][0]
 
 def single_thread(points: int, variables: int, parameter: float, file_name: str) -> None:
     '''
@@ -328,16 +330,18 @@ def single_thread(points: int, variables: int, parameter: float, file_name: str)
     :param file_name: The name of the file where the data should be stored.
     '''
     counter = 0
-    while counter <= points:
+    while counter < points:
         chunk = 100000 if counter + 100000 <= points else points - counter
         data = []
+        print(f'Thread starts chunk: {counter}')
         for point in range(chunk):
             x = [random.random() for _ in range(variables)]
             y = sum([var * parameter for var in x]) + parameter
             data.append([y] + x)
         with SEMAPHORE:
             Create_CSV.append_rows(file_name, data)
-        counter += chunk        
+        counter += chunk     
+    print('Thread has been finished')   
 
 def produce_data(scenarios: dict) -> None:
     '''
@@ -364,8 +368,10 @@ def produce_data(scenarios: dict) -> None:
     for key, value in data_files.items():
         file_name = f'./gd_{key}.csv'
         if os.path.exists(file_name):
+            Format.print_information(f'Data for {key} parameters already exist')
             continue
 
+        Format.print_information(f'Generating data for {key} parameters')
         parameter = CONFIG['param_value']
         points = value
         variables = key-1
@@ -373,16 +379,17 @@ def produce_data(scenarios: dict) -> None:
         header = ['y'] + [f'x{i+1}' for i in range(variables)]
         Create_CSV.create_csv_file(file_name, header)
 
-        chunk = points // 10
+        chunk = points // 20
         assigned = 0
         threads = []
         # Iterate over each thread
-        for _ in range(0, 10):
+        for _ in range(0, 20):
             if assigned + chunk > points:
                 thread = threading.Thread(target=single_thread, args=(points-chunk, variables, parameter, file_name))
                 threads.append(thread)
                 thread.start()
             else:
+                print(chunk)
                 thread = threading.Thread(target=single_thread, args=(chunk, variables, parameter, file_name))
                 threads.append(thread)
                 thread.start()
@@ -390,7 +397,6 @@ def produce_data(scenarios: dict) -> None:
 
         for thread in threads:
             thread.join()
-        Format.print_information(f'Generating data for {key} parameters')
 
 if __name__ == "__main__":
     main()

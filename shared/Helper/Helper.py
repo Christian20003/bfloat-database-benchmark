@@ -59,7 +59,7 @@ def copy_csv_file(src: str, dst: str, lines: int, columns: int) -> None:
     '''
 
     column = [value for value in range(1, columns+1)]
-    column_str = ', '.join(str(column))
+    column_str = ','.join(str(number) for number in column)
     try:
         os.system(f'head -n {lines} {src} | cut -d "," -f {column_str} > {dst}')
     except Exception as e:

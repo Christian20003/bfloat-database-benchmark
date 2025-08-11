@@ -31,7 +31,7 @@ lingodb = LingoDB.LINGODB
 lingodb['csv_header'] = csv_header
 
 CONFIG = {
-    'memory_trials': 100,
+    'memory_trials': 10,
     'param_value': 0.75,
     'param_start': 10,
     'databases': [
@@ -42,81 +42,10 @@ CONFIG = {
     ],
     'setups': [
         # setups with increasing amount of points
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 10,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 100,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 1000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 10000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 100000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 1000000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 10000000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 100000000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 10,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 1000000000,
-            'params_amount': 2,
-            'ignore': False
-        },
+
         # setups with increasing amount of parameters
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_3_PARAM,
             'points_amount': 10000000,
@@ -124,7 +53,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_4_PARAM,
             'points_amount': 10000000,
@@ -132,7 +61,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_5_PARAM,
             'points_amount': 10000000,
@@ -140,7 +69,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_6_PARAM,
             'points_amount': 10000000,
@@ -148,7 +77,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_7_PARAM,
             'points_amount': 10000000,
@@ -156,7 +85,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_8_PARAM,
             'points_amount': 10000000,
@@ -164,7 +93,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_9_PARAM,
             'points_amount': 100000000,
@@ -172,7 +101,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_10_PARAM,
             'points_amount': 100000000,
