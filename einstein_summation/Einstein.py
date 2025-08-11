@@ -115,8 +115,7 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
     if database == 'duckdb':
         pass
     elif database == 'umbra':
-        if number == 1 and setup_id > 1000:
-            return False
+        pass
     elif database == 'postgres':
         pass
     elif database == 'lingodb':

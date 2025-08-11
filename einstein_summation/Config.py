@@ -32,7 +32,7 @@ lingodb = LingoDB.LINGODB
 lingodb['csv_header'] = csv_header
 
 CONFIG = {
-    'memory_trials': 100,
+    'memory_trials': 10,
     'databases': [
         duckdb,
         umbra,
@@ -65,7 +65,7 @@ CONFIG = {
         },
         {
             'id': 'second',
-            'dimension': 100,
+            'dimension': 250,
             'ignore': False,
             'statements': [
                 {
@@ -88,67 +88,16 @@ CONFIG = {
         },
         {
             'id': 'third',
-            'dimension': 200,
-            'ignore': False,
-            'statements': [
-                {
-                    'number': 2,
-                    'statement': STATEMENT_2
-                }
-            ]
-        },
-        {
-            'id': 'fourth',
-            'dimension': 300,
-            'ignore': False,
-            'statements': [
-                {
-                    'number': 2,
-                    'statement': STATEMENT_2
-                }
-            ]
-        },
-        {
-            'id': 'fifth',
-            'dimension': 400,
-            'ignore': False,
-            'statements': [
-                {
-                    'number': 2,
-                    'statement': STATEMENT_2
-                }
-            ]
-        },
-        {
-            'id': 'sixth',
             'dimension': 500,
-            'ignore': False,
-            'statements': [
-                {
-                    'number': 2,
-                    'statement': STATEMENT_2
-                }
-            ]
-        },
-        {
-            'id': 'seventh',
-            'dimension': 600,
-            'ignore': False,
-            'statements': [
-                {
-                    'number': 2,
-                    'statement': STATEMENT_2
-                }
-            ]
-        },
-        {
-            'id': 'eighth',
-            'dimension': 1000,
             'ignore': False,
             'statements': [
                 {
                     'number': 1,
                     'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
                 },
                 {
                     'number': 3,
@@ -161,13 +110,40 @@ CONFIG = {
             ]
         },
         {
-            'id': 'ninth',
-            'dimension': 10000,
+            'id': 'fourth',
+            'dimension': 750,
             'ignore': False,
             'statements': [
                 {
                     'number': 1,
                     'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
+                },
+                {
+                    'number': 3,
+                    'statement': STATEMENT_3
+                },
+                {
+                    'number': 4,
+                    'statement': STATEMENT_4
+                }
+            ]
+        },
+        {
+            'id': 'fifth',
+            'dimension': 1000,
+            'ignore': False,
+            'statements': [
+                {
+                    'number': 1,
+                    'statement': STATEMENT_1
+                },
+                {
+                    'number': 2,
+                    'statement': STATEMENT_2
                 },
                 {
                     'number': 3,
