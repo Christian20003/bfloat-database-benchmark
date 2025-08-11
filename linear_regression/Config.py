@@ -42,7 +42,78 @@ CONFIG = {
     ],
     'setups': [
         # setups with increasing amount of points
-
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 10,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 100,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 1000,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 10000,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 100000,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 1000000,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 10000000,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 100000000,
+            'params_amount': 2,
+            'ignore': False
+        },
+        {
+            'iterations': 20,
+            'lr': 0.05,
+            'statement': STATEMENT_2_PARAM,
+            'points_amount': 1000000000,
+            'params_amount': 2,
+            'ignore': False
+        },
         # setups with increasing amount of parameters
         {
             'iterations': 20,
