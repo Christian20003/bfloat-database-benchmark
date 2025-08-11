@@ -215,10 +215,10 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
 
     :returns: The MSE of the matrix multiplication if the database is DuckDB, otherwise -1.
     '''
-    if database['name'] != 'duckdb' or 'sum' not in statement:
+    if database['name'] != 'duckdb' or 'sum' not in statement.lower():
         return -1
     if type == 'double':
-        return 1
+        return 0
     # Generate tables for reference result
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('refA', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])
@@ -264,7 +264,7 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
     prep_database.drop_table('refV')
     prep_database.execute_sql()
 
-    return result[0]
+    return result[0][0]
 
 def get_relation_size(database: dict, type: str, statement: str) -> float:
     '''
