@@ -31,7 +31,7 @@ def main():
     scenarios = CONFIG['setups']
 
     # Generate data if not already done
-    produce_data(scenarios)
+    data_files = produce_data(scenarios)
 
     # Generate result CSV files for each database 
     for database in databases:
@@ -66,6 +66,9 @@ def main():
                     # Prepare benchmark
                     data_file = f'gd_{parameters}.csv'
                     setup_file = 'gd_bench.csv'
+                     # If all points are in generated files (do not copy)
+                    if data_files[parameters] == points:
+                        setup_file = data_file
                     print_setting(name, points, parameters, aggregation, datatype, iterations, learning_rate)
                     query = generate_statement(statement, name, parameters, aggregation, datatype, iterations, learning_rate)
                     prepare_benchmark(database, points, CONFIG['param_start'], parameters-1, datatype, data_file, setup_file)
@@ -101,6 +104,8 @@ def main():
                         Helper.remove_dir(database['files'])
                     else:
                         Helper.remove_files(database['files'])
+        # Delete data CSV file to save space 
+        Helper.remove_files(database['gd_bench.csv'])
     Helper.remove_files(['gd_bench.csv', Settings.STATEMENT_FILE])
 
 def check_execution(db_name: str, points: int, parameters: int, aggregation: str, datatype: str) -> bool:
@@ -122,8 +127,8 @@ def check_execution(db_name: str, points: int, parameters: int, aggregation: str
         pass
     elif db_name == 'postgres':
         pass
-    elif db_name == 'lingodb':
-        pass
+    elif db_name == 'lingodb' and points == 1000000000:
+        return False
     return True
 
 def print_setting(db_name: str, points: int, parameters: int, aggregation: str, datatype: str, iterations: int, learning_rate: float) -> None:
@@ -196,7 +201,8 @@ def prepare_benchmark(database: dict, points: int, parameter: float, variables: 
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
     # Generate the csv file with the points only needed
-    Helper.copy_csv_file(src, dst, points + 1, variables + 1)
+    if src != dst:
+        Helper.copy_csv_file(src, dst, points + 1, variables + 1)
     # Postgres reads csv file from a subdirectory
     file = '../' + dst if database['name'] == 'postgres' else './' + dst
     # For some databases create directories
@@ -286,6 +292,7 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
     '''
     if database['name'] != 'duckdb':
         return -1
+    Format.print_information(f'Calculate error', mark=True)
     # Eliminate the last semicolon
     statement = statement[:-1]
     letters = 'abcdefghijklmnopqrstuvwxyz'
@@ -343,7 +350,7 @@ def single_thread(points: int, variables: int, parameter: float, file_name: str)
         counter += chunk     
     print('Thread has been finished')   
 
-def produce_data(scenarios: dict) -> None:
+def produce_data(scenarios: dict) -> dict:
     '''
     This function generates the necessary data for the benchmarks. This function
     will generate multiple files. Each file consists points data with a specific amount
@@ -351,6 +358,8 @@ def produce_data(scenarios: dict) -> None:
     './gd_<parameter_amount>.csv'
 
     :param scenarios: A dictionary containing each benchmark setup.
+    :returns: A dictionary with the number of parameters as key and each key stores 
+    the largest number of points of all corresponding benchmarks.
     '''
 
     # Identify every setup with different amounts of parameters and 
@@ -397,6 +406,7 @@ def produce_data(scenarios: dict) -> None:
 
         for thread in threads:
             thread.join()
+    return data_files
 
 if __name__ == "__main__":
     main()
