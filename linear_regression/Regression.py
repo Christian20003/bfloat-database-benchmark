@@ -339,15 +339,13 @@ def single_thread(points: int, variables: int, parameter: float, file_name: str)
     while counter < points:
         chunk = 100000 if counter + 100000 <= points else points - counter
         data = []
-        print(f'Thread starts chunk: {counter}')
         for point in range(chunk):
             x = [random.random() for _ in range(variables)]
             y = sum([var * parameter for var in x]) + parameter
             data.append([y] + x)
         with SEMAPHORE:
             Create_CSV.append_rows(file_name, data)
-        counter += chunk     
-    print('Thread has been finished')   
+        counter += chunk       
 
 def produce_data(scenarios: dict) -> dict:
     '''
@@ -397,7 +395,6 @@ def produce_data(scenarios: dict) -> dict:
                 threads.append(thread)
                 thread.start()
             else:
-                print(chunk)
                 thread = threading.Thread(target=single_thread, args=(chunk, variables, parameter, file_name))
                 threads.append(thread)
                 thread.start()

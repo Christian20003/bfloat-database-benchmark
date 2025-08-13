@@ -73,7 +73,7 @@ def main():
                         memory = []
                         for _ in range(CONFIG['memory_trials']):
                             memory = Memory.python_memory(memory_exe, time, data)
-                            if memory[0] != 0:
+                            if memory[0] > 0:
                                 break
                             Format.print_information('Restart memory benchmark. Did not measure a value')
 
@@ -116,10 +116,10 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
         pass
     elif database == 'umbra':
         pass
-    elif database == 'postgres':
-        pass
-    elif database == 'lingodb':
-        pass
+    elif database == 'postgres' and setup_id == 1000 and number == 2:
+        return False
+    elif database == 'lingodb' and setup_id >= 750 and number == 2:
+        return False
     return True
 
 def print_setting(dimension: int, database: str, type: str, statement: int, agg_func: str) -> None:

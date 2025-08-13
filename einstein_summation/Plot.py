@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     manipulate_memory = {
         'Memory': {
-            'function': lambda a: a / (1024*1024*1024),
+            'function': lambda a: a / (1024*1024),
             'args': ['Memory'],
             'types': ['float']
         }
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     manipulate_file_size = {
         'Relation-Size': {
-            'function': lambda a: a / (1024*1024*1024),
+            'function': lambda a: a / (1024),
             'args': ['Relation-Size'],
             'types': ['float']
         }
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '1000', '2500', '5000', '7500', '10000'],
         #'VectorV': ['10000'],
         'Aggregation': ['kahan'],
-        'Statement': ['1','3','4']
+        'Statement': ['2','3','4']
     }
 
     duckdb_ignore_2 = {
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '500', '1000', '2500', '5000', '7500', '10000'],
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
         #'VectorV': ['10000'],
-        'Statement': ['1','3','4'],
+        'Statement': ['2','3','4'],
         #'Type': ['bfloat']
     }
 
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         }
     }
 
-    rss = {
+    memory = {
         'file_1': {
             'file': duckdb_file,
             'line_keys': line_keys,
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         }
     }
 
-    file = {
+    relation = {
         'file_1': {
             'file': duckdb_file,
             'line_keys': line_keys,
@@ -238,21 +238,7 @@ if __name__ == "__main__":
             'manipulate': manipulate_file_size,
             'ignore': duckdb_ignore
         },
-        #'file_2': {
-        #    'file': duckdb_file,
-        #    'line_keys': line_keys,
-        #    'color': 'forestgreen',
-        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
-        #    'x_keys': x_keys,
-        #    'y_keys': {
-        #        'A*(B*v)': ['Heap'],
-        #    },
-        #    'renaming': {},
-        #    'manipulate': {},
-        #    'ignore': duckdb_ignore_2
-        #},
-        'file_3': {
+        'file_2': {
             'file': lingodb_file,
             'line_keys': line_keys,
             'color': 'orange',
@@ -274,20 +260,20 @@ if __name__ == "__main__":
         'log_x': False,
         'file_name': f'Execution_{scenario_name}.pdf'
     }
-    config_rss = {
+    config_memory = {
         'x_label': 'Number of tuples',
-        'y_label': 'Used memory in GB',
+        'y_label': 'Used memory in MB',
         'log_y': False,
         'log_x': False,
         'file_name': f'Memory_{scenario_name}.pdf'
     }
     config_relation = {
         'x_label': 'Number of tuples',
-        'y_label': 'Relation Size in GB',
+        'y_label': 'Relation Size in KB',
         'log_y': False,
         'log_x': False,
         'file_name': f'Relation_{scenario_name}.pdf'
     }
     Plotting.plot_results(time, config_time)
-    Plotting.plot_results(rss, config_rss)
-    Plotting.plot_results(file, config_relation)
+    Plotting.plot_results(memory, config_memory)
+    Plotting.plot_results(relation, config_relation)
