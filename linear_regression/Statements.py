@@ -22,13 +22,12 @@ def STATEMENT_2_PARAM(db_name: str):
       WITH RECURSIVE gd (idx, a, b) AS (
       SELECT * FROM gd_start
       UNION ALL
-      SELECT idx+1, a - {} * {}(2 * x2 * (a * x2 + b * x1 - y)), b - {} * {}(2 * x1 * (a * x2 + b * x1 - y))
+      SELECT idx+1, a - {} * {}(2 * x1 * (a * x1 + b - y)), b - {} * {}(2 * (a * x1 + b - y))
       FROM gd, points
       WHERE idx < {}
       GROUP BY idx, a, b
       )
-      SELECT * FROM gd;
-    '''
+      SELECT * FROM gd;'''
 
 def STATEMENT_4_PARAM(db_name: str):
   if db_name == 'postgres':

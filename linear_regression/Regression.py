@@ -106,7 +106,7 @@ def main():
                     else:
                         Helper.remove_files(database['files'])
         # Delete data CSV file to save space 
-        Helper.remove_files(database['gd_bench.csv'])
+        Helper.remove_files(['gd_bench.csv'])
     Helper.remove_files(['gd_bench.csv', Settings.STATEMENT_FILE])
 
 def check_execution(db_name: str, points: int, parameters: int, aggregation: str, datatype: str) -> bool:
