@@ -218,6 +218,7 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
         return -1
     if type == 'double':
         return 0
+    Format.print_information(f'Calculate error', mark=True)
     # Generate tables for reference result
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('refA', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'double'])

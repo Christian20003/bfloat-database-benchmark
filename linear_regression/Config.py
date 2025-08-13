@@ -54,23 +54,7 @@ CONFIG = {
             'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_2_PARAM,
-            'points_amount': 100,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
             'points_amount': 1000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 10000,
             'params_amount': 2,
             'ignore': False
         },
@@ -86,23 +70,7 @@ CONFIG = {
             'iterations': 20,
             'lr': 0.05,
             'statement': STATEMENT_2_PARAM,
-            'points_amount': 1000000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
             'points_amount': 10000000,
-            'params_amount': 2,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
-            'statement': STATEMENT_2_PARAM,
-            'points_amount': 100000000,
             'params_amount': 2,
             'ignore': False
         },
@@ -118,25 +86,9 @@ CONFIG = {
         {
             'iterations': 20,
             'lr': 0.05,
-            'statement': STATEMENT_3_PARAM,
-            'points_amount': 10000000,
-            'params_amount': 3,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
             'statement': STATEMENT_4_PARAM,
             'points_amount': 10000000,
             'params_amount': 4,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
-            'statement': STATEMENT_5_PARAM,
-            'points_amount': 10000000,
-            'params_amount': 5,
             'ignore': False
         },
         {
@@ -150,14 +102,6 @@ CONFIG = {
         {
             'iterations': 20,
             'lr': 0.05,
-            'statement': STATEMENT_7_PARAM,
-            'points_amount': 10000000,
-            'params_amount': 7,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
             'statement': STATEMENT_8_PARAM,
             'points_amount': 10000000,
             'params_amount': 8,
@@ -166,16 +110,8 @@ CONFIG = {
         {
             'iterations': 20,
             'lr': 0.05,
-            'statement': STATEMENT_9_PARAM,
-            'points_amount': 100000000,
-            'params_amount': 9,
-            'ignore': False
-        },
-        {
-            'iterations': 20,
-            'lr': 0.05,
             'statement': STATEMENT_10_PARAM,
-            'points_amount': 100000000,
+            'points_amount': 10000000,
             'params_amount': 10,
             'ignore': False
         }

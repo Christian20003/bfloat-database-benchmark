@@ -47,7 +47,7 @@ def main():
         points = scenario['points_amount']
         iterations = scenario['iterations']
         learning_rate = scenario['lr']
-        statement = scenario['statement']
+        statement_function = scenario['statement']
         # Iterate over each database
         for database in databases:
             if database['ignore']:
@@ -55,6 +55,7 @@ def main():
             name = database['name']
             time_exe = database['time-executable']
             memory_exe = database['memory-executable']
+            statement = statement_function(name)
             # Iterate over each defined database type
             for datatype in database['types']:
                 # Iterate over each defined database aggregation function
@@ -176,10 +177,8 @@ def generate_statement(statement: str, db_name: str, parameters: int, aggregatio
             content.append(function)
         # Add type casts if necessary
         for _ in range(parameters):
-            if db_name == 'postgres' and datatype == 'float4':
+            if db_name == 'postgres':
                 content.append(f'::{datatype}')
-            else:
-                content.append('')
         content.append(iterations)
         statement = statement.format(*content)
         file.write(statement)
