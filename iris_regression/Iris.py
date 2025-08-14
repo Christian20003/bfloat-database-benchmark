@@ -54,7 +54,7 @@ def main():
                     weigths = statement['weights']
                     number = statement['number']
                     print_setting(network, data, name, datatype, iterations, number)
-                    query = generate_statement(name, model, network, iterations, learning_rate)
+                    query = generate_statement(name, model, iterations, learning_rate)
                     prepare_benchmark(database, datatype, data)
 
                     time = Time.python_time(time_exe)
@@ -76,7 +76,7 @@ def main():
                         Format.print_information('Restart memory benchmark. Did not measure a value')
                     accuracy = get_accuracy(database, query)
                     # Create statement that returns only the weights
-                    weight_query = generate_statement(name, weigths, network, iterations, learning_rate)
+                    weight_query = generate_statement(name, weigths, iterations, learning_rate)
                     relation_size = get_relation_size(database, datatype, weight_query)
 
                     Create_CSV.append_row(database['csv_file'], [datatype, network, data, learning_rate, iterations, time, memory, relation_size, accuracy])
@@ -105,13 +105,14 @@ def print_setting(network_size: int, data_size: int, db_name: str, datatype: str
     Format.print_information(f'Iterations: {iterations}', tabs=1)
     Format.print_information(f'Statement: {statement}', tabs=1)
 
-def prepare_benchmark(database: dict, datatype: str, data_size: int) -> None:
+def prepare_benchmark(database: dict, datatype: str, data_size: int, network_size: int) -> None:
     '''
     This function prepares the benchmark by creating the database and inserting the data.
 
     :param database: The database name.
     :param datatype: The datatype for x and y values.
     :param data_size: The number of samples.
+    :param network_size: The size of the hidden layer.
     '''
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
@@ -135,6 +136,7 @@ def prepare_benchmark(database: dict, datatype: str, data_size: int) -> None:
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('iris', ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species'], ['float8', 'float8', 'float8', 'float8', 'int'])
     prep_database.create_table('iris3', ['img', 'one_hot'], [array_type, array_type])
+    prep_database.create_table('weights', ['id', 'w_xh', 'w_ho'], ['int', array_type, array_type])
     # iris.csv only contains 150 elements, therefore copy it multiple times
     for _ in range(0, data_size, 150):
         prep_database.insert_from_csv('iris', extend_file_path + './iris.csv')
@@ -143,15 +145,15 @@ def prepare_benchmark(database: dict, datatype: str, data_size: int) -> None:
         prep_database.insert_from_select('iris3', f'SELECT ARRAY[[sepal_length/10,sepal_width/10,petal_length/10,petal_width/10]] AS img, ARRAY[(array_fill(0::{datatype}, ARRAY[species]) || [1::{datatype}] ) || array_fill(0::{datatype}, ARRAY[2-species])] AS one_hot FROM iris')
     else:
         prep_database.insert_from_select('iris3', f'SELECT ARRAY[[sepal_length/10,sepal_width/10,petal_length/10,petal_width/10]] AS img, ARRAY[(array_fill(0::{datatype}, ARRAY[species]) || 1::{datatype} ) || array_fill(0::{datatype}, ARRAY[2-species])] AS one_hot FROM iris')
+    prep_database.insert_from_select('weights', f'SELECT 0, (SELECT array_agg(ys) FROM (SELECT array_agg(val) AS ys FROM (SELECT random()*2-1 AS val, x.generate_series AS x, y.generate_series AS y FROM generate_series(1,4) x, generate_series(1,{network_size}) y) tmp1 GROUP BY x) tmp2), (SELECT array_agg(ys) FROM (SELECT array_agg(val) AS ys FROM (SELECT random()*2-1 AS val, x.generate_series as x, y.generate_series AS y FROM generate_series(1,{network_size}) x, generate_series(1,3) y) tmp3 GROUP BY x) tmp4)')
     prep_database.execute_sql()
 
-def generate_statement(db_name: str, statement: str, network_size: int, iterations: int, learning_rate: float) -> str:
+def generate_statement(db_name: str, statement: str, iterations: int, learning_rate: float) -> str:
     '''
     This function generates the SQL file.
 
     :param db_name: The database name.
     :param statement: The SQL statement to be executed.
-    :param network_size: The size of the hidden layer.
     :param iterations: The number of iterations in the recursive CTE.
     :param learning_rate: The learning rate.
 
@@ -160,7 +162,7 @@ def generate_statement(db_name: str, statement: str, network_size: int, iteratio
 
     # SUM function with arrays can only be used in DuckDB by calling the function directly
     function = 'list_sum' if db_name == 'duckdb' else 'SUM'
-    query = statement.format(network_size, network_size, learning_rate, function, learning_rate, function, iterations)
+    query = statement.format(learning_rate, function, learning_rate, function, iterations)
     with open(Settings.STATEMENT_FILE, 'w') as file:
         file.write(query)
     return query
@@ -230,6 +232,7 @@ def get_relation_size(database: dict, datatype: str, query: str) -> float:
         prep_database.clear()
         prep_database.drop_table('iris')
         prep_database.drop_table('iris3')
+        prep_database.drop_table('weights')
         prep_database.execute_sql()
         return Relation.measure_relation_size(Settings.DUCK_DB_DATABASE_FILE)
 
