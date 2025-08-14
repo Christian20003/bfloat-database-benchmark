@@ -43,6 +43,9 @@ def main():
         for database in databases:
             if database['ignore']:
                 continue
+            # LingoDB has restricted recursive CTE
+            if database['name'] == 'lingodb' and iterations != 10:
+                continue
             name = database['name']
             time_exe = database['time-executable']
             memory_exe = database['memory-executable']
@@ -55,7 +58,7 @@ def main():
                     number = statement['number']
                     print_setting(network, data, name, datatype, iterations, number)
                     query = generate_statement(name, model, iterations, learning_rate)
-                    prepare_benchmark(database, datatype, data)
+                    prepare_benchmark(database, datatype, data, network)
 
                     time = Time.python_time(time_exe)
                     if database['name'] == 'postgres':
@@ -79,8 +82,8 @@ def main():
                     weight_query = generate_statement(name, weigths, iterations, learning_rate)
                     relation_size = get_relation_size(database, datatype, weight_query)
 
-                    Create_CSV.append_row(database['csv_file'], [datatype, network, data, learning_rate, iterations, time, memory, relation_size, accuracy])
-                    if database['name'] == 'postgres' or database['name'] == 'umbra':
+                    Create_CSV.append_row(database['csv_file'], [datatype, network, data, learning_rate, iterations, time, memory[0], relation_size, accuracy])
+                    if database['name'] == 'postgres' or database['name'] == 'umbra' or name == 'lingodb':
                         Helper.remove_dir(database['files'])
                     else:
                         Helper.remove_files(database['files'])
@@ -97,7 +100,7 @@ def print_setting(network_size: int, data_size: int, db_name: str, datatype: str
     :param iterations: The number of update iterations.
     :param statement: The statement number that will be executed.
     '''
-    Format.print_title(f'START BENCHMARK - IRIS-ML-Model WITH THE FOLLOWING SETTINGS')
+    Format.print_title(f'START BENCHMARK - IRIS-ML-MODEL WITH THE FOLLOWING SETTINGS')
     Format.print_information(f'Network Size: {network_size}', tabs=1)
     Format.print_information(f'Sample Size: {data_size}', tabs=1)
     Format.print_information(f'Database: {db_name}', tabs=1)
@@ -200,6 +203,7 @@ def get_accuracy(database: dict, query: str) -> float:
 
     # Parse the result
     result = Parse_Table.output_to_numpy(database['name'], output, 2, [1])
+    result = [value[0] for value in result.tolist()]
     return result
 
 def get_relation_size(database: dict, datatype: str, query: str) -> float:

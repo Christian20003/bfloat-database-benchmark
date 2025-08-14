@@ -26,7 +26,7 @@ WITH RECURSIVE gd (id, w_xh, w_ho) AS (
 accuracy AS (
 SELECT id, correct, count(*) AS count FROM (
    SELECT id, highestposition(sig(sig(img**w_xh)**w_ho))=highestposition(one_hot) AS correct FROM iris3, gd
-) 
+) result 
 GROUP BY id, correct)
 SELECT id, count*1.0/(SELECT SUM(count) FROM accuracy t2 WHERE t1.id=t2.id ) 
 FROM accuracy t1 
