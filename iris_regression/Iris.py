@@ -51,7 +51,7 @@ def main():
                 # Iterate over each statement
                 for statement in scenario['statements']:
                     model = statement['statement']
-                    weigths = statement['weigths']
+                    weigths = statement['weights']
                     number = statement['number']
                     print_setting(network, data, name, datatype, iterations, number)
                     query = generate_statement(name, model, network, iterations, learning_rate)
@@ -140,9 +140,9 @@ def prepare_benchmark(database: dict, datatype: str, data_size: int) -> None:
         prep_database.insert_from_csv('iris', extend_file_path + './iris.csv')
     # DuckDB concat function only works if both parameters are arrays
     if database['name'] == 'duckdb':
-        prep_database.insert_from_select('iris3', f'SELECT ARRAY[[sepal_length/10,sepal_width/10,petal_length/10,petal_width/10]] AS img, ARRAY[(array_fill(0::{datatype}, ARRAY[species]) || 1::{datatype} ) || array_fill(0::{datatype}, ARRAY[2-species])] AS one_hot FROM iris')
+        prep_database.insert_from_select('iris3', f'SELECT ARRAY[[sepal_length/10,sepal_width/10,petal_length/10,petal_width/10]] AS img, ARRAY[(array_fill(0::{datatype}, ARRAY[species]) || [1::{datatype}] ) || array_fill(0::{datatype}, ARRAY[2-species])] AS one_hot FROM iris')
     else:
-        prep_database.insert_from_select('iris3', f'SELECT ARRAY[[sepal_length/10,sepal_width/10,petal_length/10,petal_width/10]] AS img, ARRAY[(array_fill(0::{datatype}, ARRAY[species]) || [1::{datatype} ) || array_fill(0::{datatype}, ARRAY[2-species])] AS one_hot FROM iris')
+        prep_database.insert_from_select('iris3', f'SELECT ARRAY[[sepal_length/10,sepal_width/10,petal_length/10,petal_width/10]] AS img, ARRAY[(array_fill(0::{datatype}, ARRAY[species]) || 1::{datatype} ) || array_fill(0::{datatype}, ARRAY[2-species])] AS one_hot FROM iris')
     prep_database.execute_sql()
 
 def generate_statement(db_name: str, statement: str, network_size: int, iterations: int, learning_rate: float) -> str:
@@ -213,14 +213,14 @@ def get_relation_size(database: dict, datatype: str, query: str) -> float:
     '''
     if database['name'] != 'lingodb' and database['name'] != 'duckdb':
         return -1
-    statement = statement[:-1]
+    query = query[:-1]
     array_type = f'{datatype}[]'
     if database['name'] == 'duckdb':
         array_type += '[]'
     # Create table for result and fill it with result content
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
     prep_database.create_table('relation', ['id', 'w_xh', 'w_ho'], ['int', array_type, array_type])
-    prep_database.insert_from_select('relation', statement)
+    prep_database.insert_from_select('relation', query)
     prep_database.execute_sql()
     # LingoDB case
     if database['name'] == 'lingodb':

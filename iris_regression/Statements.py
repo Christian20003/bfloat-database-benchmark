@@ -36,7 +36,7 @@ FROM (
 ) derivative_sig2
 GROUP BY id, w_ho, w_xh), 
 accuracy AS (
-SELECT id, correct, count(*) FROM (
+SELECT id, correct, count(*) AS count FROM (
    SELECT id, highestposition(sig(sig(img**w_xh)**w_ho))=highestposition(one_hot) AS correct FROM iris3, gd
 ) 
 GROUP BY id, correct)
