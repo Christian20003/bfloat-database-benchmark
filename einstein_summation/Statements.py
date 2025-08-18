@@ -23,6 +23,6 @@ WITH result(rowIndex, val) AS (
     FROM vectorv, matrixb
     WHERE vectorv.rowIndex = matrixb.rowIndex
     GROUP BY matrixb.columnIndex
-) SELECT matrixa.rowIndex AS rowIndex, {}(result.val * matrixA.val) AS val
+) SELECT matrixa.rowIndex AS rowIndex, {}(result.val * matrixa.val) AS val
   FROM result, matrixa WHERE result.rowIndex = matrixa.columnIndex 
   GROUP BY matrixa.rowIndex;'''

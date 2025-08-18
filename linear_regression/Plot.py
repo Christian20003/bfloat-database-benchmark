@@ -24,7 +24,7 @@ if __name__ == "__main__":
     }
 
     manipulate_memory = {
-        'Execution': {
+        'Memory': {
             'function': lambda x: x / (1024*1024*1024),
             'args': ['Memory'],
             'types': ['float']
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     }
 
     manipulate_relation = {
-        'Execution': {
+        'Relation-Size': {
             'function': lambda x: x / (1024),
             'args': ['Relation-Size'],
             'types': ['float']
@@ -41,17 +41,21 @@ if __name__ == "__main__":
 
     duckdb_ignore = {
         'Aggregation': ['kahan'],
-        'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10']
-        #'Points': ['10', '100', '1000', '10000', '100000', '1000000', '100000000', '1000000000']
+        'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10'],
+        #'Points': ['10', '1000', '100000', '1000000000']
+        #'Points': ['1000000000']
     }
-    duckdb_2_ignore = {
+    duckdb_ignore_2 = {
         'Aggregation': ['standard'],
-        'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10']
+        #'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10'],
+        'Points': ['10', '1000', '100000', '1000000000'],
+        #'Type': ['double', 'float']
     }
 
     ignore = {
-        'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10']
-        #'Points': ['10', '100', '1000', '10000', '100000', '1000000', '100000000', '1000000000']
+        'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10'],
+        #'Points': ['10', '1000', '100000', '1000000000']
+        #'Points': ['1000000000']
     }
 
     umbra_rename = {
@@ -78,11 +82,26 @@ if __name__ == "__main__":
             'x_keys': x_keys,
             'y_keys': {
                 'DuckDB': ['Execution'],
+                #'Standard': ['Execution']
             },
             'renaming': {},
             'manipulate': manipulate_time,
             'ignore': duckdb_ignore
         },
+        #'file_2': {
+        #    'file': duckdb_file,
+        #    'line_keys': line_keys,
+        #    'color': 'forestgreen',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'Kahan': ['Execution']
+        #    },
+        #    'renaming': {},
+        #    'manipulate': manipulate_time,
+        #    'ignore': duckdb_ignore_2
+        #},
         'file_2': {
             'file': postgres_file,
             'line_keys': line_keys,
@@ -137,11 +156,26 @@ if __name__ == "__main__":
             'x_keys': x_keys,
             'y_keys': {
                 'DuckDB': ['Memory'],
+                #'Standard': ['Memory']
             },
             'renaming': {},
             'manipulate': manipulate_memory,
             'ignore': duckdb_ignore
         },
+        #'file_2': {
+        #    'file': duckdb_file,
+        #    'line_keys': line_keys,
+        #    'color': 'forestgreen',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'Kahan': ['Memory']
+        #    },
+        #    'renaming': {},
+        #    'manipulate': manipulate_memory,
+        #    'ignore': duckdb_ignore_2
+        #},
         'file_2': {
             'file': postgres_file,
             'line_keys': line_keys,
@@ -236,15 +270,15 @@ if __name__ == "__main__":
             'file': duckdb_file,
             'line_keys': line_keys,
             'color': 'cornflowerblue',
-            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-            'line_markers': ['o', '^', 's', '*','v', 'D'],
+            'line_shapes': ['dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+            'line_markers': ['s', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
                 'Kahan': ['MSE'],
             },
             'renaming': {},
             'manipulate': {},
-            'ignore': duckdb_2_ignore
+            'ignore': duckdb_ignore_2
         }
     }
 
