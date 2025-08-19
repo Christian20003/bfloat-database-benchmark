@@ -42,7 +42,7 @@ CONFIG = {
     'setups': [
         {
             'id': 'first',
-            'dimension': 10,
+            'dimension': 30,
             'ignore': False,
             'statements': [
                 {
@@ -65,7 +65,7 @@ CONFIG = {
         },
         {
             'id': 'second',
-            'dimension': 250,
+            'dimension': 100,
             'ignore': False,
             'statements': [
                 {
@@ -88,7 +88,7 @@ CONFIG = {
         },
         {
             'id': 'third',
-            'dimension': 500,
+            'dimension': 300,
             'ignore': False,
             'statements': [
                 {
@@ -111,7 +111,7 @@ CONFIG = {
         },
         {
             'id': 'fourth',
-            'dimension': 750,
+            'dimension': 1000,
             'ignore': False,
             'statements': [
                 {
@@ -134,7 +134,7 @@ CONFIG = {
         },
         {
             'id': 'fifth',
-            'dimension': 1000,
+            'dimension': 3100,
             'ignore': False,
             'statements': [
                 {
