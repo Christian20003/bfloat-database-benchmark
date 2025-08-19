@@ -44,7 +44,7 @@ def main():
             if database['ignore']:
                 continue
             # LingoDB has restricted recursive CTE
-            if database['name'] == 'lingodb' and iterations != 10:
+            if database['name'] == 'lingodb' and iterations != 20:
                 continue
             name = database['name']
             time_exe = database['time-executable']
@@ -170,12 +170,13 @@ def generate_statement(db_name: str, statement: str, iterations: int, learning_r
         file.write(query)
     return query
 
-def get_accuracy(database: dict, query: str) -> float:
+def get_accuracy(database: dict, query: str, iterations: int) -> float:
     '''
     This function receives the accuracy values from each iteration.
 
     :param database: The database object from CONFIG.
     :param query: The SQL statement that trains a ML model.
+    :param iterations: The number of iterations that should be executed.
 
     :returns: A list of accuracy values if the database is DuckDB, otherwise -1.
     '''
@@ -184,7 +185,7 @@ def get_accuracy(database: dict, query: str) -> float:
     Format.print_information(f'Get model accuracy', mark=True)
     # Add order by so that the result is sorted
     query = query[:-1]
-    query += ' ORDER BY id;'
+    query += f' WHERE id = {iterations};'
     # Start database and get the result
     process = subprocess.Popen(
         database['client-preparation'].split() + ['-json'], 
@@ -203,8 +204,7 @@ def get_accuracy(database: dict, query: str) -> float:
 
     # Parse the result
     result = Parse_Table.output_to_numpy(database['name'], output, 2, [1])
-    result = [value[0] for value in result.tolist()]
-    return result
+    return result[0][0]
 
 def get_relation_size(database: dict, datatype: str, query: str) -> float:
     '''

@@ -38,7 +38,7 @@ CONFIG = {
     'setups': [
         # Setups with increased data size
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 300,
             'data_size': 150,
             'statements': [{
@@ -49,7 +49,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 300,
             'data_size': 300,
             'statements': [{
@@ -60,7 +60,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 300,
             'data_size': 600,
             'statements': [{
@@ -71,7 +71,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 300,
             'data_size': 1200,
             'statements': [{
@@ -83,7 +83,7 @@ CONFIG = {
         },
         # Setups with increased network size
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 100,
             'data_size': 1200,
             'statements': [{
@@ -94,7 +94,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 200,
             'data_size': 1200,
             'statements': [{
@@ -105,7 +105,7 @@ CONFIG = {
             'ignore': False
         },
         {
-            'iterations': 10,
+            'iterations': 20,
             'network_size': 400,
             'data_size': 1200,
             'statements': [{
