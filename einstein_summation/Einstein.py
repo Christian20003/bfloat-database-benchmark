@@ -236,7 +236,8 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
     statementRef = statement.replace('vectorv', 'refV')
 
     # Define MSE in SQL
-    final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
+    #final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
+    final_stat = f'SELECT AVG(result) FROM (SELECT abs(truth - pred / truth) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
 
     # Start database and get the result
     process = subprocess.Popen(
