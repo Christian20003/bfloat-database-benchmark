@@ -6,10 +6,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 import Plotting
 
 if __name__ == "__main__":
-    duckdb_file = './data/duckdb/einstein/final_attempt/DuckDB_Results.csv'
-    umbra_file = './data/duckdb/einstein/final_attempt/Umbra_Results.csv'
-    postgres_file = './data/duckdb/einstein/final_attempt/Postgresql_Results.csv'
-    lingodb_file = './data/duckdb/einstein/final_attempt/LingoDB_Results.csv'
+    duckdb_file = './data/duckdb/einstein/test_psutil/DuckDB_Results.csv'
+    umbra_file = './data/duckdb/einstein/test_psutil/Umbra_Results.csv'
+    postgres_file = './data/duckdb/einstein/test_psutil/Postgresql_Results.csv'
+    lingodb_file = './data/duckdb/einstein/test_psutil/LingoDB_Results.csv'
     scenario_name = 'Einstein'
     line_keys = ['Type']
     x_keys = ['MatrixA', 'MatrixB', 'VectorV']
@@ -214,20 +214,20 @@ if __name__ == "__main__":
             'manipulate': manipulate_memory,
             'ignore': ignore
         },
-        'file_4': {
-            'file': umbra_file,
-            'line_keys': line_keys,
-            'color': 'cornflowerblue',
-            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-            'line_markers': ['o', '^', 's', '*','v', 'D'],
-            'x_keys': x_keys,
-            'y_keys': {
-                'Umbra': ['Memory'],
-            },
-            'renaming': umbra_rename,
-            'manipulate': manipulate_memory,
-            'ignore': ignore
-        }
+        #'file_4': {
+        #    'file': umbra_file,
+        #    'line_keys': line_keys,
+        #    'color': 'cornflowerblue',
+        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'x_keys': x_keys,
+        #    'y_keys': {
+        #        'Umbra': ['Memory'],
+        #    },
+        #    'renaming': umbra_rename,
+        #    'manipulate': manipulate_memory,
+        #    'ignore': ignore
+        #}
     }
 
     relation = {
@@ -270,7 +270,7 @@ if __name__ == "__main__":
             'line_markers': ['o', '^', 's', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
-                'Standard': ['MSE'],
+                'Standard': ['MAPE'],
             },
             'renaming': {},
             'manipulate': {},
@@ -284,7 +284,7 @@ if __name__ == "__main__":
             'line_markers': ['s', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
-                'Kahan': ['MSE']
+                'Kahan': ['MAPE']
             },
             'renaming': {},
             'manipulate': {},
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 
     config_time = {
         'x_label': 'Number of tuples',
-        'y_label': 'Execution in tuples / seconds',
+        'y_label': 'Throughput in tuples / seconds',
         'log_y': False,
         'log_x': False,
         'file_name': f'Execution_{scenario_name}.pdf'
@@ -303,21 +303,21 @@ if __name__ == "__main__":
         'x_label': 'Number of tuples',
         'y_label': 'Used memory in MB',
         'log_y': False,
-        'log_x': False,
+        'log_x': True,
         'file_name': f'Memory_{scenario_name}.pdf'
     }
     config_relation = {
         'x_label': 'Number of tuples',
         'y_label': 'Relation Size in KB',
         'log_y': False,
-        'log_x': False,
+        'log_x': True,
         'file_name': f'Relation_{scenario_name}.pdf'
     }
     config_mse = {
         'x_label': 'Number of tuples',
         'y_label': 'Mean Squared Error',
         'log_y': False,
-        'log_x': False,
+        'log_x': True,
         'file_name': f'MSE_{scenario_name}.pdf'
     }
     Plotting.plot_results(time, config_time)

@@ -38,17 +38,18 @@ def main():
         if database['create_csv'] and not database['ignore']:
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
 
-    for scenario in scenarios:
+    """ for idx, scenario in enumerate(scenarios):
+        memory_data[idx] = {}
         for database in databases:
-            memory_data[database['name']] = {}
+            memory_data[idx][database['name']] = {}
             for type in database['types']:
-                memory_data[database['name']][type] = {}
+                memory_data[idx][database['name']][type] = {}
                 for statement in scenario['statements']:
-                    memory_data[database['name']][type][statement['number']] = {}
+                    memory_data[idx][database['name']][type][statement['number']] = {}
                     for agg in database['aggregations']:
-                        memory_data[database['name']][type][statement['number']][agg] = 0
+                        memory_data[idx][database['name']][type][statement['number']][agg] = 0 """
 
-    for scenario in scenarios:
+    for idx, scenario in enumerate(scenarios):
         if scenario['ignore']:
             continue
         dimension = scenario['dimension']
@@ -60,7 +61,7 @@ def main():
             name = database['name']
             time_exe = database['time-executable']
             memory_exe = database['memory-executable']
-            for type in database['types'].reverse():
+            for type in list(reversed(database['types'])):
                 for statement in scenario['statements']:
                     number = statement['number']
                     content = statement['statement']
@@ -81,25 +82,29 @@ def main():
                             else:
                                 Helper.remove_files(database['files'])
                             continue
-                        prev_statement = 1 if number == 1 else number-1
-                        prev_mem = memory_data[name][type][prev_statement][agg]
+                        """ prev_setup = 0 if idx == 0 else idx-1
+                        prev_mem = memory_data[prev_setup][name][type][number][agg]
                         prev_type_mem = 0
                         if type == 'double':
-                            prev_type_mem = memory_data[name]['float'][number][agg]
-                        elif type == 'float8':
-                            prev_type_mem = memory_data[name]['float4'][number][agg]
+                            prev_type_mem = memory_data[idx][name]['float'][number][agg]
+                        elif type == 'float8' and name == 'postgres':
+                            prev_type_mem = memory_data[idx][name]['float4'][number][agg]
                         elif type == 'float':
-                            prev_type_mem = memory_data[name]['bfloat'][number][agg]
+                            prev_type_mem = memory_data[idx][name]['bfloat'][number][agg]
                         elif type == 'float4' and name == 'lingodb':
-                            prev_type_mem = memory_data[name]['bfloat'][number][agg]
+                            prev_type_mem = memory_data[idx][name]['bfloat'][number][agg]
                         memory = []
-                        memory_state = 0
-                        for _ in range(CONFIG['memory_trials']):
+                        memory_state = 0 """
+                        memory = []
+                        memory_state = []
+                        for idx in range(CONFIG['memory_trials']):
                             memory = Memory.python_memory(memory_exe, time, data)
-                            memory_state = memory[0] if memory[0] > memory_state else memory_state
-                            if memory[0] > 0 and memory[0] > prev_mem and memory[0] >= prev_type_mem:
-                                break
+                            memory_state.append(memory[0] if memory[0] > 0 else 0) 
+                            #= memory[0] if memory[0] > memory_state else memory_state
+                            #if memory[0] > 0 and memory[0] > prev_mem and memory[0] >= prev_type_mem:
+                            #    break
                             Format.print_information('Restart memory benchmark. Did not measure a value')
+                        # memory_data[idx][name][type][number][agg] = memory_state
 
                         error = get_error(database, type, data, matrix_file, vector_file)
                         relation_size = get_relation_size(database, type, data)
@@ -113,7 +118,7 @@ def main():
                                                   dimension*dimension, 
                                                   dimension,
                                                   time, 
-                                                  memory_state, 
+                                                  sum(memory_state) / len(memory_state), 
                                                   relation_size,
                                                   error
                                                ])
@@ -261,7 +266,7 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
 
     # Define MSE in SQL
     #final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
-    final_stat = f'SELECT AVG(result) FROM (SELECT abs(truth - pred / truth) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
+    final_stat = f'SELECT AVG(result) FROM (SELECT abs((truth - pred) / truth) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
 
     # Start database and get the result
     process = subprocess.Popen(
