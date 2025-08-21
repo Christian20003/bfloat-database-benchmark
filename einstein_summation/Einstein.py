@@ -30,7 +30,6 @@ SEMAPHORE = threading.Semaphore()
 def main():
     databases = CONFIG['databases']
     scenarios = CONFIG['setups']
-    memory_data = {}
 
     produce_data(scenarios)
 
@@ -38,18 +37,7 @@ def main():
         if database['create_csv'] and not database['ignore']:
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
 
-    """ for idx, scenario in enumerate(scenarios):
-        memory_data[idx] = {}
-        for database in databases:
-            memory_data[idx][database['name']] = {}
-            for type in database['types']:
-                memory_data[idx][database['name']][type] = {}
-                for statement in scenario['statements']:
-                    memory_data[idx][database['name']][type][statement['number']] = {}
-                    for agg in database['aggregations']:
-                        memory_data[idx][database['name']][type][statement['number']][agg] = 0 """
-
-    for idx, scenario in enumerate(scenarios):
+    for scenario in scenarios:
         if scenario['ignore']:
             continue
         dimension = scenario['dimension']
@@ -61,7 +49,7 @@ def main():
             name = database['name']
             time_exe = database['time-executable']
             memory_exe = database['memory-executable']
-            for type in list(reversed(database['types'])):
+            for type in database['types']:
                 for statement in scenario['statements']:
                     number = statement['number']
                     content = statement['statement']
@@ -82,29 +70,13 @@ def main():
                             else:
                                 Helper.remove_files(database['files'])
                             continue
-                        """ prev_setup = 0 if idx == 0 else idx-1
-                        prev_mem = memory_data[prev_setup][name][type][number][agg]
-                        prev_type_mem = 0
-                        if type == 'double':
-                            prev_type_mem = memory_data[idx][name]['float'][number][agg]
-                        elif type == 'float8' and name == 'postgres':
-                            prev_type_mem = memory_data[idx][name]['float4'][number][agg]
-                        elif type == 'float':
-                            prev_type_mem = memory_data[idx][name]['bfloat'][number][agg]
-                        elif type == 'float4' and name == 'lingodb':
-                            prev_type_mem = memory_data[idx][name]['bfloat'][number][agg]
-                        memory = []
-                        memory_state = 0 """
+
                         memory = []
                         memory_state = []
                         for idx in range(CONFIG['memory_trials']):
                             memory = Memory.python_memory(memory_exe, time, data)
                             memory_state.append(memory[0] if memory[0] > 0 else 0) 
-                            #= memory[0] if memory[0] > memory_state else memory_state
-                            #if memory[0] > 0 and memory[0] > prev_mem and memory[0] >= prev_type_mem:
-                            #    break
-                            Format.print_information('Restart memory benchmark. Did not measure a value')
-                        # memory_data[idx][name][type][number][agg] = memory_state
+                            Format.print_information(f'{idx+1}. Measurement')
 
                         error = get_error(database, type, data, matrix_file, vector_file)
                         relation_size = get_relation_size(database, type, data)
