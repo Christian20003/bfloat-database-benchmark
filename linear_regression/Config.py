@@ -18,7 +18,7 @@ csv_header = [
     'Execution', 
     'Memory', 
     'Relation-Size',
-    'MSE'
+    'MAPE'
 ]
 
 duckdb = DuckDB.DUCKDB

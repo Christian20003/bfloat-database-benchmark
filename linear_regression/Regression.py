@@ -288,7 +288,7 @@ def get_relation_size(database: dict, statement: str, parameters: int, datatype:
 
 def get_error(database: dict, statement: str, variables: int, iterations: int) -> float:
     '''
-    This function calculates the mean squared error (MSE) of the gradient descent
+    This function calculates the Mean-Absolute Precentage Error of the gradient descent
     algorithm in DuckDB.
 
     :param database: The database object from CONFIG file.
@@ -296,7 +296,7 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
     :param variables: The number of variables in the points.
     :param iterations: The number of update iterations.
 
-    :returns: The mean squared error (MSE) of the gradient descent algorithm in DuckDB, otherwise -1.
+    :returns: The MAPE of the gradient descent algorithm in DuckDB, otherwise -1.
     '''
     if database['name'] != 'duckdb':
         return -1
@@ -310,8 +310,9 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
     preds = [f'x{i+1} * {letters[i]}' for i in range(variables)]
     pred_stmt = f'SELECT {'+'.join(pred for pred in preds)} +' + letters[variables]
 
-    # Create the final statement to calculate the MSE
-    final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT pow(y - pred, 2) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
+    # Create the final statement to calculate the MAPE
+    #final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT pow(y - pred, 2) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
+    final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT abs((y - pred) / y) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
 
     # Start database and get the result
     process = subprocess.Popen(

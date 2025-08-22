@@ -122,8 +122,8 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
     
     if database == 'duckdb':
         pass
-    elif database == 'umbra':
-        pass
+    elif database == 'umbra' and setup_id == 3100:
+        return False
     elif database == 'postgres' and setup_id == 1000 and number == 2:
         return False
     elif database == 'lingodb' and setup_id >= 750 and number == 2:
@@ -211,7 +211,7 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
 
 def get_error(database: dict, type: str, statement: str, matrix_file: str, vector_file: str) -> float:
     '''
-    This function calculates the Mean-Squared-Error of the matrix multiplication with type DOUBLE as reference.
+    This function calculates the Mean-Absolute Precentage Error of the matrix multiplication with type DOUBLE as reference.
     This function only works with DuckDB.
 
     :param database: The database object from CONFIG.
@@ -220,7 +220,7 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
     :param matrix_file: The CSV file of the matrix data.
     :param vector_file: The CSV file of the vector data.
 
-    :returns: The MSE of the matrix multiplication if the database is DuckDB, otherwise -1.
+    :returns: The MAPE of the matrix multiplication if the database is DuckDB, otherwise -1.
     '''
     if database['name'] != 'duckdb' or 'sum' not in statement.lower():
         return -1
@@ -245,6 +245,7 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
 
     # Define MSE in SQL
     #final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
+    # Define MAPE in SQL
     final_stat = f'SELECT AVG(result) FROM (SELECT abs((truth - pred) / truth) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
 
     # Start database and get the result
