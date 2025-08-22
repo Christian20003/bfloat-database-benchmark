@@ -33,6 +33,7 @@ lingodb['csv_header'] = csv_header
 
 CONFIG = {
     'memory_trials': 10,
+    'memory_average': True,
     'databases': [
         duckdb,
         umbra,
@@ -140,10 +141,6 @@ CONFIG = {
                 {
                     'number': 1,
                     'statement': STATEMENT_1
-                },
-                {
-                    'number': 2,
-                    'statement': STATEMENT_2
                 },
                 {
                     'number': 3,

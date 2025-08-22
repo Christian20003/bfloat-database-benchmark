@@ -87,20 +87,29 @@ def main():
                             Helper.remove_files(database['files'])
                         continue
 
+                    # Execute memory benchmark
                     memory = []
-                    # Execute memory benchmark (if psutil does not catch memory correctly, try again)
-                    for _ in range(CONFIG['memory_trials']):
+                    memory_state = []
+                    for idx in range(CONFIG['memory_trials']):
                         memory = Memory.python_memory(memory_exe, time, query)
-                        if memory[0] > 0:
-                            break
-                        Format.print_information('Restart memory benchmark. Did not measure a value')
+                        # Make measurement multiple times if selected
+                        if CONFIG['memory_average']:
+                            memory_state.append(memory[0] if memory[0] > 0 else 0) 
+                            Format.print_information(f'{idx+1}. Measurement')
+                        else:
+                            # If psutil does not catch memory correctly, try again
+                            if memory[0] > 0:
+                                memory_state.append(memory[0]) 
+                                break
+                            else:
+                                Format.print_information('Did not measure a correct value. Try again')
 
                     # Get MSE and relation size
                     error = get_error(database, query, parameters-1, iterations)
                     relation_size = get_relation_size(database, query, parameters, datatype)
 
                     # Write results to CSV file and clean setup
-                    Create_CSV.append_row(database['csv_file'], [datatype, aggregation, parameters, points, iterations, time, memory[0], relation_size, error])
+                    Create_CSV.append_row(database['csv_file'], [datatype, aggregation, parameters, points, iterations, time, sum(memory_state) / len(memory_state), relation_size, error])
                     if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                         Helper.remove_dir(database['files'])
                     else:

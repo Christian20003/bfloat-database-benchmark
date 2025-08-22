@@ -60,7 +60,7 @@ if __name__ == "__main__":
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '500', '1000', '2500', '5000', '7500', '10000'],
         #'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
         #'VectorV': ['10000'],
-        'Statement': ['2','3','1'],
+        'Statement': ['2','3','4'],
         #'Type': ['bfloat']
     }
 
@@ -214,20 +214,20 @@ if __name__ == "__main__":
             'manipulate': manipulate_memory,
             'ignore': ignore
         },
-        #'file_4': {
-        #    'file': umbra_file,
-        #    'line_keys': line_keys,
-        #    'color': 'cornflowerblue',
-        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
-        #    'x_keys': x_keys,
-        #    'y_keys': {
-        #        'Umbra': ['Memory'],
-        #    },
-        #    'renaming': umbra_rename,
-        #    'manipulate': manipulate_memory,
-        #    'ignore': ignore
-        #}
+        'file_4': {
+            'file': umbra_file,
+            'line_keys': line_keys,
+            'color': 'cornflowerblue',
+            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+            'line_markers': ['o', '^', 's', '*','v', 'D'],
+            'x_keys': x_keys,
+            'y_keys': {
+                'Umbra': ['Memory'],
+            },
+            'renaming': umbra_rename,
+            'manipulate': manipulate_memory,
+            'ignore': ignore
+        }
     }
 
     relation = {
@@ -296,7 +296,7 @@ if __name__ == "__main__":
         'x_label': 'Number of tuples',
         'y_label': 'Throughput in tuples / seconds',
         'log_y': False,
-        'log_x': False,
+        'log_x': True,
         'file_name': f'Execution_{scenario_name}.pdf'
     }
     config_memory = {
@@ -315,7 +315,7 @@ if __name__ == "__main__":
     }
     config_mse = {
         'x_label': 'Number of tuples',
-        'y_label': 'Mean Squared Error',
+        'y_label': 'Mean Absolute Percentage Error',
         'log_y': False,
         'log_x': True,
         'file_name': f'MSE_{scenario_name}.pdf'

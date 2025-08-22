@@ -29,6 +29,7 @@ lingodb['csv_header'] = csv_header
 
 CONFIG = {
     'memory_trials': 10,
+    'memory_average': True,
     'learning_rate': 0.01,
     'databases': [
         duckdb,

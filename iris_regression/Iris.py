@@ -70,19 +70,29 @@ def main():
                         else:
                             Helper.remove_files(database['files'])
                         continue
+
                     memory = []
-                    # Try to get a positive memory value (psutil is unreliable)
-                    for _ in range(CONFIG['memory_trials']):
+                    memory_state = []
+                    for idx in range(CONFIG['memory_trials']):
                         memory = Memory.python_memory(memory_exe, time, query)
-                        if memory[0] > 0:
-                            break
-                        Format.print_information('Restart memory benchmark. Did not measure a value')
+                        # Make measurement multiple times if selected
+                        if CONFIG['memory_average']:
+                            memory_state.append(memory[0] if memory[0] > 0 else 0) 
+                            Format.print_information(f'{idx+1}. Measurement')
+                        else:
+                            # If psutil does not catch memory correctly, try again
+                            if memory[0] > 0:
+                                memory_state.append(memory[0]) 
+                                break
+                            else:
+                                Format.print_information('Did not measure a correct value. Try again')
+
                     accuracy = get_accuracy(database, query)
                     # Create statement that returns only the weights
                     weight_query = generate_statement(name, weigths, iterations, learning_rate)
                     relation_size = get_relation_size(database, datatype, weight_query)
 
-                    Create_CSV.append_row(database['csv_file'], [datatype, network, data, learning_rate, iterations, time, memory[0], relation_size, accuracy])
+                    Create_CSV.append_row(database['csv_file'], [datatype, network, data, learning_rate, iterations, time, sum(memory_state) / len(memory_state), relation_size, accuracy])
                     if database['name'] == 'postgres' or database['name'] == 'umbra' or name == 'lingodb':
                         Helper.remove_dir(database['files'])
                     else:

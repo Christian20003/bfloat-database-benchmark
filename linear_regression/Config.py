@@ -32,6 +32,7 @@ lingodb['csv_header'] = csv_header
 
 CONFIG = {
     'memory_trials': 10,
+    'memory_average': True,
     'param_value': 0.75,
     'param_start': 10,
     'databases': [

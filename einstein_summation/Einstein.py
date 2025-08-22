@@ -49,17 +49,17 @@ def main():
             name = database['name']
             time_exe = database['time-executable']
             memory_exe = database['memory-executable']
-            for type in database['types']:
+            for datatype in database['types']:
                 for statement in scenario['statements']:
                     number = statement['number']
                     content = statement['statement']
-                    for agg in database['aggregations']:
+                    for aggregation in database['aggregations']:
                         if not check_execution(name, dimension, number):
                             continue
 
-                        print_setting(dimension, name, type, number, agg)
-                        data = generate_statement(content, number, agg)
-                        prepare_benchmark(database, type, matrix_file, vector_file)
+                        print_setting(dimension, name, datatype, number, aggregation)
+                        query = generate_statement(content, number, aggregation)
+                        prepare_benchmark(database, datatype, matrix_file, vector_file)
 
                         time = Time.python_time(time_exe)
                         if database['name'] == 'postgres':
@@ -74,17 +74,24 @@ def main():
                         memory = []
                         memory_state = []
                         for idx in range(CONFIG['memory_trials']):
-                            memory = Memory.python_memory(memory_exe, time, data)
-                            memory_state.append(memory[0] if memory[0] > 0 else 0) 
-                            Format.print_information(f'{idx+1}. Measurement')
+                            memory = Memory.python_memory(memory_exe, time, query)
+                            if CONFIG['memory_average']:
+                                memory_state.append(memory[0] if memory[0] > 0 else 0) 
+                                Format.print_information(f'{idx+1}. Measurement')
+                            else:
+                                if memory[0] > 0:
+                                    memory_state.append(memory[0]) 
+                                    break
+                                else:
+                                    Format.print_information('Did not measure a correct value. Try again')
 
-                        error = get_error(database, type, data, matrix_file, vector_file)
-                        relation_size = get_relation_size(database, type, data)
+                        error = get_error(database, datatype, query, matrix_file, vector_file)
+                        relation_size = get_relation_size(database, datatype, query)
 
                         Create_CSV.append_row(database['csv_file'], 
                                               [
-                                                  type,
-                                                  agg,
+                                                  datatype,
+                                                  aggregation,
                                                   number,
                                                   dimension*dimension, 
                                                   dimension*dimension, 
