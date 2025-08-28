@@ -280,11 +280,16 @@ def get_relation_size(database: dict, statement: str, parameters: int, datatype:
         return Relation.measure_relation_size(f'{Settings.LINGODB_DIR}/relation.arrow')
     # DuckDB case (produces only a single file, therefore delete everything else)
     elif database['name'] == 'duckdb':
+        # DuckDB does not free space after deleting tables. Copy remaining table into new file
+        file_name = 'output.db'
         prep_database.clear()
         prep_database.drop_table('points')
         prep_database.drop_table('gd_start')
+        prep_database.copy_db(Settings.DUCK_DB_DATABASE_FILE.replace('.db', ''), file_name)
         prep_database.execute_sql()
-        return Relation.measure_relation_size(Settings.DUCK_DB_DATABASE_FILE)
+        size = Relation.measure_relation_size(file_name)
+        Helper.remove_files([file_name])
+        return size
 
 def get_error(database: dict, statement: str, variables: int, iterations: int) -> float:
     '''
@@ -312,7 +317,7 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
 
     # Create the final statement to calculate the MAPE
     #final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT pow(y - pred, 2) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
-    final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT abs((y - pred) / y) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
+    final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT abs((y - pred) / y) AS result FROM ({pred_stmt}::double AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
 
     # Start database and get the result
     process = subprocess.Popen(

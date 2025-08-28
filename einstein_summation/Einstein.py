@@ -122,7 +122,7 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
     
     if database == 'duckdb':
         pass
-    elif database == 'umbra' and setup_id == 3100:
+    elif database == 'umbra' and setup_id == 3100 and number == 1:
         return False
     elif database == 'postgres' and setup_id == 1000 and number == 2:
         return False
@@ -300,12 +300,17 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
         return Relation.measure_relation_size(f'{Settings.LINGODB_DIR}/relation.arrow')
     # DuckDB case (produces only a single file, therefore delete everything else)
     elif database['name'] == 'duckdb':
+        # DuckDB does not free space after deleting tables. Copy remaining table into new file
+        file_name = 'output.db'
         prep_database.clear()
         prep_database.drop_table('matrixa')
         prep_database.drop_table('matrixb')
         prep_database.drop_table('vectorv')
+        prep_database.copy_db(Settings.DUCK_DB_DATABASE_FILE.replace('.db', ''), file_name)
         prep_database.execute_sql()
-        return Relation.measure_relation_size(Settings.DUCK_DB_DATABASE_FILE)
+        size = Relation.measure_relation_size(file_name)
+        Helper.remove_files([file_name])
+        return size
 
 def generate_statement(statement: str, number: int, aggr_func: str) -> str:
     '''

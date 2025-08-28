@@ -49,7 +49,24 @@ class Database:
         statement += ';\n'
         self.statements.append(statement)
 
+    def copy_db(self, src: str, dst: str) -> None:
+        '''
+        This method copies a persistent database from DuckDB.
+
+        :param src: The name of the source database file (without '.db')
+        :param dest: The name of the destination database file (with '.db')
+        '''
+        
+        self.statements.append(f'ATTACH \'{dst}\' AS db2;\n')
+        self.statements.append(f'COPY FROM DATABASE {src} TO db2;\n')
+
     def drop_table(self, table_name: str) -> None:
+        '''
+        This method deletes a table with a DROP statment.
+
+        :param table_name: The name of the table.
+        '''
+
         statement = f'DROP TABLE {table_name};\n'
         self.statements.append(statement)
 

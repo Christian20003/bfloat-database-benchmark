@@ -243,12 +243,17 @@ def get_relation_size(database: dict, datatype: str, query: str) -> float:
         return Relation.measure_relation_size(f'{Settings.LINGODB_DIR}/relation.arrow')
     # DuckDB case (produces only a single file, therefore delete everything else)
     elif database['name'] == 'duckdb':
+        # DuckDB does not free space after deleting tables. Copy remaining table into new file
+        file_name = 'output.db'
         prep_database.clear()
         prep_database.drop_table('iris')
         prep_database.drop_table('iris3')
         prep_database.drop_table('weights')
+        prep_database.copy_db(Settings.DUCK_DB_DATABASE_FILE.replace('.db', ''), file_name)
         prep_database.execute_sql()
-        return Relation.measure_relation_size(Settings.DUCK_DB_DATABASE_FILE)
+        size = Relation.measure_relation_size(file_name)
+        Helper.remove_files([file_name])
+        return size
 
 if __name__ == '__main__':
     main()
