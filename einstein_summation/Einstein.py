@@ -74,7 +74,11 @@ def main():
                         memory = []
                         memory_state = []
                         for idx in range(CONFIG['memory_trials']):
-                            memory = Memory.python_memory(memory_exe, time, query)
+                            # It seems to be that with umbra and lingodb the original approach does not work correctly
+                            if name == 'umbra' or name == 'lingodb':
+                                memory = Memory.python_memory(time_exe, time)
+                            else:
+                                memory = Memory.python_memory(memory_exe, time, query)
                             if CONFIG['memory_average']:
                                 memory_state.append(memory[0] if memory[0] > 0 else 0) 
                                 Format.print_information(f'{idx+1}. Measurement')

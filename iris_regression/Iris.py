@@ -74,7 +74,11 @@ def main():
                     memory = []
                     memory_state = []
                     for idx in range(CONFIG['memory_trials']):
-                        memory = Memory.python_memory(memory_exe, time, query)
+                        # It seems to be that with umbra and lingodb the original approach does not work correctly
+                        if name == 'umbra' or name == 'lingodb':
+                            memory = Memory.python_memory(time_exe, time)
+                        else:
+                            memory = Memory.python_memory(memory_exe, time, query)
                         # Make measurement multiple times if selected
                         if CONFIG['memory_average']:
                             memory_state.append(memory[0] if memory[0] > 0 else 0) 
@@ -87,7 +91,7 @@ def main():
                             else:
                                 Format.print_information('Did not measure a correct value. Try again')
 
-                    accuracy = get_accuracy(database, query)
+                    accuracy = get_accuracy(database, query, iterations)
                     # Create statement that returns only the weights
                     weight_query = generate_statement(name, weigths, iterations, learning_rate)
                     relation_size = get_relation_size(database, datatype, weight_query)
@@ -195,7 +199,7 @@ def get_accuracy(database: dict, query: str, iterations: int) -> float:
     Format.print_information(f'Get model accuracy', mark=True)
     # Add order by so that the result is sorted
     query = query[:-1]
-    query += f' WHERE id = {iterations};'
+    query += f' ORDER BY id = {iterations};'
     # Start database and get the result
     process = subprocess.Popen(
         database['client-preparation'].split() + ['-json'], 
@@ -214,7 +218,7 @@ def get_accuracy(database: dict, query: str, iterations: int) -> float:
 
     # Parse the result
     result = Parse_Table.output_to_numpy(database['name'], output, 2, [1])
-    return result[0][0]
+    return result[iterations][0]
 
 def get_relation_size(database: dict, datatype: str, query: str) -> float:
     '''
