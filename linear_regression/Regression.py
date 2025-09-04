@@ -317,11 +317,11 @@ def get_error(database: dict, statement: str, variables: int, iterations: int) -
     parameter_column = ['idx'] + [letters[i] for i in range(variables+1)]
     # Create the statement to calculate a prediction
     preds = [f'x{i+1} * {letters[i]}' for i in range(variables)]
-    pred_stmt = f'SELECT {'+'.join(pred for pred in preds)} +' + letters[variables]
+    pred_stmt = f'SELECT {"+".join(pred for pred in preds)} +' + letters[variables]
 
     # Create the final statement to calculate the MAPE
     #final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT pow(y - pred, 2) AS result FROM ({pred_stmt} AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
-    final_stmt = f'WITH parameter({','.join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT abs((y - pred) / y) AS result FROM ({pred_stmt}::double AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
+    final_stmt = f'WITH parameter({",".join(parameter for parameter in parameter_column)}) AS ({statement}) SELECT AVG(result) FROM (SELECT abs((y - pred) / y) AS result FROM ({pred_stmt}::double AS pred, y FROM points, parameter WHERE idx = {iterations}));\n'
 
     # Start database and get the result
     process = subprocess.Popen(
