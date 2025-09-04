@@ -1,0 +1,10 @@
+Type,Aggregation,Parameters,Points,Iterations,Execution,Memory,Relation-Size,MAPE
+float8,standard,2,10,20,0.374139,203280384.0,-1,-1
+float8,standard,2,1000,20,0.309364,213310259.2,-1,-1
+float8,standard,2,100000,20,0.2795,196617011.2,-1,-1
+float8,standard,2,10000000,20,0.659278,174746009.6,-1,-1
+float8,standard,2,1000000000,20,31.02597,367861350.4,-1,-1
+float8,standard,4,10000000,20,0.993863,250784972.8,-1,-1
+float8,standard,6,10000000,20,1.243182,174320844.8,-1,-1
+float8,standard,8,10000000,20,1.488261,179418316.8,-1,-1
+float8,standard,10,10000000,20,1.802139,181830860.8,-1,-1

@@ -4,3 +4,4 @@ __pycache__/
 testing/
 massif*
 data/
+results_test/
