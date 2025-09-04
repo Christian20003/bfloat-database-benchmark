@@ -1,35 +1,35 @@
 #!/bin/bash
-time=$(date +%s)
-
-if [ -d ./kmeans/data ] && [ -d ./kmeans/data/result ]; then
-    mv ./kmeans/data/result ./kmeans/data/result_$time
-elif [ ! -d ./kmeans/data ]; then
-    mkdir ./kmeans/data
+if [ ! -d ./.venv ]; then
+    python3 -m venv ./.venv
 fi
 
-if [ -d ./einstein_summation/data ] && [ -d ./einstein_summation/data/result ]; then
-    mv ./einstein_summation/data/result ./einstein_summation/data/result_$time
-elif [ ! -d ./einstein_summation/data ]; then
-    mkdir ./einstein_summation/data
+source .venv/bin/activate
+
+pip install -r requirements.txt
+
+if [ ! -d ./umbra ]; then
+    tar -xf umbra.tar.xz
 fi
 
-if [ -d ./linear_regression/data ] && [ -d ./linear_regression/data/result ]; then
-    mv ./linear_regression/data/result ./linear_regression/data/result_$time
-elif [ ! -d ./linear_regression/data ]; then
-    mkdir ./linear_regression/data
+if [ ! -d ./einstein_benchmark ]; then
+    mkdir ./einstein_benchmark
 fi
 
-python3 ./kmeans/KMeans.py -e ../lingo-db/build/lingodb-release -o ../database -f ./kmeans/Statement.sql
-mv *.pdf ./kmeans/data/result
-mv *.csv ./kmeans/data/result
-mv massif.* ./kmeans/data/result
+if [ ! -d ./gd_benchmark ]; then
+    mkdir ./gd_benchmark
+fi
 
-python3 ./einstein_summation/einstein.py -e ../lingo-db/build/lingodb-release -o ../database -f ./einstein_summation/Statement.sql
-mv *.pdf ./einstein_summation/data/result
-mv *.csv ./einstein_summation/data/result
-mv massif.* ./einstein_summation/data/result
+if [ ! -d ./iris_benchmark ]; then
+    mkdir ./iris_benchmark
+fi
 
-python3 ./linear_regression/Regression.py -e ../lingo-db/build/lingodb-release -o ../database -f ./linear_regression/Statement.sql
-mv *.pdf ./linear_regression/data/result
-mv *.csv ./linear_regression/data/result
-mv massif.* ./linear_regression/data/result
+cp ./iris.csv ./iris_benchmark
+
+cd ./einstein_benchmark
+python ../einstein_summation/Einstein.py
+
+cd ../gd_benchmark
+python ../linear_regression/Regression.py
+
+cd ../iris_benchmark
+python ../iris_regression/Iris.py
