@@ -1,5 +1,7 @@
+# Absolute path to executables
 DUCK_DB_PATH = '/home/goellner/duckdb/build/release/duckdb'
-UMBRA_DB_PATH = '/home/goellner/umbra/bin/sql'
+UMBRA_DB_PATH = '/home/goellner/bfloat-database-benchmark/umbra/bin/sql'
+# Absolute path to the directory that includes all executables
 POSTGRESQL_DB_PATH = '/home/goellner/postgres/Release/bin/'
 LINGODB_DB_PATH = '/home/goellner/lingo-db/build/lingodb-release/'
 
