@@ -218,7 +218,10 @@ def get_accuracy(database: dict, query: str, iterations: int) -> float:
 
     # Parse the result
     result = Parse_Table.output_to_numpy(database['name'], output, 2, [1])
-    return result[iterations][0]
+    try:
+        return result[iterations][0]
+    except IndexError:
+        return get_accuracy(database, query, iterations)
 
 def get_relation_size(database: dict, datatype: str, query: str) -> float:
     '''
