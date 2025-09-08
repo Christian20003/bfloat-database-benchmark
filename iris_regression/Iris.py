@@ -200,28 +200,29 @@ def get_accuracy(database: dict, query: str, iterations: int) -> float:
     # Add order by so that the result is sorted
     query = query[:-1]
     query += f' ORDER BY id = {iterations};'
-    # Start database and get the result
-    process = subprocess.Popen(
-        database['client-preparation'].split() + ['-json'], 
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        text=True
-    )
+    while True:
+        # Start database and get the result
+        process = subprocess.Popen(
+            database['client-preparation'].split() + ['-json'], 
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            text=True
+        )
 
-    process.stdin.write(query)
-    process.stdin.flush()
+        process.stdin.write(query)
+        process.stdin.flush()
 
-    output, error = process.communicate()
-    if error:
-        Format.print_error('An error has been printed during accuracy calculation', error)
+        output, error = process.communicate()
+        if error:
+            Format.print_error('An error has been printed during accuracy calculation', error)
 
-    # Parse the result
-    result = Parse_Table.output_to_numpy(database['name'], output, 2, [1])
-    try:
-        return result[iterations][0]
-    except IndexError:
-        return get_accuracy(database, query, iterations)
+        # Parse the result
+        result = Parse_Table.output_to_numpy(database['name'], output, 2, [1])
+        try:
+            return result[iterations][0]
+        except IndexError:
+            continue
 
 def get_relation_size(database: dict, datatype: str, query: str) -> float:
     '''
