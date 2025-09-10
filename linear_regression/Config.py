@@ -9,6 +9,17 @@ import Umbra
 import Postgresql
 import LingoDB
 
+'''
+This file contains the configuration for gradient descent experiment.
+Most of the settings can be modified, without changing the code which executes the actual benchmark.
+This does not include: 
+    - Extending with further databases
+    - Extending the CSV file header
+    - Extending with further SQL statements
+All of these options can be done, but don't be surprised if an unexpected error occurs. Therefore, it
+is highly recommended to check the code before.
+'''
+
 csv_header = [
     'Type',
     'Aggregation',
@@ -44,11 +55,17 @@ CONFIG = {
     'setups': [
         # setups with increasing amount of points
         {
+            # Number of iterations
             'iterations': 20,
+            # Learning rate
             'lr': 0.05,
+            # The SQL statement to be executed
             'statement': STATEMENT_2_PARAM,
+            # The amount of data points
             'points_amount': 10,
+            # The amount of parameters (MUST BE COMPATIBLE WITH THE STATEMENT)
             'params_amount': 2,
+            # Whether to ignore this setup or not
             'ignore': False
         },
         {

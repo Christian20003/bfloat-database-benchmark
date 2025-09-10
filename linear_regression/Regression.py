@@ -168,7 +168,8 @@ def print_setting(db_name: str, points: int, parameters: int, aggregation: str, 
 
 def generate_statement(statement: str, db_name: str, parameters: int, aggregation: str, datatype: str, iterations: int, learning_rate: float) -> str:
     '''
-    This function generates the SQL statement for the benchmark.
+    This function generates the SQL statement for the database. The result
+    will be written into a SQL file.
 
     :param statement: The SQL statement to be executed with placeholders.
     :param db_name: The name of the database.
@@ -199,8 +200,7 @@ def generate_statement(statement: str, db_name: str, parameters: int, aggregatio
 
 def prepare_benchmark(database: dict, points: int, parameter: float, variables: int, datatype: str, src: str, dst: str) -> None:
     '''
-    This function prepares the benchmark by creating the necessary tables and copying the data
-    from the source file to the destination file.
+    This function prepares the benchmark by creating the necessary tables and inserting the data.
 
     :param database: The database object from the CONFIG file.
     :param points: The number of points used to learn all parameters.

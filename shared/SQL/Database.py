@@ -15,12 +15,11 @@ class Database:
         '''
         Creates a new instance.
 
-        :param execute_string: This string resprents the complete execution command of that particular
-                               SQL-Database (console).
+        :param execute_string: The command that should be used to start the database.
         :param start_statements: A list of SQL statements that needs to be executed at the beginning of
-                                 all statements.
+        all statements.
         :param end_statements: A list of SQL statements that needs to be executed at the end of
-                               all statements. 
+        all statements. 
         '''
 
         self.exe = execute_string.split()
@@ -28,11 +27,15 @@ class Database:
         self.end = end_statements.copy()
 
     def clear(self):
+        '''
+        This method clears all SQL statements that have been added so far.
+        '''
+
         self.statements = []
 
     def create_table(self, table_name: str, columns: List[str], types: List[str]) -> None:
         '''
-        This method adds a create statement to the list.
+        This method adds a create table statement to the list.
 
         :param table_name: The name of the table which should be created.
         :param columns: A list of column names of the table.
@@ -51,7 +54,7 @@ class Database:
 
     def copy_db(self, src: str, dst: str) -> None:
         '''
-        This method copies a persistent database from DuckDB.
+        This method copies a persistent database in DuckDB.
 
         :param src: The name of the source database file (without '.db')
         :param dest: The name of the destination database file (with '.db')
@@ -62,7 +65,7 @@ class Database:
 
     def drop_table(self, table_name: str) -> None:
         '''
-        This method deletes a table with a DROP statment.
+        This method deletes a table with a DROP statement.
 
         :param table_name: The name of the table.
         '''

@@ -9,6 +9,15 @@ import Settings
 import Format
 
 def create_database(init_exe: str, server_start_exe: str, create_db_exe: str) -> None:
+    '''
+    This function creates a new Postgres database. It first initializes the database,
+    then starts the server and finally creates a new database.
+
+    :param init_exe: The command that initializes the database.
+    :param server_start_exe: The command that starts the database server.
+    :param create_db_exe: The command that creates a new database.
+    '''
+
     init = subprocess.Popen(init_exe.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, error = init.communicate()
     if (error):
@@ -23,6 +32,12 @@ def create_database(init_exe: str, server_start_exe: str, create_db_exe: str) ->
         Format.print_error('Postgres printed an error on database creation', error)
 
 def stop_database(server_stop_exe: str) -> None:
+    '''
+    This function stops the Postgres database server.
+
+    :param server_stop_exe: The command that stops the database server.
+    '''
+    
     stop = subprocess.Popen(server_stop_exe.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, error = stop.communicate()
     if (error):

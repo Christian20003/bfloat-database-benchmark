@@ -5,7 +5,11 @@ import json
 
 def output_to_numpy(database_name: str, output: str, total_columns: int, relevant_columns: List[int]) -> np.ndarray:
     '''
-    This function parses the database output into a numpy array.
+    This function parses the database output into a numpy array. It is important to note that different databases
+    are parsed differently. The following databases with output types are supported: 
+    DuckDB (JSON), Umbra (Raw output), PostgreSQL (Raw output) and LingoDB (Raw output).
+    IMPORTANT: This function assumes that the output only contains numerical values and is only tested with DuckDB.
+    Therefore it might not work correctly with other databases.
 
     :param database_name: The name of the database.
     :param output: The output of the database.

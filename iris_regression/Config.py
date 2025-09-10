@@ -8,6 +8,17 @@ import DuckDB
 import Umbra
 import LingoDB
 
+'''
+This file contains the configuration for iris experiment.
+Most of the settings can be modified, without changing the code which executes the actual benchmark.
+This does not include: 
+    - Extending with further databases
+    - Extending the CSV file header
+    - Extending with further SQL statements
+All of these options can be done, but don't be surprised if an unexpected error occurs. Therefore, it
+is highly recommended to check the code before.
+'''
+
 csv_header = [
     'Type', 
     'Network_Size', 
@@ -39,14 +50,21 @@ CONFIG = {
     'setups': [
         # Setups with increased data size
         {
+            # Number of iterations
             'iterations': 20,
+            # Number of neurons in the hidden layer
             'network_size': 300,
+            # Number of data points
             'data_size': 150,
             'statements': [{
+                # Statement id
                 'number': 1,
+                # The actual statement
                 'statement': STATEMENT,
+                # The statement to return the learned weights
                 'weights': STATEMENT_WEIGHTS
             }],
+            # Whether to ignore this setup or not
             'ignore': False
         },
         {

@@ -5,6 +5,7 @@ UMBRA_DB_PATH = '/home/goellner/bfloat-database-benchmark/umbra/bin/sql'
 POSTGRESQL_DB_PATH = '/home/goellner/postgres/Release/bin/'
 LINGODB_DB_PATH = '/home/goellner/lingo-db/build/lingodb-release/'
 
+# The following settings do not require any modifications
 DUCK_DB_DATABASE_FILE = 'database.db'
 UMBRA_DATABASE_FILE = 'database'
 POSTGRESQL_DATABASE_FILE = 'database'

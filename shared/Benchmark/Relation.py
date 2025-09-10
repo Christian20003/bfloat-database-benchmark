@@ -8,7 +8,7 @@ import Format
 
 def measure_relation_size(file_name: str) -> float:
     '''
-    This function returns the size of a file in bytes.
+    This function reads the size of a file.
 
     :param file_name: The name of the file.
 

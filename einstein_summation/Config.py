@@ -9,6 +9,17 @@ import Umbra
 import Postgresql
 import LingoDB
 
+'''
+This file contains the configuration for Einstein summation experiment.
+Most of the settings can be modified, without changing the code which executes the actual benchmark.
+This does not include: 
+    - Extending with further databases
+    - Extending the CSV file header
+    - Extending with further SQL statements
+All of these options can be done, but don't be surprised if an unexpected error occurs. Therefore, it
+is highly recommended to check the code before.
+'''
+
 csv_header = [
     'Type',
     'Aggregation',
@@ -42,12 +53,18 @@ CONFIG = {
     ],
     'setups': [
         {
+            # Used for the name of the data file
             'id': 'first',
+            # The dimension of the (square) matrices and vectors
             'dimension': 30,
+            # Whether to ignore this setup or not
             'ignore': False,
+            # The statements to execute with this setup
             'statements': [
                 {
+                    # Id of the statement
                     'number': 1,
+                    # The actual statement
                     'statement': STATEMENT_1
                 },
                 {

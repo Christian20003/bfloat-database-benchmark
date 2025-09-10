@@ -56,10 +56,12 @@ def main():
                     model = statement['statement']
                     weigths = statement['weights']
                     number = statement['number']
+
+                    # Benchmark preparations
                     print_setting(network, data, name, datatype, iterations, number)
                     query = generate_statement(name, model, iterations, learning_rate)
                     prepare_benchmark(database, datatype, data, network)
-
+                    # Time benchmark
                     time = Time.python_time(time_exe)
                     if database['name'] == 'postgres':
                         Postgres.stop_database(database['server-preparation'][3])
@@ -70,7 +72,7 @@ def main():
                         else:
                             Helper.remove_files(database['files'])
                         continue
-
+                    # Memory benchmark
                     memory = []
                     memory_state = []
                     for idx in range(CONFIG['memory_trials']):
@@ -90,12 +92,14 @@ def main():
                                 break
                             else:
                                 Format.print_information('Did not measure a correct value. Try again')
-
+                    # Get accuracy of last iteration
                     accuracy = get_accuracy(database, query, iterations)
                     # Create statement that returns only the weights
                     weight_query = generate_statement(name, weigths, iterations, learning_rate)
+                    # Get the relation size of all weights
                     relation_size = get_relation_size(database, datatype, weight_query)
 
+                    # Write result into CSV file and clean up
                     Create_CSV.append_row(database['csv_file'], [datatype, network, data, learning_rate, iterations, time, sum(memory_state) / len(memory_state), relation_size, accuracy])
                     if database['name'] == 'postgres' or database['name'] == 'umbra' or name == 'lingodb':
                         Helper.remove_dir(database['files'])
@@ -110,7 +114,7 @@ def print_setting(network_size: int, data_size: int, db_name: str, datatype: str
     :param network_size: The size of the hidden layer.
     :param data_size: The number of samples.
     :param db_name: The database name.
-    :param datatype: The datatype for x and y values.
+    :param datatype: The datatype for samples and weights.
     :param iterations: The number of update iterations.
     :param statement: The statement number that will be executed.
     '''
@@ -127,13 +131,13 @@ def prepare_benchmark(database: dict, datatype: str, data_size: int, network_siz
     This function prepares the benchmark by creating the database and inserting the data.
 
     :param database: The database name.
-    :param datatype: The datatype for x and y values.
+    :param datatype: The datatype for samples and weights.
     :param data_size: The number of samples.
     :param network_size: The size of the hidden layer.
     '''
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
-    # # Postgres reads csv file from a subdirectory
+    # Postgres reads csv file from a subdirectory
     extend_file_path = '.' if database['name'] == 'postgres' else ''
     # Create directories for the persistent storage
     if database['name'] == 'postgres':
@@ -167,7 +171,8 @@ def prepare_benchmark(database: dict, datatype: str, data_size: int, network_siz
 
 def generate_statement(db_name: str, statement: str, iterations: int, learning_rate: float) -> str:
     '''
-    This function generates the SQL file.
+    This function generates the SQL statement for the database. The result
+    will be written into a SQL file.
 
     :param db_name: The database name.
     :param statement: The SQL statement to be executed.
@@ -186,13 +191,13 @@ def generate_statement(db_name: str, statement: str, iterations: int, learning_r
 
 def get_accuracy(database: dict, query: str, iterations: int) -> float:
     '''
-    This function receives the accuracy values from each iteration.
+    This function receives the accuracy from last iteration.
 
     :param database: The database object from CONFIG.
     :param query: The SQL statement that trains a ML model.
     :param iterations: The number of iterations that should be executed.
 
-    :returns: A list of accuracy values if the database is DuckDB, otherwise -1.
+    :returns: The accuracy value of the last iteration if the database is DuckDB, otherwise -1.
     '''
     if database['name'] != 'duckdb':
         return -1
@@ -222,16 +227,16 @@ def get_accuracy(database: dict, query: str, iterations: int) -> float:
         try:
             return result[iterations][0]
         except IndexError:
-            continue
+            return result[iterations-1][0]
 
 def get_relation_size(database: dict, datatype: str, query: str) -> float:
     '''
-    This function reads the size of the output file of a database (only lingodb and
-    duckdb. Other databases will get the value -1).
+    This function reads the size of the output file of a database (only LingoDB and
+    DuckDB. Other databases will get the value -1).
 
     :param database: The database object from the CONFIG file.
     :param datatype: The datatype of each weight entry.
-    :param query: The statement which produces all trained wieghts.
+    :param query: The statement which produces all trained weights.
 
     :returns: The output file size in bytes.
     '''

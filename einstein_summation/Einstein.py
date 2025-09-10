@@ -25,6 +25,7 @@ import Helper
 import Parse_Table
 import subprocess
 
+# Required for data generation
 SEMAPHORE = threading.Semaphore()
 
 def main():
@@ -33,34 +34,41 @@ def main():
 
     produce_data(scenarios)
 
+    # Generate for each database a CSV file (storing the result)
     for database in databases:
         if database['create_csv'] and not database['ignore']:
             Create_CSV.create_csv_file(database['csv_file'], database['csv_header'])
 
+    # Iterate over each scenario
     for scenario in scenarios:
         if scenario['ignore']:
             continue
         dimension = scenario['dimension']
         matrix_file = f'./data{scenario["id"]}_ma.csv'
         vector_file = f'./data{scenario["id"]}_vec.csv'
+        # Iterate over each database
         for database in databases:
             if database['ignore']:
                 continue
             name = database['name']
             time_exe = database['time-executable']
             memory_exe = database['memory-executable']
+            # Iterate over each type
             for datatype in database['types']:
+                # Iterate over each statement
                 for statement in scenario['statements']:
                     number = statement['number']
                     content = statement['statement']
+                    # Iterate over each aggregation function
                     for aggregation in database['aggregations']:
                         if not check_execution(name, dimension, number):
                             continue
 
+                        # Benchmark preparations
                         print_setting(dimension, name, datatype, number, aggregation)
                         query = generate_statement(content, number, aggregation)
                         prepare_benchmark(database, datatype, matrix_file, vector_file)
-
+                        # Time benchmark
                         time = Time.python_time(time_exe)
                         if database['name'] == 'postgres':
                             Postgres.stop_database(database['server-preparation'][3])
@@ -70,7 +78,7 @@ def main():
                             else:
                                 Helper.remove_files(database['files'])
                             continue
-
+                        # Memory benchmark
                         memory = []
                         memory_state = []
                         for idx in range(CONFIG['memory_trials']):
@@ -88,37 +96,39 @@ def main():
                                     break
                                 else:
                                     Format.print_information('Did not measure a correct value. Try again')
-
+                        # MAPE calculation
                         error = get_error(database, datatype, query, matrix_file, vector_file)
+                        # Relation size
                         relation_size = get_relation_size(database, datatype, query)
 
+                        # Write results to CSV
                         Create_CSV.append_row(database['csv_file'], 
                                               [
-                                                  datatype,
-                                                  aggregation,
-                                                  number,
-                                                  dimension*dimension, 
-                                                  dimension*dimension, 
-                                                  dimension,
-                                                  time, 
-                                                  sum(memory_state) / len(memory_state), 
-                                                  relation_size,
-                                                  error
+                                                datatype,
+                                                aggregation,
+                                                number,
+                                                dimension*dimension, 
+                                                dimension*dimension, 
+                                                dimension,
+                                                time, 
+                                                sum(memory_state) / len(memory_state), 
+                                                relation_size,
+                                                error
                                                ])
-                        
+                        # Remove any content that is not required anymore
                         if name == 'postgres' or name == 'umbra' or name == 'lingodb':
                             Helper.remove_dir(database['files'])
                         else:
                             Helper.remove_files(database['files'])
     Helper.remove_files([Settings.STATEMENT_FILE])
 
-def check_execution(database: str, setup_id: int, number: int) -> bool:
+def check_execution(database: str, dimension: int, number: int) -> bool:
     '''
     This function checks if the current setup should be executed. These decision have been
     defined through experience from previous executions.
 
     :param database: The name of the database.
-    :param setup_id: The size of each dimension.
+    :param dimension: The size of each dimension.
     :param number: The statement number.
 
     :returns: True if the setup can be executed otherwise false
@@ -126,23 +136,23 @@ def check_execution(database: str, setup_id: int, number: int) -> bool:
     
     if database == 'duckdb':
         pass
-    elif database == 'umbra' and setup_id == 3100 and number == 1:
+    elif database == 'umbra' and dimension == 3100 and number == 1:
         return False
-    elif database == 'postgres' and setup_id == 1000 and number == 2:
+    elif database == 'postgres' and dimension == 1000 and number == 2:
         return False
-    elif database == 'lingodb' and setup_id >= 750 and number == 2:
+    elif database == 'lingodb' and dimension >= 750 and number == 2:
         return False
     return True
 
-def print_setting(dimension: int, database: str, type: str, statement: int, agg_func: str) -> None:
+def print_setting(dimension: int, database: str, datatype: str, statement: int, agg_func: str) -> None:
     '''
     This function prints the settings for the current benchmark.
 
-    :param dimension: The number of elements.
+    :param dimension: The size of each dimension.
     :param database: The database name.
-    :param type: The datatype for tensor entries.
-    :param statement: The number of the statement that should be used.
-    :param agg_func: The aggregation function to be used in the recursive CTE.
+    :param datatype: The datatype for tensor entries.
+    :param statement: The number of the statement.
+    :param agg_func: The aggregation function to be used.
     '''
 
     Format.print_title(f'START BENCHMARK - EINSTEIN SUMMATION WITH THE FOLLOWING SETTINGS')
@@ -150,22 +160,22 @@ def print_setting(dimension: int, database: str, type: str, statement: int, agg_
     Format.print_information(f'Matrix B: {dimension}x{dimension}', tabs=1)
     Format.print_information(f'Vector V: {dimension}x1', tabs=1)
     Format.print_information(f'Database: {database}', tabs=1)
-    Format.print_information(f'Type: {type}', tabs=1)
+    Format.print_information(f'Type: {datatype}', tabs=1)
     Format.print_information(f'Statement: {statement}', tabs=1)
     Format.print_information(f'Aggregation Function: {agg_func}', tabs=1)
 
-def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: str) -> None:
+def prepare_benchmark(database: dict, datatype: str, matrix_file: str, vector_file: str) -> None:
     '''
     This function prepares the benchmark by creating the database and inserting the data.
 
     :param database: The database object from CONFIG.
-    :param type: The type of the matrix / vector entries.
+    :param datatype: The type of the tensor entries.
     :param matrix_file: The name of the csv file where the values of matrices are stored.
     :param vector_file: The name of the csv file where the values of vectors are stored.
     '''
 
     Format.print_information('Preparing benchmark - This can take some time', mark=True)
-    # Postgres is inside another directory
+    # PostgreSQL is inside another directory
     extend_file_path = '.' if database['name'] == 'postgres' else ''
     # Create directories for these database that generate multiple files
     if database['name'] == 'postgres':
@@ -178,11 +188,11 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
         Helper.create_dir(Settings.LINGODB_DIR)
     # Create necessary tables
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
-    prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
-    prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
-    prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', type])
+    prep_database.create_table('matrixa', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', datatype])
+    prep_database.create_table('matrixb', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', datatype])
+    prep_database.create_table('vectorv', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', datatype])
     # Copy with bfloat does not work in LingoDB (apache arrow does not support it)
-    if database['name'] == 'lingodb' and type == 'bfloat':
+    if database['name'] == 'lingodb' and datatype == 'bfloat':
         # Workaround by creating float tables and insert the content from them
         prep_database.create_table('data1', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
         prep_database.create_table('data2', ['rowIndex', 'columnIndex', 'val'], ['int', 'int', 'float'])
@@ -200,7 +210,7 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
     prep_database.execute_sql()
 
     # Delete temporary float tables from LingoDB
-    if database['name'] == 'lingodb' and type == 'bfloat':
+    if database['name'] == 'lingodb' and datatype == 'bfloat':
         Helper.remove_files([
             f'{Settings.LINGODB_DIR}/data1.arrow',
             f'{Settings.LINGODB_DIR}/data1.arrow.sample', 
@@ -215,11 +225,12 @@ def prepare_benchmark(database: dict, type: str, matrix_file: str, vector_file: 
 
 def get_error(database: dict, type: str, statement: str, matrix_file: str, vector_file: str) -> float:
     '''
-    This function calculates the Mean-Absolute Precentage Error of the matrix multiplication with type DOUBLE as reference.
-    This function only works with DuckDB.
+    This function calculates the Mean-Absolute Precentage Error (MAPE) of matrix multiplication 
+    with type double as reference. This function only works with DuckDB and if an aggregation function
+    is involved.
 
     :param database: The database object from CONFIG.
-    :param type: The type of the matrix / vector entries.
+    :param type: The type of the tensor entries.
     :param statement: The statement that should be benchmarked.
     :param matrix_file: The CSV file of the matrix data.
     :param vector_file: The CSV file of the vector data.
@@ -245,7 +256,7 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
     statement = statement[:-1]
     statementRef = statement.replace('matrixa', 'refA')
     statementRef = statementRef.replace('matrixb', 'refB')
-    statementRef = statement.replace('vectorv', 'refV')
+    statementRef = statementRef.replace('vectorv', 'refV')
 
     # Define MSE in SQL
     #final_stat = f'SELECT AVG(result) FROM (SELECT pow(truth - pred, 2) AS result FROM (SELECT res1.val AS pred, res2.val AS truth FROM ({statement}) res1 JOIN ({statementRef}) res2 ON res1.rowIndex = res2.rowIndex));'
@@ -280,13 +291,13 @@ def get_error(database: dict, type: str, statement: str, matrix_file: str, vecto
 
     return result[0][0]
 
-def get_relation_size(database: dict, type: str, statement: str) -> float:
+def get_relation_size(database: dict, datatype: str, statement: str) -> float:
     '''
-    This function reads the size of the output file of a database (only lingodb and
-    duckdb. Other databases will get the value -1).
+    This function reads the size of the output file of a database (only LingoDB and
+    DuckDB. Other databases will get the value -1).
 
     :param database: The database object from the CONFIG file.
-    :param type: The type of each matrix entry.
+    :param datatype: The type of each tensor entries.
     :param statement: The statement which will be benchmarked.
 
     :returns: The output file size in bytes.
@@ -296,7 +307,7 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
     statement = statement[:-1]
     # Create table for result and fill it with result content
     prep_database = Database.Database(database['client-preparation'], database['start-sql'], database['end-sql'])
-    prep_database.create_table('relation', ['rowIndex', 'val'], ['int', type])
+    prep_database.create_table('relation', ['rowIndex', 'val'], ['int', datatype])
     prep_database.insert_from_select('relation', statement)
     prep_database.execute_sql()
     # LingoDB case
@@ -318,9 +329,10 @@ def get_relation_size(database: dict, type: str, statement: str) -> float:
 
 def generate_statement(statement: str, number: int, aggr_func: str) -> str:
     '''
-    This function generates the SQL statement for the database.
+    This function generates the SQL statement for the database. The result
+    will be written into a SQL file.
     
-    :param statement: The type of statement that should be used.
+    :param statement: The statement that should be used.
     :param number: The number of the statement.
     :param aggr_func: The aggregation function that should be used.
 
@@ -356,7 +368,7 @@ def single_thread(rows: List[int], columns: int, file_name: str) -> None:
 def produce_data(scenarios: dict) -> None:
     '''
     This function generates the necessary data for the benchmarks. This function
-    will generate for each scenarion a single file with the naming scheme: 
+    will generate for each scenario a single file with the naming scheme: 
     data<scenario_id><ma||vec>.csv
 
     :param scenarios: A dictionary containing each benchmark setup.

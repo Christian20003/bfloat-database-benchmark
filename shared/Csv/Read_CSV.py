@@ -9,8 +9,8 @@ def process_data(header: List[str], body: List[List[str]]) -> dict:
     :param body: A list of data entries from the CSV file.
 
     :returns: A dictionary containing all data from the CSV file. The row number defines the
-              key of a specific row (beginning with 1) and inside the access of values is possible
-              through the use of the header keys.
+    key of a specific row (beginning with 1) and inside the access of values is possible
+    through the use of the header keys.
     '''
     result = {}
     for entry_idx, entry in enumerate(body):
@@ -31,10 +31,9 @@ def read_csv_file(file_name: str) -> dict:
     :param file_name: The name of the file.
 
     :returns: A dictionary containing all data from the CSV file. The row number defines the
-              key of a specific row (beginning with 1) and inside the access of values is possible
-              through the use of the header keys.
+    key of a specific row (beginning with 1) and inside the access of values is possible
+    through the use of the header keys.
     '''
-
     with open(file_name, 'r') as file:
         reader = csv.reader(file)
         header = next(reader)
