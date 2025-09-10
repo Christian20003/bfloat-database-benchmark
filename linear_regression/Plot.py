@@ -6,10 +6,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 import Plotting
 
 if __name__ == "__main__":
-    duckdb_file = './data/duckdb/regression/final_attempt/DuckDB_Results.csv'
-    umbra_file = './data/duckdb/regression/final_attempt/Umbra_Results.csv'
-    postgres_file = './data/duckdb/regression/final_attempt/Postgresql_Results.csv'
-    lingodb_file = './data/duckdb/regression/final_attempt/LingoDB_Results.csv'
+    duckdb_file = './data/duckdb/regression/really_final/DuckDB_Results.csv'
+    umbra_file = './data/duckdb/regression/really_final/Umbra_Results.csv'
+    postgres_file = './data/duckdb/regression/really_final/Postgresql_Results.csv'
+    lingodb_file = './data/duckdb/regression/really_final/LingoDB_Results.csv'
     scenario_name = 'Regression'
     line_keys = ['Type']
     x_keys = ['Points']
@@ -24,9 +24,9 @@ if __name__ == "__main__":
     }
 
     manipulate_memory = {
-        'Memory': {
-            'function': lambda x: x / (1024*1024*1024),
-            'args': ['Memory'],
+        'RSS': {
+            'function': lambda x: x / (1024*1024),
+            'args': ['RSS'],
             'types': ['float']
         }
     }
@@ -42,14 +42,16 @@ if __name__ == "__main__":
     duckdb_ignore = {
         'Aggregation': ['kahan'],
         'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10'],
+        #'Type': ['double', 'float']
         #'Points': ['10', '1000', '100000', '1000000000']
         #'Points': ['1000000000']
     }
+
     duckdb_ignore_2 = {
         'Aggregation': ['standard'],
-        #'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10'],
-        'Points': ['10', '1000', '100000', '1000000000'],
-        #'Type': ['double', 'float']
+        'Parameters': ['3', '4', '5', '6', '7', '8', '9', '10'],
+        #'Points': ['10', '1000', '100000', '1000000000'],
+        'Type': ['double', 'float']
     }
 
     ignore = {
@@ -159,7 +161,7 @@ if __name__ == "__main__":
                 #'Standard': ['Memory']
             },
             'renaming': {},
-            'manipulate': manipulate_memory,
+            'manipulate': {},
             'ignore': duckdb_ignore
         },
         #'file_2': {
@@ -187,7 +189,7 @@ if __name__ == "__main__":
                 'PSQL': ['Memory'],
             },
             'renaming': postgres_rename,
-            'manipulate': manipulate_memory,
+            'manipulate': {},
             'ignore': ignore
         },
         'file_3': {
@@ -215,7 +217,7 @@ if __name__ == "__main__":
                 'Umbra': ['Memory'],
             },
             'renaming': umbra_rename,
-            'manipulate': manipulate_memory,
+            'manipulate': {},
             'ignore': ignore
         }
     }
@@ -251,7 +253,7 @@ if __name__ == "__main__":
         }
     }
 
-    mse = {
+    mape = {
         'file_1': {
             'file': duckdb_file,
             'line_keys': line_keys,
@@ -260,7 +262,7 @@ if __name__ == "__main__":
             'line_markers': ['o', '^', 's', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
-                'Standard': ['MSE'],
+                'Standard': ['MAPE'],
             },
             'renaming': {},
             'manipulate': {},
@@ -269,12 +271,12 @@ if __name__ == "__main__":
         'file_2': {
             'file': duckdb_file,
             'line_keys': line_keys,
-            'color': 'cornflowerblue',
+            'color': 'forestgreen',
             'line_shapes': ['dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
             'line_markers': ['s', '*','v', 'D'],
             'x_keys': x_keys,
             'y_keys': {
-                'Kahan': ['MSE'],
+                'Kahan': ['MAPE'],
             },
             'renaming': {},
             'manipulate': {},
@@ -284,33 +286,33 @@ if __name__ == "__main__":
 
     config_time = {
         'x_label': 'Number of samples',
-        'y_label': 'Execution time in iterations / seconds',
+        'y_label': 'Throughput (iterations / seconds)',
         'log_y': False,
         'log_x': True,
         'file_name': f'Execution_{scenario_name}.pdf'
     }
     config_memory = {
         'x_label': 'Number of samples',
-        'y_label': 'Memory in GB',
+        'y_label': 'Used memory in GB',
         'log_y': False,
         'log_x': True,
         'file_name': f'Memory_{scenario_name}.pdf'
     }
     config_relation = {
         'x_label': 'Number of samples',
-        'y_label': 'Output relation size in KB',
+        'y_label': 'Relation size in KB',
         'log_y': False,
         'log_x': True,
         'file_name': f'Relation_{scenario_name}.pdf'
     }
-    config_mse = {
+    config_mape = {
         'x_label': 'Number of samples',
-        'y_label': 'Mean-Squared-Error',
+        'y_label': 'MAPE',
         'log_y': False,
         'log_x': True,
-        'file_name': f'MSE_{scenario_name}.pdf'
+        'file_name': f'MAPE_{scenario_name}.pdf'
     }
     Plotting.plot_results(time, config_time)
     Plotting.plot_results(memory, config_memory)
     Plotting.plot_results(relation, config_relation)
-    Plotting.plot_results(mse, config_mse)
+    Plotting.plot_results(mape, config_mape)

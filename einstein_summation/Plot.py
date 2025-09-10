@@ -6,15 +6,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 import Plotting
 
 if __name__ == "__main__":
-    duckdb_file = './data/duckdb/einstein/test_psutil/DuckDB_Results.csv'
-    umbra_file = './data/duckdb/einstein/test_psutil/Umbra_Results.csv'
-    postgres_file = './data/duckdb/einstein/test_psutil/Postgresql_Results.csv'
-    lingodb_file = './data/duckdb/einstein/test_psutil/LingoDB_Results.csv'
+    duckdb_file = './data/duckdb/einstein/really_final/DuckDB_Results.csv'
+    umbra_file = './data/duckdb/einstein/really_final/Umbra_Results.csv'
+    postgres_file = './data/duckdb/einstein/really_final/Postgresql_Results.csv'
+    lingodb_file = './data/duckdb/einstein/really_final/LingoDB_Results.csv'
     scenario_name = 'Einstein'
     line_keys = ['Type']
     x_keys = ['MatrixA', 'MatrixB', 'VectorV']
 
-    manipulate = {
+    manipulate_time = {
         'Execution': {
             'function': lambda a, b, c, d: (a + b + c) / d,
             'args': ['MatrixA', 'MatrixB', 'VectorV', 'Execution'],
@@ -32,36 +32,28 @@ if __name__ == "__main__":
 
     manipulate_file_size = {
         'Relation-Size': {
-            'function': lambda a: a / (1024),
+            'function': lambda a: a / (1024*1024),
             'args': ['Relation-Size'],
             'types': ['float']
         }
     }
 
     duckdb_ignore = {
-        #'Vector_V': ['400', '500', '600', '700', '800', '900', '1000', '2500', '5000', '7500', '10000'],
-        #'Vector_V': ['10', '20', '30', '40', '50', '60', '1000', '2500', '5000', '7500', '10000'],
-        #'VectorV': ['10000'],
+        #'VectorV': ['3100'],
         'Aggregation': ['kahan'],
-        'Statement': ['2','3','4']
+        'Statement': ['2','3','4'],
+        #'Type': ['float', 'double']
     }
 
     duckdb_ignore_2 = {
-        #'Vector_V': ['80', '90', '100', '200', '300', '400', '500', '600', '700', '800', '900', '1000', '2500', '5000', '7500', '10000'],
-        #'Vector_V': ['10', '20', '30', '40', '50', '60', '1000', '2500', '5000', '7500', '10000'],
-        #'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200', '300', '400', '500', '600', '700', '800'],
-        'Aggregation': ['standard'],
+        #'Aggregation': ['standard'],
         'Statement': ['2','3','4'],
-        'Type': ['float', 'double']
+        #'Type': ['float', 'double']
     }
 
     ignore = {
-        #'Vector_V': ['400', '500', '600', '700', '800', '900', '1000', '2500', '5000', '7500', '10000'],
-        #'Vector_V': ['10', '20', '30', '40', '50', '60', '500', '1000', '2500', '5000', '7500', '10000'],
-        #'Vector_V': ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '200'],
-        #'VectorV': ['10000'],
+        #'VectorV': ['3100'],
         'Statement': ['2','3','4'],
-        #'Type': ['bfloat']
     }
 
     umbra_rename = {
@@ -92,19 +84,19 @@ if __name__ == "__main__":
                 #'A*(B*v)': ['Execution']
             },
             'renaming': {},
-            'manipulate': manipulate,
+            'manipulate': manipulate_time,
             'ignore': duckdb_ignore
         },
         #'file_2': {
         #    'file': duckdb_file,
         #    'line_keys': line_keys,
         #    'color': 'forestgreen',
-        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'line_shapes': ['dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['s', '*','v', 'D'],
         #    'x_keys': x_keys,
         #    'y_keys': {
-        #        'B*v': ['Execution'],
-        #        #'Kahan': ['Execution']
+        #        #'B*v': ['Execution'],
+        #        'Kahan': ['Execution']
         #    },
         #    'renaming': {},
         #    'manipulate': manipulate,
@@ -121,7 +113,7 @@ if __name__ == "__main__":
                 'PSQL': ['Execution'],
             },
             'renaming': postgres_rename,
-            'manipulate': manipulate,
+            'manipulate': manipulate_time,
             'ignore': ignore
         },
         'file_3': {
@@ -135,7 +127,7 @@ if __name__ == "__main__":
                 'LingoDB': ['Execution'],
             },
             'renaming': postgres_rename,
-            'manipulate': manipulate,
+            'manipulate': manipulate_time,
             'ignore': ignore
         },
         'file_4': {
@@ -149,14 +141,14 @@ if __name__ == "__main__":
                 'Umbra': ['Execution'],
             },
             'renaming': umbra_rename,
-            'manipulate': manipulate,
+            'manipulate': manipulate_time,
             'ignore': ignore
         }
     }
 
     memory = {
         'file_1': {
-            'file': duckdb_file,
+            'file': lingodb_file,
             'line_keys': line_keys,
             'color': 'maroon',
             'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
@@ -172,15 +164,15 @@ if __name__ == "__main__":
             'ignore': duckdb_ignore
         },
         #'file_2': {
-        #    'file': duckdb_file,
+        #    'file': lingodb_file,
         #    'line_keys': line_keys,
         #    'color': 'forestgreen',
-        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
+        #    'line_shapes': ['solid', 'dotted','dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+        #    'line_markers': ['o', '^','s', '*','v', 'D'],
         #    'x_keys': x_keys,
         #    'y_keys': {
-        #        'B*v': ['Memory'],
-        #        #'Kahan': ['Memory']
+        #        #'B*v': ['Memory'],
+        #        'Kahan': ['Memory']
         #    },
         #    'renaming': {},
         #    'manipulate': manipulate_memory,
@@ -261,7 +253,7 @@ if __name__ == "__main__":
         },
     }
 
-    mse = {
+    mape = {
         'file_1': {
             'file': duckdb_file,
             'line_keys': line_keys,
@@ -294,7 +286,7 @@ if __name__ == "__main__":
 
     config_time = {
         'x_label': 'Number of tuples',
-        'y_label': 'Throughput in tuples / seconds',
+        'y_label': 'Throughput (tuples / seconds)',
         'log_y': False,
         'log_x': True,
         'file_name': f'Execution_{scenario_name}.pdf'
@@ -308,19 +300,19 @@ if __name__ == "__main__":
     }
     config_relation = {
         'x_label': 'Number of tuples',
-        'y_label': 'Relation Size in KB',
+        'y_label': 'Relation size in MB',
         'log_y': False,
         'log_x': True,
         'file_name': f'Relation_{scenario_name}.pdf'
     }
-    config_mse = {
+    config_mape = {
         'x_label': 'Number of tuples',
-        'y_label': 'Mean Absolute Percentage Error',
+        'y_label': 'MAPE',
         'log_y': False,
         'log_x': True,
-        'file_name': f'MSE_{scenario_name}.pdf'
+        'file_name': f'MAPE_{scenario_name}.pdf'
     }
     Plotting.plot_results(time, config_time)
     Plotting.plot_results(memory, config_memory)
     Plotting.plot_results(relation, config_relation)
-    Plotting.plot_results(mse, config_mse)
+    Plotting.plot_results(mape, config_mape)

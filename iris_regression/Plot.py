@@ -6,14 +6,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../shar
 import Plotting
 
 if __name__ == "__main__":
-    duckdb_file = './data/duckdb/iris/final_attempt/DuckDB_Results.csv'
-    umbra_file = './data/duckdb/iris/final_attempt/Umbra_Results.csv'
-    lingodb_file = './data/duckdb/iris/final_attempt/LingoDB_Results.csv'
+    duckdb_file = './data/duckdb/iris/really_final/DuckDB_Results.csv'
+    umbra_file = './data/duckdb/iris/really_final/Umbra_Results.csv'
+    lingodb_file = './data/duckdb/iris/really_final/LingoDB_Results.csv'
     scenario_name = 'Regression'
     line_keys = ['Type']
-    #x_keys = ['Data_Size']
+    x_keys = ['Data_Size']
     #x_keys = ['Network_Size']
-    x_keys = ['Iterations']
+    #x_keys = ['Iterations']
 
     manipulate_time = {
         'Execution': {
@@ -40,9 +40,9 @@ if __name__ == "__main__":
     }
 
     ignore = {
-        #'Iterations': ['1', '5', '10', '15'],
+        'Iterations': ['1', '5', '10', '15'],
         'Network_Size': ['100', '200', '400'],
-        'Data_Size': ['150', '300', '600']
+        #'Data_Size': ['150', '300', '600']
     }
 
     umbra_rename = {
@@ -116,7 +116,7 @@ if __name__ == "__main__":
                 'DuckDB': ['Memory']
             },
             'renaming': {},
-            'manipulate': manipulate_memory,
+            'manipulate': {},
             'ignore': ignore
         },
         'file_2': {
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                 'LingoDB': ['Memory'],
             },
             'renaming': postgres_rename,
-            'manipulate': manipulate_memory,
+            'manipulate': {},
             'ignore': ignore
         },
         'file_3': {
@@ -144,7 +144,7 @@ if __name__ == "__main__":
                 'Umbra': ['Memory'],
             },
             'renaming': umbra_rename,
-            'manipulate': manipulate_memory,
+            'manipulate': {},
             'ignore': ignore
         }
     }
@@ -164,43 +164,68 @@ if __name__ == "__main__":
             'manipulate': manipulate_relation,
             'ignore': ignore
         },
-        #'file_2': {
-        #    'file': lingodb_file,
-        #    'line_keys': line_keys,
-        #    'color': 'orange',
-        #    'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
-        #    'line_markers': ['o', '^', 's', '*','v', 'D'],
-        #    'x_keys': x_keys,
-        #    'y_keys': {
-        #        'LingoDB': ['Relation-Size'],
-        #    },
-        #    'renaming': postgres_rename,
-        #    'manipulate': manipulate_relation,
-        #    'ignore': ignore
-        #}
+        'file_2': {
+            'file': lingodb_file,
+            'line_keys': line_keys,
+            'color': 'orange',
+            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+            'line_markers': ['o', '^', 's', '*','v', 'D'],
+            'x_keys': x_keys,
+            'y_keys': {
+                'LingoDB': ['Relation-Size'],
+            },
+            'renaming': postgres_rename,
+            'manipulate': manipulate_relation,
+            'ignore': ignore
+        }
+    }
+
+    acc = {
+        'file_1': {
+            'file': duckdb_file,
+            'line_keys': line_keys,
+            'color': 'maroon',
+            'line_shapes': ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (3, 5, 1, 5))],
+            'line_markers': ['o', '^', 's', '*','v', 'D'],
+            'x_keys': x_keys,
+            'y_keys': {
+                'DuckDB': ['Accuracy'],
+            },
+            'renaming': {},
+            'manipulate': {},
+            'ignore': ignore
+        }
     }
 
     config_time = {
-        'x_label': 'Number of Iterations',
-        'y_label': 'Execution time in iterations / seconds',
+        'x_label': 'Number of samples',
+        'y_label': 'Throughput (iteratations / seconds)',
         'log_y': False,
         'log_x': False,
         'file_name': f'Execution_{scenario_name}.pdf'
     }
     config_memory = {
-        'x_label': 'Number of Iterations',
-        'y_label': 'Used memory in MB',
+        'x_label': 'Number of samples',
+        'y_label': 'Used memory in GB',
         'log_y': False,
         'log_x': False,
         'file_name': f'Memory_{scenario_name}.pdf'
     }
     config_relation = {
-        'x_label': 'Number of Iterations',
+        'x_label': 'Number of samples',
         'y_label': 'Relation Size in KB',
         'log_y': False,
         'log_x': False,
         'file_name': f'Relation_{scenario_name}.pdf'
     }
+    config_acc = {
+        'x_label': 'Number of samples',
+        'y_label': 'Accuracy',
+        'log_y': False,
+        'log_x': False,
+        'file_name': f'Accuracy_{scenario_name}.pdf'
+    }
     Plotting.plot_results(time, config_time)
     Plotting.plot_results(memory, config_memory)
     Plotting.plot_results(relation, config_relation)
+    Plotting.plot_results(acc, config_acc)

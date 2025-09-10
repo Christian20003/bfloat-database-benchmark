@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
+import matplotlib
 from matplotlib.lines import Line2D
+from matplotlib.ticker import MaxNLocator
 
 COLORS = ['maroon', 'cornflowerblue', 'forestgreen', 'orange', 'mediumorchid', 'yellow']
 STYLES = ['solid', 'dotted', 'dashed', 'dashdot', (0, (3, 5, 1, 5, 1, 5))]
@@ -36,7 +38,7 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
     columns = 4
     mode = 'expand' if len(data) > 4 else 'default'
     plt.tick_params(which='minor', bottom=False, top=False, left=False, right=False)
-    #plt.legend(loc=legend_loc, bbox_to_anchor=(0, 1, 1, 0.2), mode=mode, ncol=columns, fontsize=10, handletextpad=0.5)
+    plt.legend(loc=legend_loc, bbox_to_anchor=(0, 1, 1, 0.2), mode=mode, ncol=columns, fontsize=10, handletextpad=0.5)
     plt.subplots_adjust(left=0.15, right=0.85, top=0.75, bottom=0.15)
     plt.ylim(bottom=-ylimit)
     plt.xlabel(x_label, fontsize=14)
@@ -47,13 +49,21 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
         plt.xscale('log')
     if y_as_log:
         plt.yscale('log')
-    #plt.savefig(file_name)
-    plt.show()
+
+    # Add only if you want a uniform scale on the y axis
+    # plt.annotate(r'$10^3$', xy=(0, 1.04), xycoords='axes fraction', fontsize=12, ha='left', va='top')
+    # plt.gca().yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(float(x)//10**3, ',')))
+    
+    # Add only if you want only integer values on the x axis
+    # plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+
+
+    plt.savefig(file_name)
+    #plt.show()
     plt.clf()
 
-    # Code to only produce a pdf with a legend
-    """ # Create a blank figure
-    fig = plt.figure(figsize=(6, 4))
+    # Code to produce a pdf only with a legend
+    """ fig = plt.figure(figsize=(6, 4))
 
     handles = []
     description = []
@@ -62,7 +72,7 @@ def plot_data(data: dict, x_label: str, y_label: str, file_name: str, legend_loc
         description.append(key)
 
     # Create the legend
-    plt.legend(handles, description, loc='center', mode='default', ncol=4, handletextpad=0.5)
+    plt.legend(handles, description, loc='center', mode='default', ncol=3, handletextpad=0.5)
 
     # Remove axes
     plt.axis('off')
