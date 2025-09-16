@@ -39,7 +39,7 @@ Make sure you have enough RAM and persistent storage; otherwise, the operating s
 Before executing the shell script to start the benchmarks, some databases need to be installed.
 
 #### DuckDB
-1. Clone the repository and switch to the correct branch.
+1. Clone the repository (from https://github.com/Christian20003/duckdb) and switch to the correct branch.
 ```bash
 git clone https://github.com/Christian20003/duckdb.git
 cd duckdb
@@ -55,7 +55,7 @@ make release
 ```
 
 #### LingoDB
-1. Clone the repository and switch to the correct branch.
+1. Clone the repository (from https://gitlab.studium.uni-bamberg.de/christian-matthias.goellner/lingo-db) and switch to the correct branch.
 ```bash
 git clone https://gitlab.studium.uni-bamberg.de/christian-matthias.goellner/lingo-db.git
 cd lingo-db
@@ -67,7 +67,7 @@ make build-release
 ```
 
 #### PostgreSQL
-1. Clone the repository.
+1. Clone the repository (from https://github.com/postgres/postgres).
 ```bash
 git clone https://github.com/postgres/postgres.git
 cd postgres
@@ -123,7 +123,7 @@ Each benchmark allows for custom configurations, which are stored in their corre
 * <code>memory_average</code>: Defines whether a mean value should be calculated or if the first valid value should be selected.
 * <code>setup</code>: Stores a list of scenarios that should be executed (Can be extended)
     * <code>id</code>: The ID of the scenario in written form.
-    * <code>dimension</code>: The size of a single dimension of a tensor (Matrix and Vektor).
+    * <code>dimension</code>: The size of a single dimension of a tensor (Matrix and Vector).
     * <code>ignore</code>: If this specific scenario should be ignored.
     * <code>statements</code>: The SQL statements that should be executed within this scenario.
 
@@ -165,8 +165,6 @@ Databases can also be configured, which can be found in <code>./shared/Global/</
 
 This project also includes a function that uses the <code>heaptrack</code> tool to measure memory. Ensure that this tool is installed on your system. If you want to use it, you have to change some code in <code>./einstein_summation/Einstein.py</code>, <code>./linear_regression/Regression.py</code> and  <code>./iris_regression/Iris.py</code>. Comment out the following code block:
  ```python
-memory = []
-memory_state = []
 for idx in range(CONFIG['memory_trials']):
 # It seems to be that with umbra and lingodb the original approach does not work correctly
 if name == 'umbra' or name == 'lingodb':
@@ -189,7 +187,11 @@ else:
 Replace it with the following function call:
 
  ```python
-Memory.heaptrack_memory(time_exe, <file_name>)
+memory_state.append(Memory.heaptrack_memory(time_exe, <file_name>))
 ```
 
 The second parameter must be a string that defines the name of the file to be generated through <code>heaptrack</code>.
+
+### Plots
+
+Each benchmark directory includes a <code>Plot.py</code> file that can be executed to generated plots of the results. If you want to use it, make sure that the paths for the results CSV files are correct.

@@ -129,13 +129,13 @@ def memory_thread(life_signal: Event, process_signal: Event, file_name: str, use
                 Format.print_error('Psutil-Thread did not find process', None)
                 break
 
-def python_memory(execution: str, time: float, statement: str = None, memory_over_time: bool = False) -> List[float]:
+def python_memory(execution: str, exe_time: float, statement: str = None, memory_over_time: bool = False) -> List[float]:
     '''
     This function executes a memory benchmark with python by using the Psutil module.
 
     :param execution: The execution string of the database. This can include an SQL file that the database should execute. 
     If not, be sure to pass the SQL query in the `statement` parameter.
-    :param time: The execution time of the process. This is used to determine how often the memory should be read.
+    :param exe_time: The execution time of the process. This is used to determine how often the memory should be read.
     :param optional statement: The SQL query that should be executed by the database. Only use this parameter if the 
     `execution` parameter does not already reference to the query within a file.
     :param memory_over_time: If a list of memory values should be returned representing the development of the memory
@@ -153,7 +153,7 @@ def python_memory(execution: str, time: float, statement: str = None, memory_ove
     file_name = 'memory_data'
     result = []
     # Sleep time is only necessary for long running processes to reduce the overhead
-    sleep = 0.001 if time > 60 or memory_over_time else 0
+    sleep = 0.001 if exe_time > 60 or memory_over_time else 0
     current_memory = psutil.virtual_memory().used
     thread = Thread(target=memory_thread, args=(life_signal, process_signal, file_name, current_memory, sleep))
     thread.start()
